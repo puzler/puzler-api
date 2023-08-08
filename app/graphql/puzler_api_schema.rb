@@ -6,7 +6,7 @@ class PuzlerApiSchema < GraphQL::Schema
 
   use GraphQL::Dataloader
 
-  max_complexity 100
+  max_complexity 500
   max_depth 15
 
   def self.resolve_type(_abstract_type, _obj, _ctx)
