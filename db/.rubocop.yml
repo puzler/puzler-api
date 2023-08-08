@@ -1,0 +1,16 @@
+inherit_from: ../.rubocop.yml
+
+Style/StringLiterals:
+  Enabled: false
+
+Layout/EmptyLinesAroundBlockBody:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Style/NumericLiterals:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false

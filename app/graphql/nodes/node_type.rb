@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
-module Types
+module Nodes
   module NodeType
-    include Types::BaseInterface
-    # Add the `id` field
+    include Interfaces::BaseInterface
     include GraphQL::Types::Relay::NodeBehaviors
   end
 end
