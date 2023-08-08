@@ -6,10 +6,10 @@ module AuthProviders
       send(
         '/oauth/access_token',
         {
-          client_id: client_id,
-          client_secret: client_secret,
-          code: code,
-          redirect_uri: redirect_uri
+          client_id:,
+          client_secret:,
+          code:,
+          redirect_uri:
         }
       )
     end

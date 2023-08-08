@@ -5,6 +5,8 @@ module Schemas
     include GraphQL::Types::Relay::HasNodeField
     include GraphQL::Types::Relay::HasNodesField
 
+    description 'The base Query Object'
+
     implements Schemas::Auth::AuthQueries
   end
 end

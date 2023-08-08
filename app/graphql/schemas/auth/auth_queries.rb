@@ -5,7 +5,9 @@ module Schemas
     module AuthQueries
       include Interfaces::BaseInterface
 
-      field :me, Types::User, null: true
+      description 'Queries related to app authentication'
+
+      field :me, Types::User, null: true, description: 'The currently logged in User'
 
       def me
         current_user

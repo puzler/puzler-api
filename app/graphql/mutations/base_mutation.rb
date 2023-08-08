@@ -7,8 +7,8 @@ module Mutations
     input_object_class InputObjects::BaseInputObject
     object_class BaseObject
 
-    field :success, Boolean, null: false
-    field :error, String, null: true
+    field :error, String, null: true, description: 'Error message passed along with mutation response'
+    field :success, Boolean, null: false, description: 'Flag marking if mutation was successful'
 
     def error(msg)
       { success: false, error: msg }

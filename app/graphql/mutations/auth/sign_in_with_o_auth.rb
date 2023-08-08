@@ -3,10 +3,15 @@
 module Mutations
   module Auth
     class SignInWithOAuth < BaseMutation
-      argument :code, String, required: true
-      argument :provider_name, String, required: true
+      argument :code, String, required: true, description: 'The Authentication Code provided by the OAuth provider'
+      argument :provider_name, String, required: true, description: 'The OAuth provider'
 
-      field :jwt, String, null: true
+      description 'Verifies an OAuth Code and returns a Signed JWT to authenticate the User'
+
+      field :jwt,
+            String,
+            null: true,
+            description: 'A Signed JWT used to authenticate a User'
 
       def resolve(code:, provider_name:)
         return error('Already Logged In') if current_user.present?

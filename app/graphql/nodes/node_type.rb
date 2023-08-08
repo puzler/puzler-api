@@ -4,5 +4,7 @@ module Nodes
   module NodeType
     include Interfaces::BaseInterface
     include GraphQL::Types::Relay::NodeBehaviors
+
+    description 'Base Node Type'
   end
 end

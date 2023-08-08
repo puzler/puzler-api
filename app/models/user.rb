@@ -13,27 +13,27 @@ class User < ApplicationRecord
     user = User.find_by(id: data[:sub])
     return if user.nil?
     return if user.jwt_salt != data[:salt]
-    return if JwtDenylist.where(jti: data[:jti]).exists?
+    return if JwtDenylist.exists?(jti: data[:jti])
 
     user
   end
 
   def self.from_oauth(user_data, provider)
-    user = find_by(uid: user_data[:id], provider: provider)
+    user = find_by(uid: user_data[:id], provider:)
     return user if user.present?
 
     name_parts = user_data[:name].split
     password = Devise.friendly_token
     create(
       email: user_data[:email],
-      password: password,
       display_name: user_data[:email].split('@').first,
       first_name: name_parts[0],
       last_name: name_parts[1],
-      provider: provider,
       uid: user_data[:id],
       confirmed_at: DateTime.now,
-      confirmation_token: nil
+      confirmation_token: nil,
+      password:,
+      provider:
     )
   end
 

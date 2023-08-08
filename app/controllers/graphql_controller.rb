@@ -10,9 +10,9 @@ class GraphqlController < ApplicationController
     query = params[:query]
     operation_name = params[:operationName]
     context = {
-      current_user: current_user
+      current_user:
     }
-    result = PuzlerApiSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
+    result = PuzlerApiSchema.execute(query, variables:, context:, operation_name:)
     render json: result
   rescue StandardError => e
     raise e unless Rails.env.development?
@@ -54,6 +54,7 @@ class GraphqlController < ApplicationController
     logger.error err.message
     logger.error err.backtrace.join("\n")
 
-    render json: { errors: [{ message: err.message, backtrace: err.backtrace }], data: {} }, status: 500
+    render json: { errors: [{ message: err.message, backtrace: err.backtrace }], data: {} },
+           status: :internal_server_error
   end
 end
