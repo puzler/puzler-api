@@ -6,8 +6,6 @@ COPY Gemfile* ./
 RUN gem install bundler && bundle config set without 'development test' && bundle install
 
 COPY . ./
-ARG RAILS_MASTER_KEY
-RUN RAILS_ENV=production bundle exec rake assets:precompile
 
 ARG PORT
 EXPOSE $PORT
