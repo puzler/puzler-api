@@ -4,7 +4,9 @@ class User < ApplicationRecord
   devise :database_authenticatable, :registerable, :confirmable,
          :trackable, :recoverable, :validatable
 
-  before_create :set_jwt_salt
+  before_create :set_default_values
+  before_validation :strip_whitespace
+  validates_uniqueness_of :display_name, case_sensitive: false
 
   def self.from_jwt(token)
     data = decode_jwt(token)
@@ -26,7 +28,6 @@ class User < ApplicationRecord
     password = Devise.friendly_token
     create(
       email: user_data[:email],
-      display_name: user_data[:email].split('@').first,
       first_name: name_parts[0],
       last_name: name_parts[1],
       uid: user_data[:id],
@@ -51,6 +52,13 @@ class User < ApplicationRecord
 
   private
 
+  def strip_whitespace
+    columns = User.columns.select { |c| c.sql_type_metadata.type == :string }
+    columns.map(&:name).each do |column|
+      self.send(column).try(&:strip!)
+    end
+  end
+
   def jwt_payload
     {
       sub: id,
@@ -73,7 +81,15 @@ class User < ApplicationRecord
   end
   private_class_method :decode_jwt
 
-  def set_jwt_salt
+  def set_default_values
     self.jwt_salt = Devise.friendly_token
+    self.display_name = email.split('@').first
+    unless validate_attribute(:display_name)
+      number_to_append = 1
+      while validate_attribute(:display_name, "#{display_name}#{number_to_append}")
+        number_to_append += 1
+      end
+      self.display_name = "#{display_name}#{number_to_append}"
+    end
   end
 end

@@ -14,14 +14,15 @@ module Mutations
             description: 'A Signed JWT used to authenticate a User'
 
       def resolve(code:, provider_name:)
-        return error('Already Logged In') if current_user.present?
+        return error(I18n.t('devise.failure.already_authenticated')) if current_user.present?
 
         user = get_user_from_code(
           code,
           provider_name
         )
-        return error(user[:error]) if user.is_a? Hash
-        return error('Could not create User') if user.nil? || user.errors.any?
+        return oauth_failure(user[:error], provider_name) if user.is_a? Hash
+        return oauth_failure('a user with that email already exists', provider_name) if user.nil? || user.errors.any?
+        return inactive_failure(user.inactive_message) unless user.active_for_authentication?
 
         {
           success: true,
@@ -30,6 +31,20 @@ module Mutations
       end
 
       private
+
+      def inactive_failuire(message)
+        I18n.t("devise.failure.#{message}")
+      end
+
+      def oauth_failure(reason, kind)
+        error(
+          I18n.t(
+            'devise.omniauth_callbacks.failure',
+            reason:,
+            kind:
+          )
+        )
+      end
 
       def get_user_data(code, provider)
         token = provider.get_token(code)[:access_token]

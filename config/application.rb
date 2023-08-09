@@ -27,5 +27,9 @@ module PuzlerApi
     config.api_only = true
     config.autoload_paths << Rails.root.join('lib')
     config.eager_load_paths << Rails.root.join('lib')
+
+    def frontend_url
+      @frontend_url ||= ENV.fetch('FRONTEND_URL', 'localhost:5173')
+    end
   end
 end
