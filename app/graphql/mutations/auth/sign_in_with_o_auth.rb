@@ -2,11 +2,12 @@
 
 module Mutations
   module Auth
-    class SignInWithOAuth < BaseMutation
+    class SignInWithOAuth < AuthMutation
       argument :code, String, required: true, description: 'The Authentication Code provided by the OAuth provider'
       argument :provider_name, String, required: true, description: 'The OAuth provider'
 
       description 'Verifies an OAuth Code and returns a Signed JWT to authenticate the User'
+      authenticated false
 
       field :jwt,
             String,
@@ -14,27 +15,17 @@ module Mutations
             description: 'A Signed JWT used to authenticate a User'
 
       def resolve(code:, provider_name:)
-        return error(I18n.t('devise.failure.already_authenticated')) if current_user.present?
-
         user = get_user_from_code(
           code,
           provider_name
         )
         return oauth_failure(user[:error], provider_name) if user.is_a? Hash
-        return oauth_failure('a user with that email already exists', provider_name) if user.nil? || user.errors.any?
-        return inactive_failure(user.inactive_message) unless user.active_for_authentication?
+        return oauth_failure('a user with that email already exists', provider_name) unless user&.errors&.empty?
 
-        {
-          success: true,
-          jwt: user.generate_jwt
-        }
+        jwt_if_authticatable(user)
       end
 
       private
-
-      def inactive_failuire(message)
-        I18n.t("devise.failure.#{message}")
-      end
 
       def oauth_failure(reason, kind)
         error(
