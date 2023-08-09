@@ -2,7 +2,7 @@
 
 module AuthProviders
   class Facebook
-    def access_token(code)
+    def get_token(code)
       send(
         '/oauth/access_token',
         {

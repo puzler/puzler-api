@@ -20,6 +20,17 @@ class User < ApplicationRecord
     user
   end
 
+  def self.decode_jwt(token)
+    JWT.decode(
+      token,
+      Rails.application.credentials.dig(:devise, :jwt_secret),
+      true,
+      algorithm: 'HS256'
+    )[0].with_indifferent_access
+  rescue StandardError
+    nil
+  end
+
   def self.from_oauth(user_data, provider)
     user = find_by(uid: user_data[:id], provider:)
     return user if user.present?
@@ -68,18 +79,6 @@ class User < ApplicationRecord
       exp: 30.days.from_now.to_i
     }
   end
-
-  def self.decode_jwt(token)
-    JWT.decode(
-      token,
-      Rails.application.credentials.dig(:devise, :jwt_secret),
-      true,
-      algorithm: 'HS256'
-    )[0].with_indifferent_access
-  rescue StandardError
-    nil
-  end
-  private_class_method :decode_jwt
 
   def set_default_values
     self.jwt_salt ||= Devise.friendly_token

@@ -30,6 +30,14 @@ module Schemas
       field :reset_password,
             mutation: Mutations::Auth::ResetPassword,
             description: 'Used to reset a password with a token'
+
+      field :sign_out,
+            mutation: Mutations::Auth::SignOut,
+            description: "Used to sign out by invalidating the User's JWT"
+
+      field :sign_out_all_locations,
+            mutation: Mutations::Auth::SignOutAllLocations,
+            description: "Used to invalidate all of the User's current login tokens"
     end
   end
 end
