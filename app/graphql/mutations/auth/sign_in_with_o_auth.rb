@@ -38,7 +38,7 @@ module Mutations
       end
 
       def get_user_data(code, provider)
-        token = provider.get_token(code)[:access_token]
+        token = provider.get_token(code)
         return if token.nil?
 
         data = provider.get_user(token)
@@ -59,7 +59,8 @@ module Mutations
 
       def valid_providers
         @valid_providers ||= {
-          facebook: AuthProviders::Facebook
+          facebook: AuthProviders::Facebook,
+          google: AuthProviders::Google
         }.with_indifferent_access
       end
     end

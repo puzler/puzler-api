@@ -11,7 +11,7 @@ module AuthProviders
           code:,
           redirect_uri:
         }
-      )
+      )[:access_token]
     end
 
     def get_user(token)
@@ -50,8 +50,7 @@ module AuthProviders
     end
 
     def redirect_uri
-      base_url = Rails.env.development? ? 'http://localhost:5173' : 'https://www.puzler.app'
-      "#{base_url}/auth/omni/facebook"
+      "http://#{Rails.application.frontend_url}/auth/omni/facebook"
     end
 
     def base_url

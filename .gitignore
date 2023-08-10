@@ -35,3 +35,4 @@
 /config/credentials/production.key
 
 .env.local*
+.byebug_history
