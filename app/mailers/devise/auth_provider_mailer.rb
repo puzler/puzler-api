@@ -12,14 +12,13 @@ module Devise
     protected
 
     def headers_for(action, opts)
-      headers = super
-
-      headers[:subject] = I18n.t(
-        'devise.mailer.confirm_provider.subject',
-        provider: opts[:provider] || 'an OAuth provider'
+      super.merge(
+        subject: I18n.t(
+          'devise.mailer.confirm_provider.subject',
+          provider: opts[:provider] || 'an OAuth provider'
+        ),
+        from: 'Puzler <noreply@puzler.app>'
       )
-
-      headers
     end
   end
 end
