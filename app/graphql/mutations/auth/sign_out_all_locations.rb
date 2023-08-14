@@ -7,7 +7,8 @@ module Mutations
       authenticated true
 
       def resolve
-        return errors_for(current_user) unless current_user.cycle_jwt_salt
+        current_user.regenerate_jwt_salt
+        return errors_for(current_user) if current_user.errors.any?
 
         { success: true }
       end

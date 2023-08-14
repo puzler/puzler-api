@@ -10,14 +10,36 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_06_194853) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_11_174257) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "csrf_tokens", force: :cascade do |t|
+    t.string "client_token_id", null: false
+    t.string "token", null: false
+    t.datetime "exp", null: false
+    t.integer "token_type", null: false
+    t.index ["token"], name: "index_csrf_tokens_on_token", unique: true
+  end
 
   create_table "jwt_denylist", force: :cascade do |t|
     t.string "jti", null: false
     t.datetime "exp", null: false
     t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
+  end
+
+  create_table "user_o_auth_providers", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "oauth_id", null: false
+    t.integer "provider", null: false
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
+    t.datetime "confirmation_sent_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider", "oauth_id"], name: "index_user_o_auth_providers_on_provider_and_oauth_id", unique: true
+    t.index ["user_id", "provider"], name: "index_user_o_auth_providers_on_user_id_and_provider", unique: true
+    t.index ["user_id"], name: "index_user_o_auth_providers_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -38,13 +60,12 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_06_194853) do
     t.datetime "confirmed_at"
     t.datetime "confirmation_sent_at"
     t.string "unconfirmed_email"
-    t.string "provider"
-    t.string "uid"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["display_name"], name: "index_users_on_display_name", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["jwt_salt"], name: "index_users_on_jwt_salt", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 

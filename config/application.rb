@@ -29,7 +29,7 @@ module PuzlerApi
     config.eager_load_paths << Rails.root.join('lib')
 
     def frontend_url
-      @frontend_url ||= ENV.fetch('FRONTEND_URL', 'localhost:5173')
+      @frontend_url ||= credentials.frontend_url || ENV.fetch('FRONTEND_URL', 'http://localhost:5173')
     end
   end
 end

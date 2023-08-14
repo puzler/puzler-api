@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module AuthProviders
-  class Facebook
+  class Facebook < Base
     def get_token(code)
       send(
         '/oauth/access_token',
@@ -15,13 +15,31 @@ module AuthProviders
     end
 
     def get_user(token)
-      send(
+      data = send(
         '/me',
         {
           access_token: token,
           fields: 'id,name,email'
         }
       )
+
+      name_parts = data[:name].split
+      {
+        id: data[:id],
+        email: data[:email],
+        first_name: name_parts.first,
+        last_name: name_parts[1..].join(' ')
+      }
+    end
+
+    def require_email_confirmation?
+      false
+    end
+
+    protected
+
+    def base_url
+      'https://graph.facebook.com/v17.0'
     end
 
     private
@@ -36,25 +54,6 @@ module AuthProviders
       parse_response(
         http.request(request)
       )
-    end
-
-    def build_request(url, params)
-      uri = URI("#{base_url}#{url}")
-      uri.query = params.map { |k, v| "#{k}=#{v}" }.join('&')
-
-      Net::HTTP::Get.new(uri)
-    end
-
-    def parse_response(response)
-      JSON.parse(response.body).transform_keys(&:to_sym)
-    end
-
-    def redirect_uri
-      "http://#{Rails.application.frontend_url}/auth/omni/facebook"
-    end
-
-    def base_url
-      'https://graph.facebook.com/v17.0'
     end
 
     def client_id

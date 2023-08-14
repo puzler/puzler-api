@@ -7,6 +7,14 @@ module Schemas
 
       description 'Mutations related to app authentication'
 
+      field :confirm_provider_link,
+            mutation: Mutations::Auth::ConfirmProviderLink,
+            description: 'Used to confirm an OAuth provider link'
+
+      field :generate_o_auth_csrf_token,
+            mutation: Mutations::Auth::GenerateOAuthCsrfToken,
+            description: 'Used to generate a CSRF token to validate an OAuth request'
+
       field :sign_in_with_o_auth,
             mutation: Mutations::Auth::SignInWithOAuth,
             description: 'Used to sign in with a OAuth code'

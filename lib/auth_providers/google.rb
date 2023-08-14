@@ -1,20 +1,29 @@
 # frozen_string_literal: true
 
 module AuthProviders
-  class Google
-    def get_token(code)
-      code
-    end
-
+  class Google < Base
     def get_user(token)
-      data = send('https://openidconnect.googleapis.com/v1/userinfo', token:)
+      data = send('/userinfo', token:)
 
       {
-        name: data[:name],
+        first_name: data[:given_name],
+        last_name: data[:family_name],
         email: data[:email],
         id: data[:sub]
       }
     end
+
+    def require_email_confirmation?
+      false
+    end
+
+    protected
+
+    def base_url
+      'https://openidconnect.googleapis.com/v1'
+    end
+
+    private
 
     def send(url, token: nil)
       request = build_request(url)
@@ -26,20 +35,6 @@ module AuthProviders
       parse_response(
         http.request(request)
       )
-    end
-
-    def build_request(url)
-      uri = URI(url)
-
-      Net::HTTP::Get.new(uri)
-    end
-
-    def parse_response(response)
-      JSON.parse(response.body).transform_keys(&:to_sym)
-    end
-
-    def credentials
-      Rails.application.credentials.google
     end
   end
 end
