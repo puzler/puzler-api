@@ -1,8 +1,8 @@
 <p>Hello <%= @resource.email %>!</p>
 
-<p>Someone has requested to link #{@provider} to your account.</p>
+<p>Someone has requested to link <%= @provider %> to your account.</p>
 
 <p><%= link_to "Confirm #{@provider} Link", "#{Rails.application.frontend_url}/auth/confirm-oauth-link/#{@token}" %></p>
 
 <p>If you didn't request this, please ignore this email.</p>
-<p>You won't be able to sign in with #{@provider} until you access the link above to confirm it.</p>
+<p>You won't be able to sign in with <%= @provider %> until you access the link above to confirm it.</p>

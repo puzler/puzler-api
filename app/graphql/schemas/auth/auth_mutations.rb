@@ -7,10 +7,6 @@ module Schemas
 
       description 'Mutations related to app authentication'
 
-      field :confirm_provider_link,
-            mutation: Mutations::Auth::ConfirmProviderLink,
-            description: 'Used to confirm an OAuth provider link'
-
       field :generate_o_auth_csrf_token,
             mutation: Mutations::Auth::GenerateOAuthCsrfToken,
             description: 'Used to generate a CSRF token to validate an OAuth request'
@@ -30,6 +26,10 @@ module Schemas
       field :confirm_email,
             mutation: Mutations::Auth::ConfirmEmail,
             description: 'Used to confirm an email with a token'
+
+      field :confirm_provider_link,
+            mutation: Mutations::Auth::ConfirmProviderLink,
+            description: 'Used to confirm linking an OAuth provider'
 
       field :request_password_reset,
             mutation: Mutations::Auth::RequestPasswordReset,

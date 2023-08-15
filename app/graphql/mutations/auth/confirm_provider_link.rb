@@ -18,12 +18,9 @@ module Mutations
         return errors_for(auth_link) if auth_link.errors.any?
 
         user = auth_link.user
-        jwt = user.generate_jwt if current_user.nil?
+        return { success: true } if current_user.present?
 
-        {
-          success: true,
-          jwt:
-        }
+        jwt_if_authticatable(user)
       end
     end
   end
