@@ -6,6 +6,7 @@ module Devise
 
     def confirm_provider(record, token, opts = {})
       @token = token
+      @provider = opts[:provider]
       devise_mail(record, :confirm_oauth_provider, opts)
     end
 

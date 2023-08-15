@@ -31,10 +31,9 @@ class UserOAuthProvider < ApplicationRecord
   end
 
   def valid_for_confirmation?
-    record.errors.add(:base, 'Link is already confirmed') if record.confirmed?
-    record.errors.add(:base, 'Confirmation link has expired') if record.confirmation_sent_at < 3.days.ago
-
-    record.errors.empty?
+    errors.add(:base, 'Link is already confirmed') if confirmed?
+    errors.add(:base, 'Confirmation link has expired') if confirmation_sent_at < 3.days.ago
+    errors.empty?
   end
 
   def confirm!
