@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_08_11_174257) do
+ActiveRecord::Schema[7.0].define(version: 2023_08_17_184808) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -26,6 +26,23 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_11_174257) do
     t.string "jti", null: false
     t.datetime "exp", null: false
     t.index ["jti"], name: "index_jwt_denylist_on_jti", unique: true
+  end
+
+  create_table "puzzles", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.integer "visibility", default: 0, null: false
+    t.string "title"
+    t.string "author"
+    t.integer "size", null: false
+    t.text "rules"
+    t.json "given_digits"
+    t.json "grid_regions"
+    t.json "global_constraints", default: {}, null: false
+    t.json "local_constriants", default: {}, null: false
+    t.json "cosmetics", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_puzzles_on_user_id"
   end
 
   create_table "user_o_auth_providers", force: :cascade do |t|

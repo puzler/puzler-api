@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_secure_token :jwt_salt
 
   has_many :user_o_auth_providers, dependent: :destroy
+  has_many :puzzles, dependent: :destroy
 
   devise :database_authenticatable, :registerable, :confirmable,
          :trackable, :recoverable, :validatable

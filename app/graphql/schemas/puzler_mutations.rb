@@ -2,8 +2,9 @@
 
 module Schemas
   class PuzlerMutations < BaseObject
-    implements Schemas::Auth::AuthMutations
-
     description 'The base Mutation Object'
+
+    implements Schemas::Auth::AuthMutations
+    implements Schemas::Puzzles::PuzzleMutations
   end
 end

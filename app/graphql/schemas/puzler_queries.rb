@@ -8,5 +8,6 @@ module Schemas
     description 'The base Query Object'
 
     implements Schemas::Auth::AuthQueries
+    implements Schemas::Puzzles::PuzzleQueries
   end
 end
