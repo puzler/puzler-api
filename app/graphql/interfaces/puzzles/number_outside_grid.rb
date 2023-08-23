@@ -8,7 +8,7 @@ module Interfaces
       description 'An element with a number outside the grid'
 
       field :location, Types::Puzzles::Address, null: false, description: 'Location of the value'
-      field :value, String, null: false, description: 'Value of the clue'
+      field :value, Integer, null: true, description: 'Value of the clue'
     end
   end
 end

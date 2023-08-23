@@ -5,8 +5,8 @@ module Enums
     class XVTypes < BaseEnum
       description 'Enum describing if an XV constraint is an X or a V'
 
-      value 'X', value: 'x'
-      value 'V', value: 'v'
+      value 'X', value: 'X'
+      value 'V', value: 'V'
     end
   end
 end

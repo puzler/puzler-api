@@ -8,7 +8,7 @@ module InputObjects
 
         argument :xv_type,
                  Enums::Puzzles::XVTypes,
-                 required: true,
+                 required: false,
                  description: 'Element is an X or a V'
       end
     end

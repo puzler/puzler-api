@@ -35,10 +35,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_17_184808) do
     t.string "author"
     t.integer "size", null: false
     t.text "rules"
-    t.json "given_digits"
-    t.json "grid_regions"
+    t.json "cells", null: false
     t.json "global_constraints", default: {}, null: false
-    t.json "local_constriants", default: {}, null: false
+    t.json "local_constraints", default: {}, null: false
     t.json "cosmetics", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false

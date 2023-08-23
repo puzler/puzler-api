@@ -7,10 +7,9 @@ class AddPuzzles < ActiveRecord::Migration[7.0]
       t.string :author
       t.integer :size, null: false
       t.text :rules
-      t.json :given_digits
-      t.json :grid_regions
+      t.json :cells, null: false
       t.json :global_constraints, null: false, default: {}
-      t.json :local_constriants, null: false, default: {}
+      t.json :local_constraints, null: false, default: {}
       t.json :cosmetics, null: false, default: {}
 
       t.timestamps

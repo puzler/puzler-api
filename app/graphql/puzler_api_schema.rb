@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 class PuzlerApiSchema < GraphQL::Schema
-  mutation(Schemas::PuzlerMutations)
   query(Schemas::PuzlerQueries)
+  mutation(Schemas::PuzlerMutations)
 
   use GraphQL::Dataloader
 
