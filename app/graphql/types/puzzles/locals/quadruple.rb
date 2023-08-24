@@ -4,8 +4,7 @@ module Types
   module Puzzles
     module Locals
       class Quadruple < BaseType
-        implements Interfaces::Puzzles::MultiCell
-        field :location, Address, null: false, description: 'Visual location of the element'
+        implements Interfaces::Puzzles::CellConnector
         field :values, [Integer], null: false, description: 'Values in the Quadruple'
 
         description 'A Quadruple clue'
