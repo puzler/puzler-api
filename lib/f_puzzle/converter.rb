@@ -68,12 +68,19 @@ module FPuzzle
       default_region = ((row / @dimensions[:height]).floor * @regions_per_row) + (col / @dimensions[:width]).floor
       cell = { region: cell_data[:region] || default_region }
       cell.merge!(given: true, digit: cell_data[:value]) if cell_data[:given]
-      return cell unless cell_data[:c]
+      return cell unless cell_data[:c] || cell_data[:c_array]
 
       [
         cell,
-        { cell: { row:, column: col }, color: ColorHelper.rgba_from_string(cell_data[:c]) }
+        { cell: { row:, column: col }, colors: parse_cell_colors(cell_data) }
       ]
+    end
+
+    def parse_cell_colors(cell_data)
+      colors = cell_data[:c_array]&.map { |c| ColorHelper.rgba_from_string(c) }
+      colors ||= [ColorHelper.rgba_from_string(cell_data[:c])]
+
+      colors
     end
   end
 end

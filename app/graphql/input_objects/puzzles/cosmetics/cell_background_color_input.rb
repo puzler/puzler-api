@@ -6,10 +6,10 @@ module InputObjects
       class CellBackgroundColorInput < SingleCellInput
         description 'Input for a single cell background color cosmetic'
 
-        argument :color,
-                 ColorInput,
+        argument :colors,
+                 [ColorInput],
                  required: true,
-                 description: 'The background color for the cell'
+                 description: 'The background colors for the cell'
       end
     end
   end

@@ -4,10 +4,10 @@ module InputObjects
   module Puzzles
     module Cosmetics
       class CosmeticShapeInput < BaseInputObject
-        description 'Input for a cosmetic shape element'
+        description 'Input for a cosmetic shape'
 
         argument :address,
-                 AddressInput,
+                 InputObjects::Puzzles::AddressInput,
                  required: true,
                  description: 'Center point of the shape'
 
@@ -15,18 +15,18 @@ module InputObjects
         argument :width, Float, required: true, description: 'Width of the shape'
 
         argument :fill_color,
-                 ColorInput,
+                 InputObjects::Puzzles::ColorInput,
                  required: true,
                  description: 'Color to fill the shape'
 
         argument :outline_color,
-                 ColorInput,
+                 InputObjects::Puzzles::ColorInput,
                  required: true,
                  description: "Color of the shape's outline"
 
         argument :text, String, required: false, description: 'Text to place inside the shape'
         argument :text_color,
-                 ColorInput,
+                 InputObjects::Puzzles::ColorInput,
                  required: false,
                  description: 'Color of the text inside the shape'
 

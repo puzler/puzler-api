@@ -6,7 +6,7 @@ module Types
       class CellBackgroundColor < BaseType
         implements Interfaces::Puzzles::SingleCell
         description 'A background color for a single cell'
-        field :color, Color, null: false, description: 'The background color'
+        field :colors, [Color], null: false, description: 'The background colors'
       end
     end
   end
