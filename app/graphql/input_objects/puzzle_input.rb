@@ -9,15 +9,10 @@ module InputObjects
     argument :size, Integer, required: true, description: 'Puzzle Size'
     argument :title, String, required: false, description: 'Puzzle Title'
 
-    argument :given_digits,
-             [[Integer, { null: true }]],
+    argument :cells,
+             [[InputObjects::Puzzles::GridCellInput]],
              required: true,
              description: 'Given Digits'
-
-    argument :grid_regions,
-             [[Integer]],
-             required: true,
-             description: 'Grid Regions'
 
     argument :global_constraints,
              InputObjects::Puzzles::GlobalConstraintsInput,

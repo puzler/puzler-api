@@ -6,7 +6,7 @@ module InputObjects
       class ArrowInput < BaseInputObject
         description 'Input for an Arrow element'
 
-        argument :circle_cells,
+        argument :cells,
                  [AddressInput],
                  required: true,
                  description: 'Cells included in the Arrow Circle'

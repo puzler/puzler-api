@@ -7,9 +7,25 @@ module FPuzzle
       parse_f_puzzle(puzzle_data)
     end
 
-    def to_f_puzzle(puzzle); end
+    def to_f_puzzle(puzzle)
+      f_puzzle_data = generate_f_puzzle(puzzle)
+      FPuzzle::Base64.encode(f_puzzle_data)
+    end
 
     private
+
+    def generate_f_puzzle(puzzle)
+      {
+        author: puzzle.author,
+        ruleset: puzzle.rules,
+        title: puzzle.title,
+        size: puzzle.size,
+        **FPuzzle::Exporters::Grid.parse(puzzle),
+        **FPuzzle::Exporters::Cosmetics.parse(puzzle),
+        **FPuzzle::Exporters::Globals.parse(puzzle),
+        **FPuzzle::Exporters::Locals.parse(puzzle)
+      }
+    end
 
     def parse_f_puzzle(puzzle_data)
       @size = puzzle_data[:size]

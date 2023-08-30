@@ -8,6 +8,10 @@ module Types
         field :values, [Integer], null: false, description: 'Values in the Quadruple'
 
         description 'A Quadruple clue'
+
+        def values
+          object['values'] || []
+        end
       end
     end
   end

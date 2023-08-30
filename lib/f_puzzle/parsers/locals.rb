@@ -85,7 +85,7 @@ module FPuzzle
               element[output_key] = data[input_key]
             end
 
-            element.compact
+            element.compact_blank
           end
         end
 

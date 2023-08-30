@@ -6,6 +6,10 @@ module InputObjects
       description 'Input for the collection of cosmetic elements in a puzzle'
 
       argument :cages, [Cosmetics::CageInput], required: false, description: 'Cosmetic Cages'
+      argument :cell_background_colors,
+               [Cosmetics::CellBackgroundColorInput],
+               required: false,
+               description: 'Cell Background Colors'
       argument :circles, [Cosmetics::CosmeticShapeInput], required: false, description: 'Cosmetic Circles'
       argument :lines, [Cosmetics::CustomLineInput], required: false, description: 'Cosmetic Lines'
       argument :rectangles, [Cosmetics::CosmeticShapeInput], required: false, description: 'Cosmetic Rectangles'

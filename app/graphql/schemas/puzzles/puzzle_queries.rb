@@ -24,6 +24,16 @@ module Schemas
                        description: 'Compressed Base64 string containing the FPuzzles puzzle data'
             end
 
+      field :generate_f_puzzle,
+            String,
+            null: false,
+            description: 'Convert a Puzzle to a compressed Base64 string in fPuzzle format' do
+              argument :puzzle,
+                       InputObjects::PuzzleInput,
+                       required: true,
+                       description: 'The Puzzle to convert'
+            end
+
       def fetch_puzzle(id:)
         puzzle = Puzzle.find_by(id:)
         return if puzzle.nil?
@@ -34,6 +44,10 @@ module Schemas
 
       def load_f_puzzle(base64_data:)
         FPuzzle::Converter.new.from_f_puzzle(base64_data)
+      end
+
+      def generate_f_puzzle(puzzle:)
+        FPuzzle::Converter.new.to_f_puzzle(puzzle)
       end
     end
   end
