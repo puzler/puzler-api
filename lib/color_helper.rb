@@ -57,8 +57,8 @@ class ColorHelper
         hex_with_alpha: /^#(?<red>[0-9a-fA-F]{2})(?<green>[0-9a-fA-F]{2})(?<blue>[0-9a-fA-F]{2})(?<alpha>[0-9a-fA-F]{1,2})$/,
         short_hex_no_alpha: /^#(?<red>[0-9a-fA-F])(?<green>[0-9a-fA-F])(?<blue>[0-9a-fA-F])$/,
         short_hex_with_alpha: /^#(?<red>[0-9a-fA-F])(?<green>[0-9a-fA-F])(?<blue>[0-9a-fA-F])(?<alpha>[0-9a-fA-F])$/,
-        rgb: /^rgb\((?<red>\d{1,3}(?>\.\d+){0,1})[\s,]*(?<green>\d{1,3}(?>\.\d+){0,1})[\s,]+(?<blue>\d{1,3}(?>\.\d+){0,1})\)$/,
-        rgba: /^rgba\((?<red>\d{1,3}(?>\.\d+){0,1})[\s,]*(?<green>\d{1,3}(?>\.\d+){0,1})[\s,]+(?<blue>\d{1,3}(?>\.\d+){0,1})[\s,]+(?<alpha>(1|0){0,1}(\.\d)*)\)$/
+        rgb: /^rgb\((?<red>\d{1,3}(?:\.\d+){0,1})[\s,]*(?<green>\d{1,3}(?:\.\d+){0,1})[\s,]+(?<blue>\d{1,3}(?:\.\d+){0,1})\)$/,
+        rgba: /^rgba\((?<red>\d{1,3}(?:\.\d+){0,1})[\s,]*(?<green>\d{1,3}(?:\.\d+){0,1})[\s,]+(?<blue>\d{1,3}(?:\.\d+){0,1})[\s,]+(?<alpha>(?:1|0){0,1}(?:\.\d)*)\)$/
       }
     end
     # rubocop:enable Layout/LineLength

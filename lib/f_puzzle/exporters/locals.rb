@@ -42,7 +42,9 @@ module FPuzzle
             palindrome: line_list(locals.palindrome_lines),
             renban: line_list(locals.renban_lines),
             whispers: line_list(locals.german_whisper_lines),
-            betweenline: line_list(locals.between_lines)
+            betweenline: line_list(locals.between_lines),
+            dutchwhisper: line_list(locals.dutch_whisper_lines),
+            regionsum: line_list(locals.region_sum_lines)
           }
         end
 
@@ -73,12 +75,9 @@ module FPuzzle
 
         def parse_outside_grid_locals(locals)
           {
-            sandwichsum: locals.sandwich_sums&.map do |sandwich|
-              {
-                cell: parse_address(sandwich.location),
-                value: sandwich.value&.to_s
-              }
-            end,
+            sandwichsum: outside_grid(locals.sandwich_sums),
+            skyscraper: outside_grid(locals.skyscraper),
+            xsum: outside_grid(locals.x_sums),
             littlekillersum: locals.little_killer_sums&.map do |killer|
               {
                 cell: parse_address(killer.location),
@@ -89,12 +88,23 @@ module FPuzzle
           }
         end
 
+        def outside_grid(items)
+          items&.map do |item|
+            {
+              cell: parse_address(item.location),
+              value: item.value&.to_s
+            }
+          end
+        end
+
         def parse_single_cell_locals(locals)
           {
             odd: single_cell(locals.odd_cells),
             even: single_cell(locals.even_cells),
             minimum: single_cell(locals.min_cells),
-            maximum: single_cell(locals.max_cells)
+            maximum: single_cell(locals.max_cells),
+            rowindex: single_cell(locals.row_index_cells),
+            columnindex: single_cell(locals.column_index_cells)
           }
         end
 
@@ -102,14 +112,7 @@ module FPuzzle
           items&.map do |item|
             {
               cell: parse_address(item.cell),
-              **kw_map.transform_values do |input_key|
-                val = item[input_key]
-                if val.is_a? Array
-                  val.map(&:to_s)
-                else
-                  val.to_s
-                end
-              end
+              **process_kw_map(kw_map, item)
             }
           end
         end
@@ -129,45 +132,35 @@ module FPuzzle
           list&.map do |item|
             {
               cells: item.cells.map { |add| parse_address(add) },
-              **kw_map.transform_values do |input_key|
-                val = item[input_key]
-                if val.is_a? Array
-                  val
-                else
-                  val.to_s
-                end
-              end
+              **process_kw_map(kw_map, item)
             }
           end
         end
 
         def parse_cell_connector(list, **kw_map)
           list&.map do |item|
-            rows = []
-            columns = []
-            item.cells.each do |add|
-              rows.push add.row
-              columns.push add.column
-            end
-
-            cells = []
-            rows.uniq.each do |row|
-              columns.uniq.each do |column|
-                cells.push({ row:, column: })
-              end
+            rows, columns = item.cells.each_with_object([[], []]) do |address, lists|
+              lists[0] << address.row
+              lists[1] << address.column
             end
 
             {
-              cells: cells.map { |address| parse_address(address) },
-              **kw_map.transform_values do |input_key|
-                val = item[input_key]
-                if val.is_a? Array
-                  val
-                else
-                  val.to_s
-                end
-              end
+              cells: rows.uniq.map do |row|
+                columns.uniq.map { |column| parse_address({ row:, column: }) }
+              end.flat,
+              **process_kw_map(kw_map, item)
             }
+          end
+        end
+
+        def process_kw_map(kw_map, item)
+          kw_map.transform_values do |input_key|
+            val = item[input_key]
+            if val.is_a? Array
+              val
+            else
+              val.to_s
+            end
           end
         end
       end

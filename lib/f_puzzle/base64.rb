@@ -2,7 +2,7 @@
 
 module FPuzzle
   class Base64
-    class << self
+    class << self # rubocop:disable Metrics/ClassLength
       BASE_64_DICTIONARY = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\\'
 
       def decode(base64_data)
@@ -25,211 +25,100 @@ module FPuzzle
 
       private
 
-      def encode_base64(json_data)
-        bits_per_char = 6
-        context_dictionary = {}
-        context_dict_size = 3
-        context_dictionary_to_create = {}
-        context_w = ''
-        context_wc = ''
-        context_num_bits = 2
-        context_data_val = 0
-        context_data_position = 0
-        context_enlarge_in = 2
-        context_data = []
+      ENCODE_BITS_PER_CHAR = 5
+
+      def check_data_reset(data)
+        return data[:position] += 1 unless data[:position] == ENCODE_BITS_PER_CHAR
+
+        data[:position] = 0
+        data[:output].push BASE_64_DICTIONARY[data[:numeric]]
+        data[:numeric] = 0
+      end
+
+      def increment_data_loop(data, num_times)
+        num_times.times do
+          data[:numeric] = (data[:numeric] << 1) | (data[:value] & 1)
+          check_data_reset(data)
+          data[:value] >>= 1
+        end
+      end
+
+      def increment_bits(bits)
+        bits[:enlarge_in] -= 1
+        return unless bits[:enlarge_in].zero?
+
+        bits[:enlarge_in] = 2**bits[:num]
+        bits[:num] += 1
+      end
+
+      def char_loop(bits, lt256, data, first_pass)
+        bits[:num].times do
+          data[:numeric] <<= 1
+          data[:numeric] |= data[:value] if lt256
+          check_data_reset(data)
+          if lt256
+            data[:value] = 0
+          elsif first_pass
+            data[:value] >>= 1
+          end
+        end
+        data[:value] = chars[0].ord
+      end
+
+      def process_chars(dictionary, chars, data, bits, first_pass)
+        if dictionary[:to_create][chars]
+          lt256 = chars[0].ord < 256
+          data[:value] = 1 if lt256
+          char_loop(bits, lt256, data, first_pass)
+          increment_data_loop(data, lt256 ? 16 : 8)
+          increment_bits(bits)
+          dictionary[:to_create].delete(chars)
+        else
+          data[:value] = dictionary[:values][chars]
+          increment_data_loop(data, bits[:num])
+        end
+        increment_bits(bits)
+      end
+
+      def encode_base64(json_data) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        dictionary = { values: {}, to_create: {} }
+        bits = { num: 2, enlarge_in: 2 }
+        data = { output: [], position: 0, numeric: 0, value: nil }
+        w = ''
+        wc = ''
 
         json_data.each_char do |char|
-          if context_dictionary[char].nil?
-            context_dictionary[char] = context_dict_size
-            context_dict_size += 1
-            context_dictionary_to_create[char] = true
+          if dictionary[:values][char].nil?
+            dictionary[:values][char] = dictionary[:values].length + 3
+            dictionary[:to_create][char] = true
           end
 
-          context_wc = "#{context_w}#{char}"
-          if context_dictionary[context_wc]
-            context_w = context_wc
+          wc = "#{w}#{char}"
+          if dictionary[:values][wc]
+            w = wc
           else
-            if context_dictionary_to_create[context_w]
-              if context_w[0].ord < 256
-                context_num_bits.times do
-                  context_data_val <<= 1
-                  if context_data_position == bits_per_char - 1
-                    context_data_position = 0
-                    context_data.push BASE_64_DICTIONARY[context_data_val]
-                    context_data_val = 0
-                  else
-                    context_data_position += 1
-                  end
-                end
-                value = context_w[0].ord
-                8.times do
-                  context_data_val = (context_data_val << 1) | (value & 1)
-                  if context_data_position == bits_per_char - 1
-                    context_data_position = 0
-                    context_data.push BASE_64_DICTIONARY[context_data_val]
-                    context_data_val = 0
-                  else
-                    context_data_position += 1
-                  end
-                  value >>= 1
-                end
-              else
-                value = 1
-                context_num_bits.times do
-                  context_data_val = (context_data_val << 1) | value
-                  if context_data_position == bits_per_char - 1
-                    context_data_position = 0
-                    context_data.push BASE_64_DICTIONARY[context_data_val]
-                    context_data_val = 0
-                  else
-                    context_data_position += 1
-                  end
-                  value = 0
-                end
-                value = context_w[0].ord
-                16.times do
-                  context_data_val = (context_data_val << 1) | (value & 1)
-                  if context_data_position == bits_per_char - 1
-                    context_data_position = 0
-                    context_data.push BASE_64_DICTIONARY[context_data_val]
-                    context_data_val = 0
-                  else
-                    context_data_position += 1
-                  end
-                  value = value >> 1
-                end
-              end
-              context_enlarge_in -= 1
-              if context_enlarge_in.zero?
-                context_enlarge_in = 2**context_num_bits
-                context_num_bits += 1
-              end
-              context_dictionary_to_create.delete(context_w)
-            else
-              value = context_dictionary[context_w]
-              context_num_bits.times do
-                context_data_val = (context_data_val << 1) | (value & 1)
-                if context_data_position == bits_per_char - 1
-                  context_data_position = 0
-                  context_data.push BASE_64_DICTIONARY[context_data_val]
-                  context_data_val = 0
-                else
-                  context_data_position += 1
-                end
-                value >>= 1
-              end
-            end
-            context_enlarge_in -= 1
-            if context_enlarge_in.zero?
-              context_enlarge_in = 2**context_num_bits
-              context_num_bits += 1
-            end
-            context_dictionary[context_wc] = context_dict_size
-            context_dict_size += 1
-            context_w = char
+            process_chars(dictionary, w, data, bits, true)
+            dictionary[:values][wc] = dictionary[:values].length + 3
+            w = char
           end
         end
 
-        if context_w != ''
-          if context_dictionary_to_create[context_w]
-            if context_w[0].ord < 256
-              context_num_bits.times do
-                context_data_val <<= 1
-                if context_data_position == bits_per_char - 1
-                  context_data_position = 0
-                  context_data.push BASE_64_DICTIONARY[context_data_val]
-                  context_data_val = 0
-                else
-                  context_data_position += 1
-                end
-              end
-              value = context_w[0].ord
-              8.times do
-                context_data_val = (context_data_val << 1) | (value & 1)
-                context_data_position = 0
-                if context_data_position == bits_per_char - 1
-                  context_data.push BASE_64_DICTIONARY[context_data_val]
-                  context_data_val = 0
-                end
-                value >>= 1
-              end
-            else
-              value = 1
-              context_num_bits.times do
-                context_data_val = (context_data_val << 1) | value
-                if context_data_position == bits_per_char - 1
-                  context_data_position = 0
-                  context_data.push BASE_64_DICTIONARY[context_data_val]
-                  context_data_val = 0
-                else
-                  context_data_position += 1
-                end
-                value = 0
-              end
-              value = context_w[0].ord
-              16.times do
-                context_data_val = (context_data_val << 1) | (value & 1)
-                if context_data_position == bits_per_char - 1
-                  context_data_position = 0
-                  context_data.push BASE_64_DICTIONARY[context_data_val]
-                  context_data_val = 0
-                else
-                  context_data_position += 1
-                end
-                value >>= 1
-              end
-            end
-            context_enlarge_in -= 1
-            if context_enlarge_in.zero?
-              context_enlarge_in = 2**context_num_bits
-              context_num_bits += 1
-            end
-            context_dictionary_to_create.delete(context_w)
-          else
-            value = context_dictionary[context_w]
-            context_num_bits.times do
-              context_data_val = (context_data_val << 1) | (value & 1)
-              if context_data_position == bits_per_char - 1
-                context_data_position = 0
-                context_data.push BASE_64_DICTIONARY[context_data_val]
-                context_data_val = 0
-              else
-                context_data_position += 1
-              end
-              value >>= 1
-            end
-          end
-          context_enlarge_in -= 1
-          if context_enlarge_in.zero?
-            context_enlarge_in = 2**context_num_bits
-            context_num_bits += 1
-          end
+        process_chars(dictionary, w, data, bits, false) if w != ''
+
+        data[:value] = 2
+        bits[:num].times do
+          data[:numeric] = (data[:numeric] << 1) | (data[:value] & 1)
+          check_data_reset(data)
+          data[:value] >>= 1
         end
 
-        value = 2
-        context_num_bits.times do
-          context_data_val = (context_data_val << 1) | (value & 1)
-          if context_data_position == bits_per_char - 1
-            context_data_position = 0
-            context_data.push BASE_64_DICTIONARY[context_data_val]
-            context_data_val = 0
-          else
-            context_data_position += 1
-          end
-          value >>= 1
+        while data[:position] <= ENCODE_BITS_PER_CHAR
+          data[:numeric] <<= 1
+          data[:output].push BASE_64_DICTIONARY[data[:numeric]] if data[:position] == ENCODE_BITS_PER_CHAR
+          data[:position] += 1
         end
 
-        loop do
-          context_data_val <<= 1
-          if context_data_position == bits_per_char - 1
-            context_data.push BASE_64_DICTIONARY[context_data_val]
-            break
-          else
-            context_data_position += 1
-          end
-        end
-
-        context_data.join
+        data[:output].join
       end
 
       def decode_base64(base64_data) # rubocop:disable Metrics/MethodLength, Metrics/AbcSize

@@ -15,16 +15,16 @@ module FPuzzle
         row = address.row + 1
         column = address.column + 1
 
-        minRow = row.floor
-        maxRow = row.ceil
-        minCol = column.floor
-        maxCol = column.ceil
+        min_row = row.floor
+        max_row = row.ceil
+        min_col = column.floor
+        max_col = column.ceil
 
         [
-          "R#{minRow}C#{minCol}",
-          "R#{minRow}C#{maxCol}",
-          "R#{maxRow}C#{minCol}",
-          "R#{maxRow}C#{maxCol}"
+          "R#{min_row}C#{min_col}",
+          "R#{min_row}C#{max_col}",
+          "R#{max_row}C#{min_col}",
+          "R#{max_row}C#{max_col}"
         ].uniq
       end
     end
