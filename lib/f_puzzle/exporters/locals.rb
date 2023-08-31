@@ -76,7 +76,7 @@ module FPuzzle
         def parse_outside_grid_locals(locals)
           {
             sandwichsum: outside_grid(locals.sandwich_sums),
-            skyscraper: outside_grid(locals.skyscraper),
+            skyscraper: outside_grid(locals.skyscrapers),
             xsum: outside_grid(locals.x_sums),
             littlekillersum: locals.little_killer_sums&.map do |killer|
               {

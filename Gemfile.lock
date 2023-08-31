@@ -111,6 +111,7 @@ GEM
     loofah (2.21.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
+    lz_string (0.2.0)
     mail (2.8.1)
       mini_mime (>= 0.1.1)
       net-imap
@@ -275,6 +276,7 @@ DEPENDENCIES
   dotenv-rails
   graphql (~> 2.0)
   jwt (~> 2.7)
+  lz_string (~> 0.2.0)
   omniauth (~> 2.1)
   omniauth-facebook (~> 9.0)
   omniauth-rails_csrf_protection (~> 1.0)

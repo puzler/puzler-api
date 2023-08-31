@@ -3,13 +3,20 @@
 module FPuzzle
   class Converter
     def from_f_puzzle(base64_data)
-      puzzle_data = FPuzzle::Base64.decode(base64_data)
+      json = LZString::Base64.decompress(base64_data)
+      return if json.blank?
+
+      puzzle_data = JSON.parse(json).deep_transform_keys do |key|
+        key.underscore.to_sym
+      end
+
       parse_f_puzzle(puzzle_data)
     end
 
     def to_f_puzzle(puzzle)
       f_puzzle_data = generate_f_puzzle(puzzle)
-      FPuzzle::Base64.encode(f_puzzle_data)
+
+      LZString::Base64.compress(f_puzzle_data.to_json)
     end
 
     private
@@ -24,7 +31,7 @@ module FPuzzle
         **FPuzzle::Exporters::Cosmetics.parse(puzzle),
         **FPuzzle::Exporters::Globals.parse(puzzle),
         **FPuzzle::Exporters::Locals.parse(puzzle)
-      }
+      }.compact_blank
     end
 
     def parse_f_puzzle(puzzle_data)
