@@ -10,7 +10,7 @@ module FPuzzle
             chess: { king: :antiking, knight: :antiknight },
             # :'diagonal-' gets converted to diagonal_ when we .underscore it
             diagonals: { positive: :'diagonal+', negative: :diagonal_ },
-            anti_kropki: { antiwhite: :nonconsecutive, anti_black: [:negative, 'ratio'] },
+            anti_kropki: { anti_white: :nonconsecutive, anti_black: [:negative, 'ratio'] },
             anti_x_v: { anti_x: [:negative, 'xv'], anti_v: [:negative, 'xv'] },
             disjoint_sets: { enabled: :disjointgroups }
           ).each_with_object({}) do |(global_key, settings), output|
