@@ -39,6 +39,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_08_17_184808) do
     t.json "global_constraints", default: {}, null: false
     t.json "local_constraints", default: {}, null: false
     t.json "cosmetics", default: {}, null: false
+    t.json "solution"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_puzzles_on_user_id"

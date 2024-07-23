@@ -4,10 +4,12 @@ module InputObjects
   class PuzzleInput < BaseInputObject
     description 'Input for a Puzzle'
 
+    argument :id, ID, required: false, description: 'The Puzzle ID'
     argument :author, String, required: false, description: 'Puzzle Author'
     argument :rules, String, required: false, description: 'Puzzle Rules'
     argument :size, Integer, required: true, description: 'Puzzle Size'
     argument :title, String, required: false, description: 'Puzzle Title'
+    argument :solution, [[Integer, null: true]], required: false, description: 'The Puzzle Solution'
 
     argument :cells,
              [[InputObjects::Puzzles::GridCellInput]],

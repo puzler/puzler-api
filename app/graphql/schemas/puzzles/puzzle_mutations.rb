@@ -7,9 +7,9 @@ module Schemas
 
       description 'Base Mutation object for Puzzles'
 
-      field :create_puzzle,
-            mutation: Mutations::Puzzles::CreatePuzzle,
-            description: 'Create a Puzzle'
+      field :save_puzzle,
+            mutation: Mutations::Puzzles::SavePuzzle,
+            description: 'Save a puzzle to the DB'
     end
   end
 end

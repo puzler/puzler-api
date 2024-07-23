@@ -11,6 +11,7 @@ class AddPuzzles < ActiveRecord::Migration[7.0]
       t.json :global_constraints, null: false, default: {}
       t.json :local_constraints, null: false, default: {}
       t.json :cosmetics, null: false, default: {}
+      t.json :solution, null: true
 
       t.timestamps
     end
