@@ -147,7 +147,7 @@ module FPuzzle
             {
               cells: rows.uniq.map do |row|
                 columns.uniq.map { |column| parse_address({ row:, column: }) }
-              end.flat,
+              end&.flatten,
               **process_kw_map(kw_map, item)
             }
           end
