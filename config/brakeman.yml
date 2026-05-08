@@ -1,0 +1,7 @@
+---
+# Suppress the progress bar — cleaner output in CI and the terminal.
+:quiet: true
+
+# Path to the ignore file for acknowledged false positives.
+# Run `brakeman -I` interactively to add entries.
+:ignore_file: config/brakeman.ignore
