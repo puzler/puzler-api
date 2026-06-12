@@ -1,0 +1,61 @@
+# Render Blueprint for the Puzler API + its datastores (this repo, puzler-api).
+# The Vue SPA has its own Blueprint in the puzler-vue repo.
+# Avatars are stored on Cloudflare R2 (config/storage.yml) — the one managed
+# dependency outside Render.
+#
+# Plan names and regions occasionally change — confirm them in the dashboard
+# if a sync fails.
+
+databases:
+  - name: puzler-db
+    databaseName: puzler_production
+    user: puzler
+    plan: basic-256mb # smallest paid Postgres; bump as you grow
+    region: oregon
+
+services:
+  # Redis (Render "Key Value"), shared by ActionCable now and Sidekiq later.
+  # noeviction is required so Sidekiq jobs are never dropped under memory
+  # pressure — and it's harmless for ActionCable.
+  - type: keyvalue
+    name: puzler-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # internal-only; no public access
+
+  # Rails API, built from this repo's Dockerfile (repo root is the API root).
+  - type: web
+    name: puzler-api
+    runtime: docker
+    region: oregon
+    plan: starter # persistent instance — avoids free-tier spin-down dropping WebSockets
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      # Decrypts config/credentials/production.yml.enc — paste the contents of
+      # config/credentials/production.key. Marked secret (sync:false).
+      - key: RAILS_MASTER_KEY
+        sync: false
+      # Wired automatically from the managed datastores above.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: puzler-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: puzler-redis
+          property: connectionString
+      # Public origins. Set after you know your domains (see DEPLOYMENT.md):
+      #   FRONTEND_URL → the SPA's URL (CORS + ActionCable + OAuth + email links)
+      #   API_URL      → this service's public URL (OAuth connect + avatar URLs)
+      - key: FRONTEND_URL
+        sync: false
+      - key: API_URL
+        sync: false

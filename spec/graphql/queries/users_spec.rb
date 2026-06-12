@@ -46,4 +46,35 @@ RSpec.describe "Queries: users", type: :graphql do
       expect(gql_data(result, "user")).to be_nil
     end
   end
+
+  describe "self-gated fields" do
+    let(:query) do
+      <<~GQL
+        query($username: String!) {
+          user(username: $username) { username email passwordSet oauthConnections { provider createdAt } }
+        }
+      GQL
+    end
+
+    let(:user) { create(:user) }
+
+    before { create(:user_oauth_identity, user: user) }
+
+    it "exposes email, passwordSet, and oauthConnections to the user themselves", :aggregate_failures do
+      result = execute_query(query, variables: { username: user.username }, context: auth_context(user))
+
+      data = gql_data(result, "user")
+      expect(data["email"]).to eq(user.email)
+      expect(data["passwordSet"]).to be(true)
+      expect(data["oauthConnections"]).to contain_exactly(a_hash_including("provider" => "google"))
+    end
+
+    it "hides them from other viewers" do
+      result = execute_query(query, variables: { username: user.username }, context: auth_context(create(:user)))
+
+      expect(gql_data(result, "user")).to include(
+        "username" => user.username, "email" => nil, "passwordSet" => nil, "oauthConnections" => nil
+      )
+    end
+  end
 end

@@ -24,7 +24,7 @@ module Mutations
         raise GraphQL::ExecutionError, "Cosmetic not found" if id && cosmetic.nil?
 
         update_attrs = { cosmetic_type: attrs.cosmetic_type, position: attrs.position,
-                         style: attrs.style, data: attrs.data }
+                         style: attrs.style, data: attrs.data || {} }
           .tap { |h| h[:display_order] = attrs.display_order if attrs.display_order }
 
         if cosmetic.update(update_attrs)

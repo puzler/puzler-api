@@ -80,6 +80,7 @@ test:
 #
 production:
   <<: *default
-  database: api_production
-  username: api
-  password: <%= ENV["API_DATABASE_PASSWORD"] %>
+  # Render (and most managed hosts) inject the full connection string as
+  # DATABASE_URL. Using it directly avoids the DATABASE_URL-vs-explicit-keys
+  # merge ambiguity.
+  url: <%= ENV["DATABASE_URL"] %>

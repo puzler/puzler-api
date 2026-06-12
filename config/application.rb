@@ -23,7 +23,11 @@ module Api
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    #
+    # `omniauth` is ignored because lib/omniauth/strategies/patreon.rb defines
+    # OmniAuth::Strategies::Patreon (Zeitwerk would infer "Omniauth" and raise on
+    # eager load). It's required explicitly in config/initializers/devise.rb.
+    config.autoload_lib(ignore: %w[assets tasks omniauth])
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -37,5 +41,16 @@ module Api
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = true
+
+    # OAuth provider tokens predating encryption still exist in dev databases;
+    # let AR encryption read them until they're rewritten.
+    config.active_record.encryption.support_unencrypted_data = true
+
+    # OmniAuth 2.x needs rack.session for its state/CSRF handshake between the
+    # request and callback phases; nothing else uses the session (auth is JWT).
+    # same_site must stay :lax so the state cookie survives the provider redirect.
+    config.session_store :cookie_store, key: "_puzler_session", same_site: :lax
+    config.middleware.use ActionDispatch::Cookies
+    config.middleware.use config.session_store, config.session_options
   end
 end

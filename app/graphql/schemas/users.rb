@@ -26,6 +26,14 @@ module Schemas
       description "User account mutations"
       graphql_name "UserMutations"
 
+      field :change_password, mutation: ::Mutations::Users::ChangePassword,
+        description: "Set or change the current user's password"
+      field :delete_account, mutation: ::Mutations::Users::DeleteAccount,
+        description: "Permanently delete the current user's account"
+      field :disconnect_oauth_provider, mutation: ::Mutations::Users::DisconnectOauthProvider,
+        description: "Remove a linked OAuth provider"
+      field :prepare_oauth_connect, mutation: ::Mutations::Users::PrepareOauthConnect,
+        description: "Get a URL to start connecting an OAuth provider"
       field :update_profile, mutation: ::Mutations::Users::UpdateProfile,
         description: "Update the current user's profile information"
     end

@@ -12,10 +12,15 @@ gem "devise"
 gem "devise-jwt"
 gem "omniauth"
 gem "omniauth-google-oauth2"
+gem "omniauth-oauth2" # required directly by lib/omniauth/strategies/patreon.rb
 gem "omniauth-rails_csrf_protection"
+
+# File storage (ActiveStorage S3/R2 backend)
+gem "aws-sdk-s3", require: false
 
 # GraphQL
 gem "graphql"
+gem "graphiql-rails" # API Explorer, mounted at /explorer in all environments
 
 # Authorization
 gem "pundit"
@@ -43,8 +48,10 @@ end
 
 group :development do
   gem "annotate"
+  gem "letter_opener"
 end
 
 group :test do
   gem "shoulda-matchers"
+  gem "simplecov", require: false
 end

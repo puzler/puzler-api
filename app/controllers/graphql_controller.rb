@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class GraphqlController < ApplicationController
-  before_action :authenticate_user_from_token!
+  include JwtAuthenticatable
 
   def execute
     variables = prepare_variables(params[:variables])
@@ -18,21 +18,6 @@ class GraphqlController < ApplicationController
   end
 
   private
-
-  def authenticate_user_from_token!
-    header = request.headers["Authorization"]
-    return unless header&.start_with?("Bearer ")
-
-    token = header.split(" ").last
-    payload = JWT.decode(token, Rails.application.credentials.secret_key_base, true, algorithm: "HS256").first
-    @current_user = User.find_by(id: payload["sub"], jti: payload["jti"])
-  rescue JWT::DecodeError
-    nil
-  end
-
-  def current_user
-    @current_user
-  end
 
   def prepare_variables(variables_param)
     case variables_param

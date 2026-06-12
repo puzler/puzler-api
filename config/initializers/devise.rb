@@ -26,7 +26,7 @@ Devise.setup do |config|
   # Configure the e-mail address which will be shown in Devise::Mailer,
   # note that it will be overwritten if you use your own mailer class
   # with default "from" parameter.
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
+  config.mailer_sender = "no-reply@puzler.app"
 
   # Configure the class responsible to send e-mails.
   # config.mailer = 'Devise::Mailer'
@@ -92,7 +92,7 @@ Devise.setup do |config|
   # It will change confirmation, password recovery and other workflows
   # to behave the same regardless if the e-mail provided was right or wrong.
   # Does not affect registerable.
-  # config.paranoid = true
+  config.paranoid = true
 
   # By default Devise will store the user in session. You can skip storage for
   # particular strategies by setting this option.
@@ -268,7 +268,8 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
+  # API-only: never redirect to HTML pages; respond 401/422 JSON instead.
+  config.navigational_formats = []
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete
@@ -277,13 +278,13 @@ Devise.setup do |config|
   # Add a new OmniAuth provider. Check the wiki for more information on setting
   # up on your models and hooks.
   config.omniauth :google_oauth2,
-    ENV.fetch("GOOGLE_CLIENT_ID", ""),
-    ENV.fetch("GOOGLE_CLIENT_SECRET", ""),
+    Rails.application.credentials.dig(:google, :client_id) || "",
+    Rails.application.credentials.dig(:google, :client_secret) || "",
     scope: "email,profile"
 
   config.omniauth :patreon,
-    ENV.fetch("PATREON_CLIENT_ID", ""),
-    ENV.fetch("PATREON_CLIENT_SECRET", ""),
+    Rails.application.credentials.dig(:patreon, :client_id) || "",
+    Rails.application.credentials.dig(:patreon, :client_secret) || "",
     scope: "identity identity[email] campaigns"
 
   # ==> Warden configuration

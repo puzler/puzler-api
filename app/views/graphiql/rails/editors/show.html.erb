@@ -1,0 +1,72 @@
+<%# Overrides graphiql-rails' editors/show view (app views shadow engine views)
+    to add a Puzler top bar with a link back to the frontend. Keep the
+    #graphiql-container data attributes in sync with the gem's template. %>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= GraphiQL::Rails.config.title || 'GraphiQL' %></title>
+      <% if defined?(Propshaft) %>
+        <%= stylesheet_link_tag("graphiql/rails/graphiql-3.8.3") %>
+        <%= stylesheet_link_tag("graphiql/rails/application") %>
+        <%= javascript_include_tag("graphiql/rails/application", nonce: true )  %>
+      <% elsif defined?(Sprockets) %>
+        <%= stylesheet_link_tag("graphiql/rails/application") %>
+        <%= javascript_include_tag("graphiql/rails/application", nonce: true )  %>
+      <% else %>
+        <%= stylesheet_link_tag("/graphiql-rails/stylesheets/graphiql-3.8.3.css") %>
+        <%= stylesheet_link_tag("/graphiql-rails/stylesheets/application.css?v=#{GraphiQL::Rails::VERSION}") %>
+        <%= javascript_include_tag("/graphiql-rails/javascripts/application.js?v=#{GraphiQL::Rails::VERSION}", nonce: true)  %>
+      <% end %>
+    <style>
+      /* Ink & Paper top bar above GraphiQL (see app/STYLE_GUIDE.md) */
+      body {
+        display: flex;
+        flex-direction: column;
+      }
+      .puzler-bar {
+        align-items: center;
+        background: #212B42; /* ink */
+        display: flex;
+        flex: none;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        gap: 0.75rem;
+        height: 3rem;
+        padding: 0 1rem;
+      }
+      .puzler-bar__brand {
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        text-decoration: none;
+      }
+      .puzler-bar__brand:hover { color: #F0A93B; /* spark */ }
+      .puzler-bar__label { color: #9AA3B8; font-size: 0.85rem; }
+      .puzler-bar__back {
+        color: #9AA3B8;
+        font-size: 0.85rem;
+        margin-left: auto;
+        text-decoration: none;
+      }
+      .puzler-bar__back:hover { color: #fff; }
+      #graphiql-container { flex: 1; height: auto; min-height: 0; }
+    </style>
+  </head>
+  <body>
+    <header class="puzler-bar">
+      <a class="puzler-bar__brand" href="<%= ENV.fetch('FRONTEND_URL', 'http://localhost:5173') %>">Puzler</a>
+      <span class="puzler-bar__label">API Explorer</span>
+      <a class="puzler-bar__back" href="<%= ENV.fetch('FRONTEND_URL', 'http://localhost:5173') %>">← Back to Puzler</a>
+    </header>
+    <%= content_tag :div, 'Loading...', id: 'graphiql-container', data: {
+      graphql_endpoint_path: graphql_endpoint_path,
+      initial_query: GraphiQL::Rails.config.initial_query,
+      logo: GraphiQL::Rails.config.logo,
+      headers: GraphiQL::Rails.config.resolve_headers(self),
+      query_params: GraphiQL::Rails.config.query_params,
+      header_editor_enabled: GraphiQL::Rails.config.header_editor_enabled,
+      input_value_deprecation: GraphiQL::Rails.config.input_value_deprecation,
+      should_persist_headers: GraphiQL::Rails.config.should_persist_headers
+    } %>
+  </body>
+</html>
