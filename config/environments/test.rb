@@ -8,6 +8,12 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
+  # Fixed throwaway encryption keys so the suite runs without config/master.key
+  # (which is gitignored and absent in CI). Never used outside tests.
+  config.active_record.encryption.primary_key = "test" * 8
+  config.active_record.encryption.deterministic_key = "test" * 8
+  config.active_record.encryption.key_derivation_salt = "test" * 8
+
   # While tests run files are not watched, reloading is not necessary.
   config.enable_reloading = false
 
