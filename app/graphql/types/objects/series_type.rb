@@ -43,23 +43,12 @@ module Types
 
       private
 
-      # Authors see every entry; everyone else sees only entries whose target is
-      # publicly visible, preserving series order.
+      # Authors see every entry; everyone else sees only released entries whose
+      # target is publicly visible, preserving series order.
       def visible_entries
         return object.series_entries.to_a if author_or_admin?
 
-        object.series_entries.select { |entry| entry_visible?(entry) }
-      end
-
-      def entry_visible?(entry)
-        target = entry.entryable
-        return false unless target
-
-        case entry.entryable_type
-        when "Puzzle" then target.published? && target.visible_public?
-        when "Collection" then target.visible_public?
-        else false
-        end
+        object.series_entries.select { |entry| entry.released? && entry.target_publicly_visible? }
       end
 
       def author_or_admin?

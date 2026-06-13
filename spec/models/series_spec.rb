@@ -57,6 +57,18 @@ RSpec.describe Series, type: :model do
     end
   end
 
+  describe "entry release scheduling" do
+    let(:series) { create(:series) }
+
+    it "treats a nil or past released_at as released and a future one as pending", :aggregate_failures do
+      immediate = create(:series_entry, series:, entryable: create(:puzzle), released_at: nil)
+      past = create(:series_entry, series:, entryable: create(:puzzle), released_at: 1.hour.ago)
+      future = create(:series_entry, series:, entryable: create(:puzzle), released_at: 1.hour.from_now)
+      expect([ immediate.released?, past.released?, future.released? ]).to eq([ true, true, false ])
+      expect(SeriesEntry.released).to contain_exactly(immediate, past)
+    end
+  end
+
   describe "subscriptions" do
     it "tracks subscribers and blocks duplicates", :aggregate_failures do
       series = create(:series)

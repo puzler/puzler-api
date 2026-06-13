@@ -11,6 +11,16 @@ module Types
       field :position, Integer, null: false, description: "Order within the series"
       field :puzzle, PuzzleType, null: true,
         description: "The puzzle, when this entry is a puzzle"
+      field :released, Boolean, null: false, method: :released?,
+        description: "Whether this entry has been released yet"
+      field :released_at, GraphQL::Types::ISO8601DateTime, null: true,
+        description: "Scheduled release time; null means released on creation"
+      field :series_id, ID, null: false, description: "The series this entry belongs to"
+      field :series_title, String, null: true, description: "Title of the parent series"
+
+      def series_title
+        object.series&.title
+      end
 
       def puzzle
         object.entryable if object.entryable_type == "Puzzle"

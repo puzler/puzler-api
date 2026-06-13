@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_150003) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_160001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -260,9 +260,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_150003) do
     t.bigint "entryable_id", null: false
     t.string "entryable_type", null: false
     t.integer "position", default: 0, null: false
+    t.datetime "released_at"
     t.bigint "series_id", null: false
     t.datetime "updated_at", null: false
     t.index ["entryable_type", "entryable_id"], name: "index_series_entries_on_entryable"
+    t.index ["released_at"], name: "index_series_entries_on_released_at"
     t.index ["series_id", "entryable_type", "entryable_id"], name: "index_series_entries_unique", unique: true
     t.index ["series_id", "position"], name: "index_series_entries_on_series_id_and_position"
     t.index ["series_id"], name: "index_series_entries_on_series_id"

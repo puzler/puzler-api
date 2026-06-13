@@ -21,6 +21,9 @@ module Schemas
       field :my_subscriptions, [ Types::Objects::SeriesType ], null: false,
         description: "Series the current user is subscribed to, newest subscription first"
 
+      field :series_feed, [ Types::Objects::SeriesEntryType ], null: false,
+        description: "Recently-released entries across the current user's subscribed series, newest first"
+
       def series(id:)
         record = ::Series.find_by(id:)
         return nil unless record&.viewable_by?(context[:current_user])
@@ -47,6 +50,20 @@ module Schemas
                               .map(&:series)
       end
 
+      # "New in your series": released entries from subscribed series the user
+      # can still see and whose target is public, newest release first.
+      def series_feed
+        require_current_user!
+        user = context[:current_user]
+        series_ids = user.series_subscriptions.pluck(:series_id)
+        return [] if series_ids.empty?
+
+        viewable = ::Series.where(id: series_ids).select { |s| s.viewable_by?(user) }.index_by(&:id)
+        entries = SeriesEntry.released.where(series_id: viewable.keys).includes(:entryable, :series)
+        entries.select(&:target_publicly_visible?)
+               .sort_by(&:effective_release_at).reverse.first(50)
+      end
+
       private
 
       def require_current_user!
@@ -69,6 +86,8 @@ module Schemas
         description: "Remove an entry from a series"
       field :reorder_series_entries, mutation: ::Mutations::Series::ReorderSeriesEntries,
         description: "Reorder the entries in a series"
+      field :schedule_series_entry, mutation: ::Mutations::Series::ScheduleSeriesEntry,
+        description: "Set or clear a series entry's scheduled release time"
       field :toggle_series_subscription, mutation: ::Mutations::Series::ToggleSeriesSubscription,
         description: "Subscribe to or unsubscribe from a series"
       field :update_series, mutation: ::Mutations::Series::UpdateSeries,
