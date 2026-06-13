@@ -5,6 +5,7 @@ module Types
 
       argument :description, String, required: false, description: "Optional description"
       argument :mode, String, required: false, description: "Ordering mode: unordered or sequence"
+      argument :timed, Boolean, required: false, description: "Competition timing on/off"
       argument :title, String, required: false, description: "Collection title"
       argument :visibility, String, required: false, description: "private, unlisted, or public"
     end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_130004) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_140002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -54,12 +54,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_130004) do
     t.index ["puzzle_id"], name: "index_collection_puzzles_on_puzzle_id"
   end
 
+  create_table "collection_solve_times", force: :cascade do |t|
+    t.bigint "collection_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "puzzle_id", null: false
+    t.integer "seconds", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["collection_id", "puzzle_id", "user_id"], name: "index_collection_solve_times_unique", unique: true
+    t.index ["collection_id"], name: "index_collection_solve_times_on_collection_id"
+    t.index ["puzzle_id"], name: "index_collection_solve_times_on_puzzle_id"
+    t.index ["user_id"], name: "index_collection_solve_times_on_user_id"
+  end
+
   create_table "collections", force: :cascade do |t|
     t.bigint "author_id", null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.integer "mode", default: 0, null: false
     t.string "share_token"
+    t.boolean "timed", default: false, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "visibility", default: 0, null: false
@@ -273,6 +287,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_130004) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "collection_puzzles", "collections"
   add_foreign_key "collection_puzzles", "puzzles"
+  add_foreign_key "collection_solve_times", "collections"
+  add_foreign_key "collection_solve_times", "puzzles"
+  add_foreign_key "collection_solve_times", "users"
   add_foreign_key "collections", "users", column: "author_id"
   add_foreign_key "comments", "comments", column: "parent_id"
   add_foreign_key "comments", "puzzles"

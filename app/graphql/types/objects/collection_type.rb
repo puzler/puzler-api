@@ -12,6 +12,7 @@ module Types
         description: "Puzzles in order; non-authors see only the publicly-visible ones"
       field :share_token, String, null: true,
         description: "Unguessable share key for unlisted access; only visible to the author"
+      field :timed, Boolean, null: false, description: "Whether solves are timed (competition mode)"
       field :title, String, null: false, description: "Collection title"
       field :visibility, String, null: false,
         description: "Access mode: private, unlisted, public, patrons_only, or subscribers_only"

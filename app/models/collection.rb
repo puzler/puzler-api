@@ -3,6 +3,7 @@ class Collection < ApplicationRecord
 
   has_many :collection_puzzles, dependent: :destroy
   has_many :puzzles, through: :collection_puzzles
+  has_many :collection_solve_times, dependent: :destroy
 
   # Mirrors Puzzle's access model. "private"/"public" collide with Ruby keywords,
   # so visibility methods are prefixed (visible_public?, etc.). `mode` governs

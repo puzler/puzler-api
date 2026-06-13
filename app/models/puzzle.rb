@@ -7,6 +7,7 @@ class Puzzle < ApplicationRecord
 
   has_many :collection_puzzles, dependent: :destroy
   has_many :collections, through: :collection_puzzles
+  has_many :collection_solve_times, dependent: :destroy
 
   has_many :constraints, dependent: :destroy
   has_many :cosmetics, dependent: :destroy
