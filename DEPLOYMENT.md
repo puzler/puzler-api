@@ -9,10 +9,10 @@ Production architecture:
 | PostgreSQL         | Render managed      | `DATABASE_URL` wired by the Blueprint          |
 | Redis              | Render Key Value    | ActionCable now, Sidekiq later (`noeviction`)  |
 | File storage       | Cloudflare R2       | already configured (`config/storage.yml`)      |
-| Email              | SendGrid            | SMTP, key in production credentials            |
+| Email              | Resend              | SMTP, key in production credentials            |
 | Analytics          | Plausible           | cookieless, env-gated (`VITE_PLAUSIBLE_DOMAIN`)|
 
-All compute/hosting lives on Render; R2 (avatars) and SendGrid (email) are
+All compute/hosting lives on Render; R2 (avatars) and Resend (email) are
 managed dependencies, not servers you run. The API and SPA are **separate
 repos** (`puzler-api`, `puzler-vue`), so each carries its own `render.yaml`
 Blueprint.
@@ -93,7 +93,7 @@ cd api
 bin/rails credentials:edit --environment production
 ```
 
-Replace placeholders for: `sendgrid.api_key`, `google.client_id/secret`,
+Replace placeholders for: `smtp.password` (Resend API key), `google.client_id/secret`,
 `patreon.client_id/secret`, and `r2.account_id/access_key_id/secret_access_key`
 (bucket is preset to `puzler`). Commit the re-encrypted `production.yml.enc`
 (safe — it's encrypted; the key is not in the repo).
@@ -110,7 +110,7 @@ Also create the mailboxes referenced in the legal docs before public launch:
 - [ ] `GET https://api.puzler.app/up` → 200; `/` → hello JSON; `/explorer` loads
 - [ ] Email signup → login → logout on the live SPA
 - [ ] Google + Patreon sign-in (after Parts C & D)
-- [ ] Forgot password → email arrives via SendGrid → reset link lands on the SPA
+- [ ] Forgot password → email arrives via Resend → reset link lands on the SPA
 - [ ] Avatar upload (verifies R2)
 - [ ] Open a puzzle that uses live updates → ActionCable connects (no WS origin errors in console)
 - [ ] Footer links resolve; legal pages deep-link on hard refresh

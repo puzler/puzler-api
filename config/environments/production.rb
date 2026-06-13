@@ -76,13 +76,16 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   # config.action_mailer.raise_delivery_errors = false
 
-  # SendGrid SMTP delivery. API key lives in Rails credentials (sendgrid.api_key).
+  # Provider-agnostic SMTP delivery — all settings live in the credentials
+  # `smtp:` block, so switching providers is a credentials edit, never a code
+  # change. Currently Resend (smtp.resend.com, user "resend", password = API key).
+  smtp = Rails.application.credentials.smtp || {}
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.smtp_settings = {
-    address: "smtp.sendgrid.net",
-    port: 587,
-    user_name: "apikey",
-    password: Rails.application.credentials.dig(:sendgrid, :api_key),
+    address: smtp[:address],
+    port: smtp[:port] || 587,
+    user_name: smtp[:user_name],
+    password: smtp[:password],
     authentication: :plain,
     enable_starttls_auto: true
   }
