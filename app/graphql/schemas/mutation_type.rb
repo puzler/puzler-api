@@ -12,6 +12,7 @@ module Schemas
     implements Users::Mutations
     implements Puzzles::Mutations
     implements Collections::Mutations
+    implements Series::Mutations
     implements Constraints::Mutations
     implements Cosmetics::Mutations
     implements Social::Mutations

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_140002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_150003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -242,6 +242,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_140002) do
     t.index ["user_id"], name: "index_ratings_on_user_id"
   end
 
+  create_table "series", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "share_token", null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "visibility", default: 0, null: false
+    t.index ["author_id"], name: "index_series_on_author_id"
+    t.index ["share_token"], name: "index_series_on_share_token", unique: true
+    t.index ["visibility"], name: "index_series_on_visibility"
+  end
+
+  create_table "series_entries", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entryable_id", null: false
+    t.string "entryable_type", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "series_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entryable_type", "entryable_id"], name: "index_series_entries_on_entryable"
+    t.index ["series_id", "entryable_type", "entryable_id"], name: "index_series_entries_unique", unique: true
+    t.index ["series_id", "position"], name: "index_series_entries_on_series_id_and_position"
+    t.index ["series_id"], name: "index_series_entries_on_series_id"
+  end
+
+  create_table "series_subscriptions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "series_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["series_id", "user_id"], name: "index_series_subscriptions_on_series_id_and_user_id", unique: true
+    t.index ["series_id"], name: "index_series_subscriptions_on_series_id"
+    t.index ["user_id"], name: "index_series_subscriptions_on_user_id"
+  end
+
   create_table "tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -313,5 +349,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_140002) do
   add_foreign_key "puzzles", "users", column: "author_id"
   add_foreign_key "ratings", "puzzles"
   add_foreign_key "ratings", "users"
+  add_foreign_key "series", "users", column: "author_id"
+  add_foreign_key "series_entries", "series"
+  add_foreign_key "series_subscriptions", "series"
+  add_foreign_key "series_subscriptions", "users"
   add_foreign_key "user_oauth_identities", "users"
 end
