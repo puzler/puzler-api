@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_130004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "collection_puzzles", force: :cascade do |t|
+    t.bigint "collection_id", null: false
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "puzzle_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["collection_id", "position"], name: "index_collection_puzzles_on_collection_id_and_position"
+    t.index ["collection_id", "puzzle_id"], name: "index_collection_puzzles_on_collection_id_and_puzzle_id", unique: true
+    t.index ["collection_id"], name: "index_collection_puzzles_on_collection_id"
+    t.index ["puzzle_id"], name: "index_collection_puzzles_on_puzzle_id"
+  end
+
+  create_table "collections", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "mode", default: 0, null: false
+    t.string "share_token"
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.integer "visibility", default: 0, null: false
+    t.index ["author_id"], name: "index_collections_on_author_id"
+    t.index ["mode"], name: "index_collections_on_mode"
+    t.index ["share_token"], name: "index_collections_on_share_token", unique: true
+    t.index ["visibility"], name: "index_collections_on_visibility"
   end
 
   create_table "comments", force: :cascade do |t|
@@ -85,6 +112,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
     t.index ["puzzle_id", "user_id"], name: "index_favorites_on_puzzle_id_and_user_id", unique: true
     t.index ["puzzle_id"], name: "index_favorites_on_puzzle_id"
     t.index ["user_id"], name: "index_favorites_on_user_id"
+  end
+
+  create_table "folders", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "parent_id"
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["author_id", "position"], name: "index_folders_on_author_id_and_position"
+    t.index ["author_id"], name: "index_folders_on_author_id"
+    t.index ["parent_id"], name: "index_folders_on_parent_id"
   end
 
   create_table "puzzle_access_grants", force: :cascade do |t|
@@ -149,6 +188,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
     t.text "description"
     t.integer "favorite_count", default: 0, null: false
     t.boolean "featured", default: false, null: false
+    t.bigint "folder_id"
     t.jsonb "given_digits", default: {}, null: false
     t.integer "grid_cols", default: 9, null: false
     t.integer "grid_rows", default: 9, null: false
@@ -167,6 +207,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
     t.integer "visibility", default: 0, null: false
     t.index ["author_id"], name: "index_puzzles_on_author_id"
     t.index ["constraint_types"], name: "index_puzzles_on_constraint_types", using: :gin
+    t.index ["folder_id"], name: "index_puzzles_on_folder_id"
     t.index ["published_at"], name: "index_puzzles_on_published_at"
     t.index ["published_version_id"], name: "index_puzzles_on_published_version_id"
     t.index ["share_token"], name: "index_puzzles_on_share_token", unique: true
@@ -230,6 +271,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "collection_puzzles", "collections"
+  add_foreign_key "collection_puzzles", "puzzles"
+  add_foreign_key "collections", "users", column: "author_id"
   add_foreign_key "comments", "comments", column: "parent_id"
   add_foreign_key "comments", "puzzles"
   add_foreign_key "comments", "users"
@@ -237,6 +281,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
   add_foreign_key "cosmetics", "puzzles"
   add_foreign_key "favorites", "puzzles"
   add_foreign_key "favorites", "users"
+  add_foreign_key "folders", "folders", column: "parent_id", on_delete: :nullify
+  add_foreign_key "folders", "users", column: "author_id"
   add_foreign_key "puzzle_access_grants", "puzzles"
   add_foreign_key "puzzle_access_grants", "users"
   add_foreign_key "puzzle_access_grants", "users", column: "granted_by_id"
@@ -245,6 +291,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
   add_foreign_key "puzzle_tags", "puzzles"
   add_foreign_key "puzzle_tags", "tags"
   add_foreign_key "puzzle_versions", "puzzles"
+  add_foreign_key "puzzles", "folders", on_delete: :nullify
   add_foreign_key "puzzles", "puzzle_versions", column: "published_version_id", on_delete: :nullify
   add_foreign_key "puzzles", "users", column: "author_id"
   add_foreign_key "ratings", "puzzles"

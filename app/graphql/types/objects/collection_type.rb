@@ -1,0 +1,44 @@
+module Types
+  module Objects
+    class CollectionType < BaseObject
+      description "An ordered, shareable grouping of puzzles (a series)"
+
+      field :author, UserType, null: false, description: "The setter who owns the collection"
+      field :description, String, null: true, description: "Optional description"
+      field :id, ID, null: false, description: "Unique collection ID"
+      field :mode, String, null: false, description: "Ordering mode: unordered or sequence"
+      field :puzzle_count, Integer, null: false, description: "Number of puzzles the viewer can see in this collection"
+      field :puzzles, [ PuzzleType ], null: false,
+        description: "Puzzles in order; non-authors see only the publicly-visible ones"
+      field :share_token, String, null: true,
+        description: "Unguessable share key for unlisted access; only visible to the author"
+      field :title, String, null: false, description: "Collection title"
+      field :visibility, String, null: false,
+        description: "Access mode: private, unlisted, public, patrons_only, or subscribers_only"
+
+      def puzzles
+        visible_puzzles
+      end
+
+      def puzzle_count
+        visible_puzzles.size
+      end
+
+      def share_token
+        object.share_token if author_or_admin?
+      end
+
+      private
+
+      # Authors see every puzzle in the collection (incl. drafts); everyone else
+      # sees only the publicly-visible ones, preserving collection order.
+      def visible_puzzles
+        author_or_admin? ? object.puzzles : object.puzzles.publicly_visible
+      end
+
+      def author_or_admin?
+        context[:current_user]&.id == object.author_id || context[:current_user]&.admin?
+      end
+    end
+  end
+end

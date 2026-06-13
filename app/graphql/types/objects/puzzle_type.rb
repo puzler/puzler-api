@@ -8,6 +8,8 @@ module Types
       field :avg_rating, Float, null: true, description: "Average star rating from players (1–5 scale)"
       field :box_layout, GraphQL::Types::JSON, null: true,
         description: "Custom box region definitions; null means standard 3×3 boxes"
+      field :collection_ids, [ ID ], null: false,
+        description: "IDs of the author's collections containing this puzzle; only visible to the author"
       field :comments, [ CommentType ], null: false, description: "Top-level comments, newest first"
       field :constraint_types, [ String ], null: false,
         description: "Constraint-type tags from the published version, for archive filtering"
@@ -16,6 +18,8 @@ module Types
       field :description, String, null: true, description: "Optional description or story text"
       field :favorite_count, Integer, null: false, description: "Number of times this puzzle has been favorited"
       field :featured, Boolean, null: false, description: "Whether an admin has featured this puzzle"
+      field :folder, FolderType, null: true,
+        description: "Folder this puzzle is filed in; only visible to the author"
       field :given_digits, GraphQL::Types::JSON, null: false,
         description: "Pre-filled clue digits keyed by cell coordinate (r0c0: 5)"
       field :granted_users, [ UserType ], null: false,
@@ -74,6 +78,16 @@ module Types
         return User.none unless author_or_admin?
 
         object.granted_users
+      end
+
+      def folder
+        object.folder if author_or_admin?
+      end
+
+      def collection_ids
+        return [] unless author_or_admin?
+
+        object.collection_ids.map(&:to_s)
       end
 
       def my_rating

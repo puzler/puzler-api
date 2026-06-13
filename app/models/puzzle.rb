@@ -1,8 +1,12 @@
 class Puzzle < ApplicationRecord
   belongs_to :author, class_name: "User"
+  belongs_to :folder, optional: true
 
   has_many :versions, class_name: "PuzzleVersion", dependent: :destroy
   belongs_to :published_version, class_name: "PuzzleVersion", optional: true
+
+  has_many :collection_puzzles, dependent: :destroy
+  has_many :collections, through: :collection_puzzles
 
   has_many :constraints, dependent: :destroy
   has_many :cosmetics, dependent: :destroy

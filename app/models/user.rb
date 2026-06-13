@@ -19,6 +19,8 @@ class User < ApplicationRecord
 
   has_many :oauth_identities, class_name: "UserOauthIdentity", dependent: :destroy
   has_many :puzzles, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :folders, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :collections, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :puzzle_plays, dependent: :destroy
   has_many :ratings, dependent: :destroy
   has_many :comments, dependent: :destroy
