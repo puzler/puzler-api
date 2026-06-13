@@ -12,8 +12,6 @@ Rails.application.routes.draw do
 
   post "/graphql", to: "graphql#execute"
 
-  put "/me/avatar", to: "users/avatars#update"
-  delete "/me/avatar", to: "users/avatars#destroy"
   get "/me/export", to: "users/data_exports#show"
 
   # Action Cable WebSocket mount

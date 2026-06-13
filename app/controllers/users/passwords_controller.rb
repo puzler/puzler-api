@@ -19,7 +19,7 @@ class Users::PasswordsController < Devise::PasswordsController
         }
       }, status: :ok
     else
-      render json: { errors: resource.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: resource.errors.full_messages }, status: :unprocessable_content
     end
   end
 end

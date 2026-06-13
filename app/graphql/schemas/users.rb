@@ -34,8 +34,12 @@ module Schemas
         description: "Remove a linked OAuth provider"
       field :prepare_oauth_connect, mutation: ::Mutations::Users::PrepareOauthConnect,
         description: "Get a URL to start connecting an OAuth provider"
+      field :remove_avatar, mutation: ::Mutations::Users::RemoveAvatar,
+        description: "Remove the current user's uploaded avatar"
       field :update_profile, mutation: ::Mutations::Users::UpdateProfile,
         description: "Update the current user's profile information"
+      field :upload_avatar, mutation: ::Mutations::Users::UploadAvatar,
+        description: "Upload and set the current user's avatar"
     end
   end
 end

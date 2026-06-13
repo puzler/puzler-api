@@ -29,7 +29,7 @@ RSpec.describe "Registrations", type: :request do
     it "returns validation errors for a bad username", :aggregate_failures do
       post "/users", params: { user: params[:user].merge(username: "x") }, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to include(a_string_matching(/Username/))
     end
 
@@ -37,7 +37,7 @@ RSpec.describe "Registrations", type: :request do
       create(:user, email: "new@example.com")
       post "/users", params: params, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to include(a_string_matching(/Email/))
     end
   end

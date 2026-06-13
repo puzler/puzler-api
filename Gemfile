@@ -22,6 +22,7 @@ gem "image_processing", "~> 1.2" # avatar variants via libvips (in the Docker im
 # GraphQL
 gem "graphql"
 gem "graphiql-rails" # API Explorer, mounted at /explorer in all environments
+gem "apollo_upload_server" # GraphQL multipart file uploads (avatar)
 
 # Authorization
 gem "pundit"

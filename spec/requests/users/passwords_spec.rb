@@ -65,7 +65,7 @@ RSpec.describe "Passwords", type: :request do
     it "rejects an invalid token", :aggregate_failures do
       reset_password("bogus")
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(response.parsed_body["errors"]).to include(a_string_matching(/Reset password token/))
     end
   end
