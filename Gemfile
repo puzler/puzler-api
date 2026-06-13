@@ -17,6 +17,7 @@ gem "omniauth-rails_csrf_protection"
 
 # File storage (ActiveStorage S3/R2 backend)
 gem "aws-sdk-s3", require: false
+gem "image_processing", "~> 1.2" # avatar variants via libvips (in the Docker image)
 
 # GraphQL
 gem "graphql"

@@ -9,7 +9,13 @@ class User < ApplicationRecord
 
   enum :role, { user: 0, admin: 1 }
 
-  has_one_attached :avatar
+  # Standardized 256x256 avatar: square-cropped, EXIF stripped (libvips drops
+  # metadata when transforming), served via the named variant below.
+  AVATAR_VARIANT = { resize_to_fill: [ 256, 256 ] }.freeze
+
+  has_one_attached :avatar do |attachable|
+    attachable.variant :display, **AVATAR_VARIANT
+  end
 
   has_many :oauth_identities, class_name: "UserOauthIdentity", dependent: :destroy
   has_many :puzzles, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
@@ -29,12 +35,13 @@ class User < ApplicationRecord
     Warden::JWTAuth::UserEncoder.new.call(self, :user, nil).first
   end
 
-  # Uploaded avatar wins; the avatar_url column holds an OAuth profile image
-  # captured at first sign-in and acts as the fallback.
+  # Uploaded avatar wins (served as the normalized :display variant); the
+  # avatar_url column holds an OAuth profile image captured at first sign-in
+  # and acts as the fallback.
   def resolved_avatar_url
     if avatar.attached?
-      Rails.application.routes.url_helpers.rails_blob_url(
-        avatar, host: ENV.fetch("API_URL", "http://localhost:3000")
+      Rails.application.routes.url_helpers.rails_representation_url(
+        avatar.variant(:display), host: ENV.fetch("API_URL", "http://localhost:3000")
       )
     else
       avatar_url

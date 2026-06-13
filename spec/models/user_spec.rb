@@ -36,10 +36,10 @@ RSpec.describe User, type: :model do
       expect(user.resolved_avatar_url).to eq("https://example.com/oauth.jpg")
     end
 
-    it "prefers an attached avatar" do
+    it "prefers an attached avatar, served as the normalized variant" do
       user.avatar.attach(io: StringIO.new("fake image data"), filename: "avatar.png", content_type: "image/png")
 
-      expect(user.resolved_avatar_url).to include("/rails/active_storage/blobs/")
+      expect(user.resolved_avatar_url).to include("/rails/active_storage/representations/")
     end
   end
 end
