@@ -1,5 +1,76 @@
-require 'rails_helper'
+require "rails_helper"
 
 RSpec.describe Puzzle, type: :model do
-  pending "add some examples to (or delete) #{__FILE__}"
+  let(:author) { create(:user) }
+  let(:other)  { create(:user) }
+
+  describe "#generate_share_token" do
+    it "assigns an unguessable token on create" do
+      expect(create(:puzzle).share_token).to be_present
+    end
+  end
+
+  describe "scopes" do
+    it ".publicly_visible returns only published public puzzles", :aggregate_failures do
+      public_puzzle = create(:puzzle, :published)
+      create(:puzzle, :unlisted)
+      create(:puzzle, :access_private)
+      create(:puzzle) # draft
+      expect(described_class.publicly_visible).to contain_exactly(public_puzzle)
+    end
+  end
+
+  describe "#viewable_by?" do
+    context "when the puzzle is a draft" do
+      let(:puzzle) { create(:puzzle, author:) }
+
+      it "is visible only to the author and admins", :aggregate_failures do
+        expect(puzzle.viewable_by?(author)).to be(true)
+        expect(puzzle.viewable_by?(create(:user, role: :admin))).to be(true)
+        expect(puzzle.viewable_by?(other)).to be(false)
+        expect(puzzle.viewable_by?(nil)).to be(false)
+      end
+    end
+
+    context "when public" do
+      let(:puzzle) { create(:puzzle, :published, author:) }
+
+      it "is visible to anyone, signed in or not", :aggregate_failures do
+        expect(puzzle.viewable_by?(nil)).to be(true)
+        expect(puzzle.viewable_by?(other)).to be(true)
+      end
+    end
+
+    context "when unlisted" do
+      let(:puzzle) { create(:puzzle, :unlisted, author:) }
+
+      it "is visible only with the matching share token", :aggregate_failures do
+        expect(puzzle.viewable_by?(other, share_token: puzzle.share_token)).to be(true)
+        expect(puzzle.viewable_by?(other, share_token: "wrong")).to be(false)
+        expect(puzzle.viewable_by?(other)).to be(false)
+      end
+    end
+
+    context "when private" do
+      let(:puzzle) { create(:puzzle, :access_private, author:) }
+
+      it "is visible only to granted users", :aggregate_failures do
+        expect(puzzle.viewable_by?(other)).to be(false)
+        puzzle.access_grants.create!(user: other, granted_by: author)
+        expect(puzzle.viewable_by?(other)).to be(true)
+      end
+
+      it "never leaks via a share token" do
+        expect(puzzle.viewable_by?(other, share_token: puzzle.share_token)).to be(false)
+      end
+    end
+
+    context "when a stubbed tier (patrons_only / subscribers_only)" do
+      it "denies everyone except the author for now", :aggregate_failures do
+        puzzle = create(:puzzle, :published, author:, visibility: :patrons_only)
+        expect(puzzle.viewable_by?(other)).to be(false)
+        expect(puzzle.viewable_by?(author)).to be(true)
+      end
+    end
+  end
 end

@@ -20,3 +20,9 @@ RSpec/DescribeClass:
 # Mutations with 5+ args use explicit Types::InputObjects classes instead.
 GraphQL/ExtractInputType:
   MaxArguments: 4
+
+# Two fields that merely share a name prefix (e.g. published_at /
+# published_version) don't warrant a wrapper type; extraction earns its keep
+# only for larger clusters of genuinely related fields.
+GraphQL/ExtractType:
+  MaxFields: 3

@@ -25,11 +25,26 @@ FactoryBot.define do
 
     trait :published do
       status { :published }
+      visibility { :public }
       published_at { 1.day.ago }
     end
 
     trait :featured do
-      status { :featured }
+      status { :published }
+      featured { true }
+      visibility { :public }
+      published_at { 1.day.ago }
+    end
+
+    trait :unlisted do
+      status { :published }
+      visibility { :unlisted }
+      published_at { 1.day.ago }
+    end
+
+    trait :access_private do
+      status { :published }
+      visibility { :private }
       published_at { 1.day.ago }
     end
 

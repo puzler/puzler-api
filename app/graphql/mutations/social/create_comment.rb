@@ -17,7 +17,7 @@ module Mutations
 
       def resolve(puzzle_id:, body:, parent_id: nil)
         require_auth!
-        puzzle = Puzzle.published_or_featured.find_by(id: puzzle_id)
+        puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
         comment = current_user.comments.build(puzzle:, body:, parent_id:)

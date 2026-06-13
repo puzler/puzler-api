@@ -10,7 +10,7 @@ module Types
       field :slug, String, null: false, description: "URL-safe tag identifier"
 
       def puzzle_count
-        object.puzzles.published_or_featured.count
+        object.puzzles.publicly_visible.count
       end
     end
   end

@@ -12,7 +12,7 @@ module Mutations
         description: "The new or existing unsolved play session"
 
       def resolve(puzzle_id:)
-        puzzle = Puzzle.published_or_featured.find_by(id: puzzle_id)
+        puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
         play = if current_user

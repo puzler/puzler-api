@@ -24,6 +24,8 @@ class User < ApplicationRecord
   has_many :comments, dependent: :destroy
   has_many :favorites, dependent: :destroy
   has_many :favorited_puzzles, through: :favorites, source: :puzzle
+  has_many :puzzle_access_grants, dependent: :destroy
+  has_many :accessible_puzzles, through: :puzzle_access_grants, source: :puzzle
 
   validates :username, presence: true, uniqueness: { case_sensitive: false },
                        format: { with: /\A[a-zA-Z0-9_]+\z/, message: "only letters, numbers, and underscores" },
