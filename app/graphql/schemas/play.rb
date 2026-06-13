@@ -5,6 +5,8 @@ module Schemas
       description "Mutations for playing puzzles"
       graphql_name "PlayMutations"
 
+      field :reveal_solve_message, mutation: ::Mutations::Play::RevealSolveMessage,
+        description: "Reveal a puzzle's custom solve message for a correct solution"
       field :save_progress, mutation: ::Mutations::Play::SaveProgress,
         description: "Persist the current cell state for an in-progress session"
       field :start_play, mutation: ::Mutations::Play::StartPlay,

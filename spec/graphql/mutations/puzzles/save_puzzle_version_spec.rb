@@ -3,8 +3,8 @@ require "rails_helper"
 RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($puzzleId: ID!, $definition: JSON!, $solution: JSON, $label: String) {
-        savePuzzleVersion(input: { puzzleId: $puzzleId, definition: $definition, solution: $solution, label: $label }) {
+      mutation($puzzleId: ID!, $attrs: PuzzleVersionAttrsInput!) {
+        savePuzzleVersion(input: { puzzleId: $puzzleId, attrs: $attrs }) {
           version { id versionNumber displayName label constraintTypes solutionHash isPublished }
           errors
         }
@@ -15,12 +15,12 @@ RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
   let(:user) { create(:user) }
   let(:puzzle) { create(:puzzle, author: user) }
   let(:definition) do
-    { "version" => 2, "activeConstraints" => [ { "type" => "thermometer" } ], "globals" => { "variants" => [ "diagonal_positive" ] } }
+    { "version" => 3, "activeConstraints" => [ { "type" => "thermometer" } ], "globals" => { "variants" => [ "diagonal_positive" ] } }
   end
 
-  def save_version(context, **vars)
-    result = execute_query(mutation, variables: { puzzleId: puzzle.id, definition: }.merge(vars), context:)
-    gql_data(result, "savePuzzleVersion")
+  def save_version(context, **attrs)
+    vars = { puzzleId: puzzle.id, attrs: { definition: }.merge(attrs) }
+    gql_data(execute_query(mutation, variables: vars, context:), "savePuzzleVersion")
   end
 
   context "when authenticated as the author" do
@@ -38,18 +38,24 @@ RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
       expect(version["versionNumber"]).to eq(2)
       expect(version["displayName"]).to eq("Tweaked bulb")
     end
+
+    it "stores a custom solve message" do
+      save_version(auth_context(user), solveMessage: "Well done!")
+      expect(puzzle.versions.last.solve_message).to eq("Well done!")
+    end
   end
 
   context "when the puzzle belongs to someone else" do
     it "refuses to save" do
-      result = execute_query(mutation, variables: { puzzleId: puzzle.id, definition: }, context: auth_context(create(:user)))
+      vars = { puzzleId: puzzle.id, attrs: { definition: } }
+      result = execute_query(mutation, variables: vars, context: auth_context(create(:user)))
       expect(gql_errors(result).first["message"]).to eq("Puzzle not found")
     end
   end
 
   context "when unauthenticated" do
     it "returns an authentication error" do
-      result = execute_query(mutation, variables: { puzzleId: puzzle.id, definition: })
+      result = execute_query(mutation, variables: { puzzleId: puzzle.id, attrs: { definition: } })
       expect(gql_errors(result).first["message"]).to eq("Authentication required")
     end
   end

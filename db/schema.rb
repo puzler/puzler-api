@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_110002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_13_120001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -131,6 +131,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_110002) do
     t.bigint "puzzle_id", null: false
     t.jsonb "solution", default: {}, null: false
     t.string "solution_hash"
+    t.text "solve_message"
     t.datetime "updated_at", null: false
     t.integer "version_number", null: false
     t.index ["constraint_types"], name: "index_puzzle_versions_on_constraint_types", using: :gin

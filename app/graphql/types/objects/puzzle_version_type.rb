@@ -19,6 +19,8 @@ module Types
         description: "Solution grid for this version; only visible to the author"
       field :solution_hash, String, null: true,
         description: "SHA-256 of the solution, used for client-side completion detection"
+      field :solve_message, String, null: true,
+        description: "Custom solve message; only visible to the author (revealed to solvers on a correct solve)"
       field :version_number, Integer, null: false, description: "Sequential per-puzzle version number"
 
       def is_published
@@ -27,6 +29,12 @@ module Types
 
       def solution
         return object.solution if author_or_admin?
+
+        nil
+      end
+
+      def solve_message
+        return object.solve_message if author_or_admin?
 
         nil
       end
