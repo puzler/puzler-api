@@ -19,11 +19,19 @@ class User < ApplicationRecord
 
   has_many :oauth_identities, class_name: "UserOauthIdentity", dependent: :destroy
   has_many :puzzles, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :folders, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :collections, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :collection_solve_times, dependent: :destroy
+  has_many :series, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :series_subscriptions, dependent: :destroy
+  has_many :subscribed_series, through: :series_subscriptions, source: :series
   has_many :puzzle_plays, dependent: :destroy
   has_many :ratings, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :favorites, dependent: :destroy
   has_many :favorited_puzzles, through: :favorites, source: :puzzle
+  has_many :puzzle_access_grants, dependent: :destroy
+  has_many :accessible_puzzles, through: :puzzle_access_grants, source: :puzzle
 
   validates :username, presence: true, uniqueness: { case_sensitive: false },
                        format: { with: /\A[a-zA-Z0-9_]+\z/, message: "only letters, numbers, and underscores" },

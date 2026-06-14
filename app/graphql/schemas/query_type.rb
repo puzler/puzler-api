@@ -11,6 +11,8 @@ module Schemas
 
     implements Users::Queries
     implements Puzzles::Queries
+    implements Collections::Queries
+    implements Series::Queries
     implements Tags::Queries
   end
 end

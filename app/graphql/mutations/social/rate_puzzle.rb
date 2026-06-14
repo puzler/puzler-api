@@ -17,7 +17,7 @@ module Mutations
 
       def resolve(puzzle_id:, stars: nil, difficulty_vote: nil)
         require_auth!
-        puzzle = Puzzle.published_or_featured.find_by(id: puzzle_id)
+        puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
         rating = current_user.ratings.find_or_initialize_by(puzzle:)

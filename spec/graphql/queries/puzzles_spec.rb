@@ -46,12 +46,19 @@ RSpec.describe "Queries: puzzles", type: :graphql do
       GQL
     end
 
-    it "returns only published or featured puzzles", :aggregate_failures do
+    it "returns only published public puzzles", :aggregate_failures do
       published = create(:puzzle, :published)
-      draft = create(:puzzle)
+      hidden = [ create(:puzzle), create(:puzzle, :unlisted), create(:puzzle, :access_private) ]
       ids = gql_data(execute_query(query), "puzzles").map { |p| p["id"] }
       expect(ids).to include(published.id.to_s)
-      expect(ids).not_to include(draft.id.to_s)
+      expect(ids).not_to include(*hidden.map { |p| p.id.to_s })
+    end
+
+    it "filters by constraint type", :aggregate_failures do
+      thermo = create(:puzzle, :published, constraint_types: [ "thermometer" ])
+      create(:puzzle, :published, constraint_types: [ "killer_cage" ])
+      result = execute_query('query { puzzles(constraintTypes: ["thermometer"]) { id } }')
+      expect(gql_data(result, "puzzles").map { |p| p["id"] }).to eq([ thermo.id.to_s ])
     end
   end
 

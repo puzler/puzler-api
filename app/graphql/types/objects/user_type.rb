@@ -35,11 +35,11 @@ module Types
 
       def puzzles(status: nil)
         scope = object.puzzles
-        status ? scope.where(status: status) : scope.published_or_featured
+        status ? scope.where(status: status) : scope.publicly_visible
       end
 
       def puzzle_count
-        object.puzzles.published_or_featured.count
+        object.puzzles.publicly_visible.count
       end
 
       def solve_count
