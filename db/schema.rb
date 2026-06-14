@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_13_160001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_14_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_13_160001) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "app_versions", force: :cascade do |t|
+    t.string "commit", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["commit"], name: "index_app_versions_on_commit", unique: true
   end
 
   create_table "collection_puzzles", force: :cascade do |t|
