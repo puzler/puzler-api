@@ -100,9 +100,14 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def create_user_from_oauth(auth, provider)
+    name = auth.info.name
+    username = generate_username(name || auth.info.email.split("@").first)
     user = User.new(
       email: auth.info.email,
-      username: generate_username(auth.info.name || auth.info.email.split("@").first),
+      username: username,
+      # The provider's real name (e.g. "Jane Doe") becomes the display name;
+      # username is the sanitized handle derived from it.
+      display_name: name.presence || username,
       password: Devise.friendly_token[0, 20],
       password_set: false,
       avatar_url: auth.info.image

@@ -8,6 +8,7 @@ class UserSerializer
       id: @user.id,
       email: @user.email,
       username: @user.username,
+      display_name: @user.display_name,
       avatar_url: @user.resolved_avatar_url,
       bio: @user.bio,
       role: @user.role,

@@ -33,9 +33,17 @@ class User < ApplicationRecord
   has_many :puzzle_access_grants, dependent: :destroy
   has_many :accessible_puzzles, through: :puzzle_access_grants, source: :puzzle
 
+  # username is the unique handle used in profile URLs, lookups, and access
+  # grants — kept strict (letters/numbers/underscores).
   validates :username, presence: true, uniqueness: { case_sensitive: false },
                        format: { with: /\A[a-zA-Z0-9_]+\z/, message: "only letters, numbers, and underscores" },
                        length: { minimum: 3, maximum: 30 }
+
+  # display_name is the free-form, mutable, NON-unique name shown to others
+  # (spaces and punctuation allowed). New records fall back to the username.
+  normalizes :display_name, with: ->(value) { value&.strip }
+  before_validation :default_display_name, on: :create
+  validates :display_name, presence: true, length: { maximum: 50 }
 
   before_update :mark_password_set_and_rotate_jti, if: :will_save_change_to_encrypted_password?
 
@@ -57,6 +65,10 @@ class User < ApplicationRecord
   end
 
   private
+
+  def default_display_name
+    self.display_name = username if display_name.blank?
+  end
 
   # Any password change (set, change, or reset) marks the password usable for
   # login and revokes all outstanding JWTs. Callers that need to keep the

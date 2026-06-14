@@ -7,17 +7,19 @@ module Mutations
         description: "URL for the user's profile picture"
       argument :bio, String, required: false,
         description: "Short biography shown on the user's profile page"
+      argument :display_name, String, required: false,
+        description: "Free-form name shown to others (not unique)"
       argument :username, String, required: false,
-        description: "Public display name"
+        description: "Unique handle used in profile URLs and lookups"
 
       field :errors, [ String ], null: false,
         description: "Validation errors, if any"
       field :user, Types::Objects::UserType, null: true,
         description: "The updated user"
 
-      def resolve(username: nil, bio: nil, avatar_url: nil)
+      def resolve(username: nil, display_name: nil, bio: nil, avatar_url: nil)
         require_auth!
-        attrs = { username:, bio:, avatar_url: }.compact
+        attrs = { username:, display_name:, bio:, avatar_url: }.compact
         if current_user.update(attrs)
           { user: current_user, errors: [] }
         else

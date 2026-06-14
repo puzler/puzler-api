@@ -39,6 +39,27 @@ RSpec.describe "Queries: puzzles", type: :graphql do
     end
   end
 
+  describe "authorName" do
+    let(:query) { "query($id: ID!) { puzzle(id: $id) { authorName } }" }
+
+    def published_with_author(author_meta)
+      puzzle = create(:puzzle, :published)
+      version = create(:puzzle_version, puzzle:, definition: { "meta" => { "author" => author_meta } })
+      puzzle.update!(published_version: version)
+      puzzle
+    end
+
+    it "returns the free-text author from the published version's metadata" do
+      puzzle = published_with_author("Anonymous Setter")
+      expect(gql_data(execute_query(query, variables: { id: puzzle.id }), "puzzle", "authorName")).to eq("Anonymous Setter")
+    end
+
+    it "is null when the author left it blank (UI falls back to the display name)" do
+      puzzle = published_with_author("   ")
+      expect(gql_data(execute_query(query, variables: { id: puzzle.id }), "puzzle", "authorName")).to be_nil
+    end
+  end
+
   describe "puzzles" do
     let(:query) do
       <<~GQL

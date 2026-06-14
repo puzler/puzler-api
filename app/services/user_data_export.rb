@@ -24,7 +24,7 @@ class UserDataExport
   attr_reader :user
 
   def profile
-    user.slice(:id, :email, :username, :bio, :role, :created_at).merge(
+    user.slice(:id, :email, :username, :display_name, :bio, :role, :created_at).merge(
       avatar_url: user.resolved_avatar_url
     )
   end

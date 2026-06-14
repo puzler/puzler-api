@@ -1,6 +1,34 @@
 require "rails_helper"
 
 RSpec.describe User, type: :model do
+  describe "display_name" do
+    it "defaults to the username when blank on create" do
+      user = create(:user, username: "alice", display_name: nil)
+      expect(user.display_name).to eq("alice")
+    end
+
+    it "allows spaces and punctuation, and is not unique", :aggregate_failures do
+      create(:user, display_name: "Jane O'Doe-Smith Jr.")
+      twin = build(:user, display_name: "Jane O'Doe-Smith Jr.")
+      expect(twin).to be_valid
+    end
+
+    it "strips surrounding whitespace" do
+      user = create(:user, display_name: "  Spacey  ")
+      expect(user.display_name).to eq("Spacey")
+    end
+
+    it "is capped at 50 characters" do
+      expect(build(:user, display_name: "a" * 51)).not_to be_valid
+    end
+
+    it "cannot be blanked once set (no create-time fallback on update)" do
+      user = create(:user, display_name: "Original")
+      user.display_name = "  "
+      expect(user).not_to be_valid
+    end
+  end
+
   describe "#generate_jwt" do
     it "produces a token that decodes back to the user", :aggregate_failures do
       user = create(:user)

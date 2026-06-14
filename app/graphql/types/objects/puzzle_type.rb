@@ -3,7 +3,10 @@ module Types
     class PuzzleType < BaseObject
       description "A variant sudoku puzzle"
 
-      field :author, UserType, null: false, description: "Puzzle creator"
+      field :author, UserType, null: false, description: "Puzzle creator (the owning account)"
+      field :author_name, String, null: true,
+        description: "Free-form author credit from the published puzzle's metadata; null when left blank, " \
+          "in which case attribution falls back to the author's display name"
       field :avg_difficulty, Float, null: true, description: "Average difficulty rating from players (1–4 scale)"
       field :avg_rating, Float, null: true, description: "Average star rating from players (1–5 scale)"
       field :box_layout, GraphQL::Types::JSON, null: true,
@@ -54,6 +57,14 @@ module Types
 
       def grid
         { rows: object.grid_rows, cols: object.grid_cols }
+      end
+
+      # The setter's free-text credit lives in the published version's definition
+      # (meta.author); blank means "attribute to my display name" — the frontend
+      # applies that fallback so it can link the display name to the profile.
+      def author_name
+        name = object.published_version&.definition&.dig("meta", "author")
+        name.strip.presence if name.is_a?(String)
       end
 
       def solution

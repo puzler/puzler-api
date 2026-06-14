@@ -16,7 +16,7 @@ RSpec.describe "Collection timing", type: :graphql do
   end
 
   def board_query
-    "query($c: ID!) { collectionLeaderboard(collectionId: $c) { rank username totalSeconds } }"
+    "query($c: ID!) { collectionLeaderboard(collectionId: $c) { rank username displayName totalSeconds } }"
   end
 
   def rec(user, puzzle, secs)
@@ -38,7 +38,7 @@ RSpec.describe "Collection timing", type: :graphql do
   end
 
   describe "collectionLeaderboard" do
-    let(:speedy) { create(:user, username: "speedy") }
+    let(:speedy) { create(:user, username: "speedy", display_name: "Speedy Gonzales") }
 
     before do
       create(:collection_solve_time, collection:, puzzle: first, user: speedy, seconds: 30)
@@ -48,7 +48,7 @@ RSpec.describe "Collection timing", type: :graphql do
 
     it "ranks only solvers who completed every puzzle, by total time" do
       data = gql_data(execute_query(board_query, variables: { c: collection.id }), "collectionLeaderboard")
-      expect(data).to eq([ { "rank" => 1, "username" => "speedy", "totalSeconds" => 75 } ])
+      expect(data).to eq([ { "rank" => 1, "username" => "speedy", "displayName" => "Speedy Gonzales", "totalSeconds" => 75 } ])
     end
   end
 end

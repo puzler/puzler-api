@@ -50,9 +50,10 @@ module Schemas
         # Only solvers who have a time for every puzzle in the collection rank.
         totals = collection.collection_solve_times.group(:user_id)
                            .having("COUNT(*) = ?", puzzle_count).sum(:seconds)
-        usernames = User.where(id: totals.keys).pluck(:id, :username).to_h
+        users = User.where(id: totals.keys).index_by(&:id)
         totals.sort_by { |_, secs| secs }.each_with_index.map do |(user_id, secs), index|
-          { rank: index + 1, total_seconds: secs, username: usernames[user_id] }
+          user = users[user_id]
+          { rank: index + 1, total_seconds: secs, username: user.username, display_name: user.display_name }
         end
       end
 

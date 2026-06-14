@@ -6,6 +6,8 @@ module Types
       field :avatar_url, String, null: true, method: :resolved_avatar_url, description: "Profile picture URL"
       field :bio, String, null: true, description: "Short biography shown on the user's profile"
       field :created_at, GraphQL::Types::ISO8601DateTime, null: false, description: "When this account was created"
+      field :display_name, String, null: false,
+        description: "Free-form name shown to others (not unique)"
       field :email, String, null: true, description: "User's email address (only visible to the user themselves)"
       field :id, ID, null: false, description: "Unique user ID"
       field :oauth_connections, [ OauthIdentityType ], null: true,
@@ -19,7 +21,7 @@ module Types
       end
       field :role, String, null: false, description: "Account role: user or admin"
       field :solve_count, Integer, null: false, description: "Number of puzzles this user has completed"
-      field :username, String, null: false, description: "Public display name"
+      field :username, String, null: false, description: "Unique handle used in profile URLs and lookups"
 
       def email
         object.email if viewer_is_self?
