@@ -2,6 +2,8 @@
 require "rubygems"
 require "bundler/setup"
 
-ARGV.unshift("--ensure-latest")
+# Intentionally no --ensure-latest: it fails CI the moment a newer Brakeman is
+# released, before Dependabot's daily bundler run can bump the lock. We scan with
+# the locked version instead; Dependabot + bundler-audit keep it current.
 
 load Gem.bin_path("brakeman", "brakeman")
