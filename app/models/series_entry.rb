@@ -20,11 +20,13 @@ class SeriesEntry < ApplicationRecord
     released_at || created_at
   end
 
-  # Is the puzzle/collection this entry points at visible to the public?
-  def target_publicly_visible?
+  # May the puzzle/collection this entry points at be shown to a non-author
+  # viewing the series? True for public targets and for the container-only tier
+  # (which exists precisely to surface inside a series).
+  def viewable_in_container?
     case entryable_type
-    when "Puzzle" then entryable&.published? && entryable&.visible_public?
-    when "Collection" then entryable&.visible_public?
+    when "Puzzle" then entryable&.published? && (entryable&.visible_public? || entryable&.visible_containers_only?)
+    when "Collection" then entryable&.visible_public? || entryable&.visible_containers_only?
     else false
     end
   end

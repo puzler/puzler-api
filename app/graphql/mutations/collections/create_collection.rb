@@ -3,13 +3,14 @@ module Mutations
     class CreateCollection < Mutations::BaseMutation
       description "Create a collection"
 
-      SELECTABLE_VISIBILITY = %w[private unlisted public].freeze
+      SELECTABLE_VISIBILITY = %w[private unlisted public containers_only].freeze
       ALLOWED_MODES = %w[unordered sequence].freeze
 
       argument :description, String, required: false, description: "Optional description"
-      argument :mode, String, required: false, description: "Ordering mode: unordered or sequence"
+      argument :mode, Types::Enums::CollectionModeEnum, required: false, description: "Ordering mode: unordered or sequence"
       argument :title, String, required: true, description: "Collection title"
-      argument :visibility, String, required: false, description: "private, unlisted, or public"
+      argument :visibility, Types::Enums::CollectionVisibilityEnum, required: false,
+        description: "private, unlisted, public, or containers_only"
 
       field :collection, Types::Objects::CollectionType, null: true, description: "The new collection"
       field :errors, [ String ], null: false, description: "Validation errors, if any"

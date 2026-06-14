@@ -47,13 +47,13 @@ module Types
       field :solution_hash, String, null: true,
         description: "SHA-256 of the canonical solution, used for client-side completion detection"
       field :solve_count, Integer, null: false, description: "Number of times this puzzle has been solved"
-      field :status, String, null: false, description: "Lifecycle status: draft or published"
+      field :status, Types::Enums::PuzzleStatusEnum, null: false, description: "Lifecycle status: draft or published"
       field :tags, [ TagType ], null: false, description: "Tags categorizing this puzzle"
       field :title, String, null: false, description: "Puzzle title"
       field :versions, [ PuzzleVersionType ], null: false,
         description: "All saved versions, oldest first; only visible to the author"
-      field :visibility, String, null: false,
-        description: "Access mode: private, unlisted, public, patrons_only, or subscribers_only"
+      field :visibility, Types::Enums::PuzzleVisibilityEnum, null: false,
+        description: "Access mode: private, unlisted, public, patrons_only, subscribers_only, or containers_only"
 
       def grid
         { rows: object.grid_rows, cols: object.grid_cols }
@@ -73,8 +73,12 @@ module Types
         nil
       end
 
+      # Container-only puzzles surface their token to any viewer who reached them
+      # through a container they can see, so the client can build a working play
+      # link. (Plain unlisted puzzles keep the token author-only — it's the secret
+      # that gates their link.)
       def share_token
-        return object.share_token if author_or_admin?
+        return object.share_token if author_or_admin? || object.visible_containers_only?
 
         nil
       end

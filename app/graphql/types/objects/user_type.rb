@@ -17,9 +17,9 @@ module Types
       field :puzzle_count, Integer, null: false,
         description: "Number of published or featured puzzles by this user"
       field :puzzles, [ PuzzleType ], null: false, description: "Puzzles created by this user" do
-        argument :status, String, required: false, description: "Filter by puzzle status"
+        argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by puzzle status"
       end
-      field :role, String, null: false, description: "Account role: user or admin"
+      field :role, Types::Enums::UserRoleEnum, null: false, description: "Account role: user or admin"
       field :solve_count, Integer, null: false, description: "Number of puzzles this user has completed"
       field :username, String, null: false, description: "Unique handle used in profile URLs and lookups"
 

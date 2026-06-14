@@ -3,7 +3,7 @@ module Types
     class CosmeticAttrsInput < BaseInputObject
       description "Attributes for creating or updating a cosmetic"
 
-      argument :cosmetic_type, String, required: true,
+      argument :cosmetic_type, Types::Enums::CosmeticTypeEnum, required: true,
         description: "Cosmetic type identifier (line, cell_color, shape, text)"
       # No default_value here: a {} default on a JSON scalar can't be rendered
       # back to an SDL literal, which breaks introspection round-trips

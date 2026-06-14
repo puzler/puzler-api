@@ -3,7 +3,7 @@ module Mutations
     class RatePuzzle < Mutations::BaseMutation
       description "Rate a published puzzle or cast a difficulty vote"
 
-      argument :difficulty_vote, String, required: false,
+      argument :difficulty_vote, Types::Enums::RatingDifficultyEnum, required: false,
         description: "Difficulty assessment (easy, medium, hard, or expert)"
       argument :puzzle_id, ID, required: true,
         description: "ID of the puzzle to rate"

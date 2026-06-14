@@ -60,7 +60,7 @@ module Schemas
 
         viewable = ::Series.where(id: series_ids).select { |s| s.viewable_by?(user) }.index_by(&:id)
         entries = SeriesEntry.released.where(series_id: viewable.keys).includes(:entryable, :series)
-        entries.select(&:target_publicly_visible?)
+        entries.select(&:viewable_in_container?)
                .sort_by(&:effective_release_at).reverse.first(50)
       end
 

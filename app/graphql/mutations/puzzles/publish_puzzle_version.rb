@@ -6,7 +6,7 @@ module Mutations
       argument :puzzle_id, ID, required: true, description: "ID of the puzzle"
       argument :tag_slugs, [ String ], required: false, description: "Tag slugs to attach before publishing"
       argument :version_id, ID, required: true, description: "Version to publish"
-      argument :visibility, String, required: false, description: "Optionally set the access mode at the same time"
+      argument :visibility, Types::Enums::PuzzleVisibilityEnum, required: false, description: "Optionally set the access mode at the same time"
 
       field :errors, [ String ], null: false, description: "Validation errors, if any"
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The published puzzle"

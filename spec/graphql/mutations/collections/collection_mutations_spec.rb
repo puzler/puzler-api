@@ -9,17 +9,17 @@ RSpec.describe "Collection mutations", type: :graphql do
 
   describe "createCollection" do
     let(:mutation) do
-      "mutation($title: String!, $visibility: String) { createCollection(input: { title: $title, visibility: $visibility }) { collection { id title visibility mode } errors } }"
+      "mutation($title: String!, $visibility: CollectionVisibilityEnum) { createCollection(input: { title: $title, visibility: $visibility }) { collection { id title visibility mode } errors } }"
     end
 
     it "creates a collection with private/unordered defaults", :aggregate_failures do
       data = gql_data(gql(mutation, { title: "Beginners" }), "createCollection")
       expect(data["errors"]).to be_empty
-      expect(data["collection"]).to include("title" => "Beginners", "visibility" => "private", "mode" => "unordered")
+      expect(data["collection"]).to include("title" => "Beginners", "visibility" => "PRIVATE", "mode" => "UNORDERED")
     end
 
     it "rejects a stubbed visibility tier", :aggregate_failures do
-      data = gql_data(gql(mutation, { title: "X", visibility: "patrons_only" }), "createCollection")
+      data = gql_data(gql(mutation, { title: "X", visibility: "PATRONS_ONLY" }), "createCollection")
       expect(data["collection"]).to be_nil
       expect(data["errors"].first).to include("Unsupported visibility")
     end
@@ -36,8 +36,8 @@ RSpec.describe "Collection mutations", type: :graphql do
 
     it "updates title, visibility, and mode" do
       collection = create(:collection, author: user)
-      data = gql_data(gql(mutation, { id: collection.id, attrs: { title: "New", visibility: "public", mode: "sequence" } }), "updateCollection", "collection")
-      expect(data).to include("title" => "New", "visibility" => "public", "mode" => "sequence")
+      data = gql_data(gql(mutation, { id: collection.id, attrs: { title: "New", visibility: "PUBLIC", mode: "SEQUENCE" } }), "updateCollection", "collection")
+      expect(data).to include("title" => "New", "visibility" => "PUBLIC", "mode" => "SEQUENCE")
     end
   end
 

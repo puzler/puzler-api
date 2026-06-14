@@ -48,6 +48,12 @@ FactoryBot.define do
       published_at { 1.day.ago }
     end
 
+    trait :containers_only do
+      status { :published }
+      visibility { :containers_only }
+      published_at { 1.day.ago }
+    end
+
     trait :without_solution do
       solution { {} }
       solution_hash { nil }

@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Mutation: upsertCosmetic", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($puzzleId: ID!, $id: ID, $cosmeticType: String!, $position: JSON!, $style: JSON!) {
+      mutation($puzzleId: ID!, $id: ID, $cosmeticType: CosmeticTypeEnum!, $position: JSON!, $style: JSON!) {
         upsertCosmetic(input: {
           puzzleId: $puzzleId, id: $id,
           attrs: { cosmeticType: $cosmeticType, position: $position, style: $style }
@@ -22,10 +22,10 @@ RSpec.describe "Mutation: upsertCosmetic", type: :graphql do
   context "when creating a new cosmetic" do
     it "creates and returns the cosmetic", :aggregate_failures do
       result = execute_query(mutation,
-        variables: { puzzleId: puzzle.id, cosmeticType: "cell_color", position: position, style: { "color" => "#ff0000" } },
+        variables: { puzzleId: puzzle.id, cosmeticType: "CELL_COLOR", position: position, style: { "color" => "#ff0000" } },
         context: auth_context(user))
       expect(gql_data(result, "upsertCosmetic", "errors")).to be_empty
-      expect(gql_data(result, "upsertCosmetic", "cosmetic", "cosmeticType")).to eq("cell_color")
+      expect(gql_data(result, "upsertCosmetic", "cosmetic", "cosmeticType")).to eq("CELL_COLOR")
     end
   end
 
@@ -35,7 +35,7 @@ RSpec.describe "Mutation: upsertCosmetic", type: :graphql do
     it "updates the cosmetic" do
       execute_query(mutation,
         variables: { puzzleId: puzzle.id, id: cosmetic.id,
-                     cosmeticType: "cell_color", position: position, style: { "color" => "#00ff00" } },
+                     cosmeticType: "CELL_COLOR", position: position, style: { "color" => "#00ff00" } },
         context: auth_context(user))
       expect(cosmetic.reload.style["color"]).to eq("#00ff00")
     end
@@ -44,7 +44,7 @@ RSpec.describe "Mutation: upsertCosmetic", type: :graphql do
   context "when unauthenticated" do
     it "returns an authentication error" do
       result = execute_query(mutation,
-        variables: { puzzleId: puzzle.id, cosmeticType: "cell_color", position: position, style: { "color" => "#ff0000" } })
+        variables: { puzzleId: puzzle.id, cosmeticType: "CELL_COLOR", position: position, style: { "color" => "#ff0000" } })
       expect(gql_errors(result).first["message"]).to eq("Authentication required")
     end
   end
