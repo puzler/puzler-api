@@ -15,7 +15,7 @@ module Types
         description: "Whether the current user is subscribed to this series"
       field :subscriber_count, Integer, null: false, description: "Number of subscribers"
       field :title, String, null: false, description: "Series title"
-      field :visibility, String, null: false,
+      field :visibility, Types::Enums::SeriesVisibilityEnum, null: false,
         description: "Access mode: private, unlisted, public, patrons_only, or subscribers_only"
 
       def entries
@@ -44,11 +44,11 @@ module Types
       private
 
       # Authors see every entry; everyone else sees only released entries whose
-      # target is publicly visible, preserving series order.
+      # target may be shown inside a container, preserving series order.
       def visible_entries
         return object.series_entries.to_a if author_or_admin?
 
-        object.series_entries.select { |entry| entry.released? && entry.target_publicly_visible? }
+        object.series_entries.select { |entry| entry.released? && entry.viewable_in_container? }
       end
 
       def author_or_admin?

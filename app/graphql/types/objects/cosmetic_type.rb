@@ -3,7 +3,7 @@ module Types
     class CosmeticType < BaseObject
       description "A visual decoration on a puzzle (cell color, line, shape, or text label)"
 
-      field :cosmetic_type, String, null: false, description: "Cosmetic type identifier"
+      field :cosmetic_type, Types::Enums::CosmeticTypeEnum, null: false, description: "Cosmetic type identifier"
       field :data, GraphQL::Types::JSON, null: false, description: "Type-specific extra data"
       field :display_order, Integer, null: false, description: "Render order among cosmetics"
       field :id, ID, null: false, description: "Unique cosmetic ID"

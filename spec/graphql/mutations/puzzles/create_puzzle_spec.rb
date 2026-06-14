@@ -19,7 +19,7 @@ RSpec.describe "Mutation: createPuzzle", type: :graphql do
       result = execute_query(mutation, variables: { title: "My Puzzle" }, context: auth_context(user))
       data = gql_data(result, "createPuzzle")
       expect(data["errors"]).to be_empty
-      expect(data["puzzle"]).to include("title" => "My Puzzle", "status" => "draft")
+      expect(data["puzzle"]).to include("title" => "My Puzzle", "status" => "DRAFT")
       expect(data["puzzle"]["grid"]).to include("rows" => 9, "cols" => 9)
     end
 

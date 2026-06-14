@@ -7,7 +7,7 @@ module Schemas
 
       field :my_puzzles, [ Types::Objects::PuzzleType ], null: false,
         description: "All puzzles belonging to the current user" do
-        argument :status, String, required: false, description: "Filter by status (draft, published, featured)"
+        argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by status (draft or published)"
       end
 
       field :puzzle, Types::Objects::PuzzleType, null: true,
@@ -36,7 +36,7 @@ module Schemas
         argument :per_page, Integer, required: false, default_value: 20, description: "Results per page"
         argument :sort, String, required: false, default_value: "newest",
           description: "Sort order: newest, rating, or popular"
-        argument :status, String, required: false, description: "Filter by status"
+        argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by status"
         argument :tags, [ String ], required: false, description: "Filter by tag slugs (any match)"
       end
 

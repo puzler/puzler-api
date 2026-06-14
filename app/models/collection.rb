@@ -9,8 +9,11 @@ class Collection < ApplicationRecord
   # Mirrors Puzzle's access model. "private"/"public" collide with Ruby keywords,
   # so visibility methods are prefixed (visible_public?, etc.). `mode` governs
   # ordering only — timing/competition is a separate setting added later.
+  # `containers_only` (added 2026-06-14) is hidden from the archive but surfaced
+  # inside the author's own series; for direct access it behaves like `unlisted`.
   enum :visibility,
-    { private: 0, unlisted: 1, public: 2, patrons_only: 3, subscribers_only: 4 },
+    { private: 0, unlisted: 1, public: 2, patrons_only: 3, subscribers_only: 4,
+      containers_only: 5 },
     prefix: :visible
   enum :mode, { unordered: 0, sequence: 1 }
 
@@ -28,7 +31,7 @@ class Collection < ApplicationRecord
 
     case visibility
     when "public" then true
-    when "unlisted" then share_token.present? && share_token == self.share_token
+    when "unlisted", "containers_only" then share_token.present? && share_token == self.share_token
     else false
     end
   end

@@ -5,7 +5,7 @@ module Types
 
       argument :description, String, required: false, description: "Optional description"
       argument :title, String, required: false, description: "Series title"
-      argument :visibility, String, required: false, description: "private, unlisted, or public"
+      argument :visibility, Types::Enums::SeriesVisibilityEnum, required: false, description: "private, unlisted, or public"
     end
   end
 end

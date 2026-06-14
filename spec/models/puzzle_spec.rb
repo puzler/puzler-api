@@ -11,12 +11,21 @@ RSpec.describe Puzzle, type: :model do
   end
 
   describe "scopes" do
-    it ".publicly_visible returns only published public puzzles", :aggregate_failures do
-      public_puzzle = create(:puzzle, :published)
+    let!(:public_puzzle) { create(:puzzle, :published) }
+    let!(:container_puzzle) { create(:puzzle, :containers_only) }
+
+    before do
       create(:puzzle, :unlisted)
       create(:puzzle, :access_private)
       create(:puzzle) # draft
+    end
+
+    it ".publicly_visible returns only published public puzzles" do
       expect(described_class.publicly_visible).to contain_exactly(public_puzzle)
+    end
+
+    it ".container_visible adds the container-only tier to the public ones" do
+      expect(described_class.container_visible).to contain_exactly(public_puzzle, container_puzzle)
     end
   end
 
@@ -62,6 +71,16 @@ RSpec.describe Puzzle, type: :model do
 
       it "never leaks via a share token" do
         expect(puzzle.viewable_by?(other, share_token: puzzle.share_token)).to be(false)
+      end
+    end
+
+    context "when containers_only" do
+      let(:puzzle) { create(:puzzle, :containers_only, author:) }
+
+      it "behaves like unlisted for direct access — token gated", :aggregate_failures do
+        expect(puzzle.viewable_by?(other, share_token: puzzle.share_token)).to be(true)
+        expect(puzzle.viewable_by?(other, share_token: "wrong")).to be(false)
+        expect(puzzle.viewable_by?(other)).to be(false)
       end
     end
 

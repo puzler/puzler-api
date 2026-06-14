@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Mutation: publishPuzzleVersion / unpublishPuzzle", type: :graphql do
   let(:publish) do
     <<~GQL
-      mutation($puzzleId: ID!, $versionId: ID!, $visibility: String) {
+      mutation($puzzleId: ID!, $versionId: ID!, $visibility: PuzzleVisibilityEnum) {
         publishPuzzleVersion(input: { puzzleId: $puzzleId, versionId: $versionId, visibility: $visibility }) {
           puzzle { id status visibility constraintTypes publishedVersion { id } }
           errors
@@ -28,9 +28,9 @@ RSpec.describe "Mutation: publishPuzzleVersion / unpublishPuzzle", type: :graphq
   let(:version) { create(:puzzle_version, puzzle:) }
 
   it "points the puzzle at the version and copies its constraint types", :aggregate_failures do
-    vars = { puzzleId: puzzle.id, versionId: version.id, visibility: "public" }
+    vars = { puzzleId: puzzle.id, versionId: version.id, visibility: "PUBLIC" }
     data = gql_data(execute_query(publish, variables: vars, context: auth_context(user)), "publishPuzzleVersion", "puzzle")
-    expect(data).to include("status" => "published", "visibility" => "public")
+    expect(data).to include("status" => "PUBLISHED", "visibility" => "PUBLIC")
     expect(data["publishedVersion"]["id"]).to eq(version.id.to_s)
     expect(data["constraintTypes"]).to match_array(version.constraint_types)
   end
@@ -47,7 +47,7 @@ RSpec.describe "Mutation: publishPuzzleVersion / unpublishPuzzle", type: :graphq
     puzzle.update!(published_version: version, status: :published)
     result = execute_query(unpublish, variables: { id: puzzle.id }, context: auth_context(user))
     data = gql_data(result, "unpublishPuzzle", "puzzle")
-    expect(data["status"]).to eq("draft")
+    expect(data["status"]).to eq("DRAFT")
     expect(data["publishedVersion"]).to be_nil
   end
 end

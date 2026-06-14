@@ -25,6 +25,32 @@ RSpec.describe "Series queries", type: :graphql do
       expect(view(mixed_series)["entries"].map { |e| e["entryType"] }).to eq([ "Puzzle", "Collection" ])
     end
 
+    context "with container-only entries in a public series" do
+      let(:fixture) do
+        series = create(:series, author:, visibility: :public)
+        collection = create(:collection, author:, visibility: :containers_only)
+        puzzle = create(:puzzle, :containers_only, author:)
+        add_entry(series, collection, 0)
+        add_entry(series, puzzle, 1)
+        { series:, collection:, puzzle: }
+      end
+
+      def entries(series)
+        detail = "query($id: ID!) { series(id: $id) { entries { entryType collection { id shareToken } puzzle { id shareToken } } } }"
+        gql_data(execute_query(detail, variables: { id: series.id }, context: auth_context(viewer)), "series", "entries")
+      end
+
+      it "surfaces both entries to non-authors (fixing the empty-series bug)" do
+        expect(entries(fixture[:series]).map { |e| e["entryType"] }).to eq([ "Collection", "Puzzle" ])
+      end
+
+      it "exposes their share tokens so the client can build working links", :aggregate_failures do
+        rows = entries(fixture[:series])
+        expect(rows[0]["collection"]["shareToken"]).to eq(fixture[:collection].share_token)
+        expect(rows[1]["puzzle"]["shareToken"]).to eq(fixture[:puzzle].share_token)
+      end
+    end
+
     it "reflects the viewer's subscription state" do
       series = create(:series, author:, visibility: :public)
       create(:series_subscription, series:, user: viewer)

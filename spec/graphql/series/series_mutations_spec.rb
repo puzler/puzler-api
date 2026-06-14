@@ -13,17 +13,17 @@ RSpec.describe "Series mutations", type: :graphql do
 
   describe "createSeries" do
     let(:mutation) do
-      "mutation($title: String!, $visibility: String) { createSeries(input: { title: $title, visibility: $visibility }) { series { id title visibility } errors } }"
+      "mutation($title: String!, $visibility: SeriesVisibilityEnum) { createSeries(input: { title: $title, visibility: $visibility }) { series { id title visibility } errors } }"
     end
 
     it "creates a private series by default", :aggregate_failures do
       data = gql_data(gql(mutation, { title: "Weekly" }), "createSeries")
       expect(data["errors"]).to be_empty
-      expect(data["series"]).to include("title" => "Weekly", "visibility" => "private")
+      expect(data["series"]).to include("title" => "Weekly", "visibility" => "PRIVATE")
     end
 
     it "rejects a stubbed visibility tier", :aggregate_failures do
-      data = gql_data(gql(mutation, { title: "X", visibility: "patrons_only" }), "createSeries")
+      data = gql_data(gql(mutation, { title: "X", visibility: "PATRONS_ONLY" }), "createSeries")
       expect(data["series"]).to be_nil
       expect(data["errors"].first).to include("Unsupported visibility")
     end

@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Mutation: ratePuzzle", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($puzzleId: ID!, $stars: Int, $difficultyVote: String) {
+      mutation($puzzleId: ID!, $stars: Int, $difficultyVote: RatingDifficultyEnum) {
         ratePuzzle(input: { puzzleId: $puzzleId, stars: $stars, difficultyVote: $difficultyVote }) {
           rating { stars difficultyVote }
           errors
@@ -18,10 +18,10 @@ RSpec.describe "Mutation: ratePuzzle", type: :graphql do
   context "when authenticated" do
     it "creates a rating", :aggregate_failures do
       result = execute_query(mutation,
-        variables: { puzzleId: puzzle.id, stars: 5, difficultyVote: "hard" },
+        variables: { puzzleId: puzzle.id, stars: 5, difficultyVote: "HARD" },
         context: auth_context(user))
       expect(gql_data(result, "ratePuzzle", "rating", "stars")).to eq(5)
-      expect(gql_data(result, "ratePuzzle", "rating", "difficultyVote")).to eq("hard")
+      expect(gql_data(result, "ratePuzzle", "rating", "difficultyVote")).to eq("HARD")
     end
 
     it "updates an existing rating" do

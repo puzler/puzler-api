@@ -3,7 +3,7 @@ module Mutations
     class UpdateCollection < Mutations::BaseMutation
       description "Update a collection's title, description, visibility, or mode"
 
-      SELECTABLE_VISIBILITY = %w[private unlisted public].freeze
+      SELECTABLE_VISIBILITY = %w[private unlisted public containers_only].freeze
       ALLOWED_MODES = %w[unordered sequence].freeze
 
       argument :attrs, Types::InputObjects::CollectionAttrsInput, required: true,

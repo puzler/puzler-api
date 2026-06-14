@@ -121,6 +121,22 @@ body. `MutationType` and `QueryType` are thin — they only `implements` the rel
 2. Create `app/graphql/mutations/[category]/` for the resolver classes
 3. Register in `mutation_type.rb` and/or `query_type.rb`
 
+### New enum (backed by a model enum)
+
+Any model-backed enum should surface as a GraphQL enum so values are validated and
+strongly typed end-to-end (no magic strings on the client).
+
+1. Create `app/graphql/types/enums/[name]_enum.rb` → `Types::Enums::[Name]Enum < BaseEnum`,
+   and call `generate_from_rails_enum(Model.<enum_pluralized>)` (e.g. `Puzzle.visibilities`).
+   This registers each Rails key as an UPPERCASE GraphQL value (`public` → `PUBLIC`) whose
+   coerced Ruby value is the original string — so resolvers and `update(...)` are unchanged.
+2. Use the enum class as the type for the matching object **field** AND for any **mutation /
+   input-object argument** that sets it (keep any runtime `SELECTABLE`-style guards — the enum
+   only blocks values outside the enum, not business rules like "tier not live yet").
+3. The wire format becomes the UPPERCASE name; the frontend imports the generated const
+   (e.g. `PuzzleVisibilityEnum.Public`) instead of a string literal. Request specs must pass
+   and assert the UPPERCASE form.
+
 ---
 
 ## Planned Additions

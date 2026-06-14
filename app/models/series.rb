@@ -9,8 +9,11 @@ class Series < ApplicationRecord
 
   # Mirrors Collection's access model. "private"/"public" collide with Ruby
   # keywords, so visibility methods are prefixed (visible_public?, etc.).
+  # `containers_only` mirrors Puzzle/Collection for enum symmetry; it isn't
+  # selectable for a series (a series isn't embedded in anything higher).
   enum :visibility,
-    { private: 0, unlisted: 1, public: 2, patrons_only: 3, subscribers_only: 4 },
+    { private: 0, unlisted: 1, public: 2, patrons_only: 3, subscribers_only: 4,
+      containers_only: 5 },
     prefix: :visible
 
   before_create :generate_share_token
