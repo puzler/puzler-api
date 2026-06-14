@@ -16,6 +16,19 @@ class AppVersion < ApplicationRecord
       @number = commit_sha.present? ? record_for(commit_sha)&.id : nil
     end
 
+    # Eagerly register the running commit at startup (called from the Docker
+    # entrypoint after db:prepare) so every deployed commit gets its own number,
+    # even if no request ever reads it before the next deploy. Never raises — a
+    # versioning hiccup must not abort a deploy.
+    def register!
+      record = number ? find_by(id: number) : nil
+      Rails.logger.info("[AppVersion] running version #{number || "?"} (#{commit_sha || "unknown"})")
+      record
+    rescue StandardError => e
+      Rails.logger.warn("[AppVersion] registration skipped: #{e.message}")
+      nil
+    end
+
     # Payload for the root endpoint.
     def info
       { version: number, commit: commit_sha, branch: branch }.compact

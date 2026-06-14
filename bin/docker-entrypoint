@@ -5,9 +5,12 @@ if [ -z "${LD_PRELOAD+x}" ] && [ -f /usr/lib/*/libjemalloc.so.2 ]; then
   export LD_PRELOAD="$(echo /usr/lib/*/libjemalloc.so.2)"
 fi
 
-# If running the rails server then create or migrate existing database
+# If running the rails server then create or migrate existing database, then
+# register this deploy's commit so its version number is assigned at startup
+# (not lazily) — `|| true` so a versioning hiccup can never abort the deploy.
 if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
   ./bin/rails db:prepare
+  ./bin/rails runner 'AppVersion.register!' || true
 fi
 
 exec "${@}"
