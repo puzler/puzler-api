@@ -36,6 +36,8 @@ module Schemas
         description: "Get a URL to start connecting an OAuth provider"
       field :remove_avatar, mutation: ::Mutations::Users::RemoveAvatar,
         description: "Remove the current user's uploaded avatar"
+      field :update_player_prefs, mutation: ::Mutations::Users::UpdatePlayerPrefs,
+        description: "Update the current user's solver-page preferences (settings and/or color palette)"
       field :update_profile, mutation: ::Mutations::Users::UpdateProfile,
         description: "Update the current user's profile information"
       field :upload_avatar, mutation: ::Mutations::Users::UploadAvatar,

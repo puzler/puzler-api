@@ -5,6 +5,8 @@ module Types
 
       field :avatar_url, String, null: true, method: :resolved_avatar_url, description: "Profile picture URL"
       field :bio, String, null: true, description: "Short biography shown on the user's profile"
+      field :color_palette, GraphQL::Types::JSON, null: true,
+        description: "The user's customized cell-coloring palette (only visible to the user themselves)"
       field :created_at, GraphQL::Types::ISO8601DateTime, null: false, description: "When this account was created"
       field :display_name, String, null: false,
         description: "Free-form name shown to others (not unique)"
@@ -14,6 +16,8 @@ module Types
         description: "Linked OAuth providers (only visible to the user themselves)"
       field :password_set, Boolean, null: true,
         description: "Whether the user has set a password they know (only visible to the user themselves)"
+      field :player_settings, GraphQL::Types::JSON, null: true,
+        description: "The user's solver-page settings (only visible to the user themselves)"
       field :puzzle_count, Integer, null: false,
         description: "Number of published or featured puzzles by this user"
       field :puzzles, [ PuzzleType ], null: false, description: "Puzzles created by this user" do
@@ -29,6 +33,14 @@ module Types
 
       def oauth_connections
         object.oauth_identities if viewer_is_self?
+      end
+
+      def player_settings
+        object.player_settings if viewer_is_self?
+      end
+
+      def color_palette
+        object.color_palette if viewer_is_self?
       end
 
       def password_set

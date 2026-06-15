@@ -5,6 +5,8 @@ module Schemas
       description "Mutations for playing puzzles"
       graphql_name "PlayMutations"
 
+      field :check_solution, mutation: ::Mutations::Play::CheckSolution,
+        description: "Check an in-progress board, returning solved / correct-so-far / incorrect"
       field :reveal_solve_message, mutation: ::Mutations::Play::RevealSolveMessage,
         description: "Reveal a puzzle's custom solve message for a correct solution"
       field :save_progress, mutation: ::Mutations::Play::SaveProgress,
