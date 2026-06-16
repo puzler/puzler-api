@@ -55,4 +55,23 @@ RSpec.describe Collection, type: :model do
       expect(first.collections.count).to eq(2)
     end
   end
+
+  describe "#recompute_aggregates!" do
+    let(:collection) { create(:collection) }
+
+    it "averages member ratings and sums member solves" do
+      create(:collection_puzzle, collection:, puzzle: create(:puzzle, avg_rating: 4.0, solve_count: 10))
+      create(:collection_puzzle, collection:, puzzle: create(:puzzle, avg_rating: 2.0, solve_count: 5))
+      collection.recompute_aggregates!
+      expect([ collection.avg_rating, collection.solve_count ]).to eq([ 3.0, 15 ])
+    end
+
+    it "cascades to any series containing the collection" do
+      series = create(:series)
+      create(:series_entry, series:, entryable: collection)
+      create(:collection_puzzle, collection:, puzzle: create(:puzzle, solve_count: 7))
+      collection.recompute_aggregates!
+      expect(series.reload.solve_count).to eq(7)
+    end
+  end
 end

@@ -14,6 +14,7 @@ module Mutations
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
         if puzzle.update(published_version: nil, status: :draft)
+          current_user.recompute_setter_stats!
           { puzzle:, errors: [] }
         else
           { puzzle: nil, errors: puzzle.errors.full_messages }

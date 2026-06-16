@@ -35,7 +35,12 @@ class Puzzle < ApplicationRecord
 
   before_create :generate_share_token
 
+  # Once a puzzle has this many community difficulty votes, its effective
+  # difficulty switches from the author's value to the community average.
+  DIFFICULTY_VOTE_CUTOFF = 4
+
   validates :title, presence: true, length: { maximum: 100 }
+  validates :author_difficulty, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 5 }, allow_nil: true
   validates :grid_rows, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 25 }
   validates :grid_cols, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 25 }
 
@@ -63,6 +68,28 @@ class Puzzle < ApplicationRecord
     when "private" then user.present? && access_grants.exists?(user_id: user.id)
     else false # patrons_only / subscribers_only — stubbed
     end
+  end
+
+  # After this puzzle's rating/solve aggregates change, refresh the denormalized
+  # aggregates on every container that includes it. Collections cascade to their
+  # own containing series, so here we only need to recompute collections plus
+  # any series this puzzle is entered into directly.
+  def refresh_container_aggregates!
+    collections.each(&:recompute_aggregates!)
+    Series.joins(:series_entries)
+          .where(series_entries: { entryable_type: "Puzzle", entryable_id: id })
+          .distinct.each(&:recompute_aggregates!)
+  end
+
+  # Recompute the community difficulty average and vote count, then resolve the
+  # effective difficulty: the community average once there are enough votes,
+  # otherwise the author's chosen value (nil until one of those exists).
+  def recompute_difficulty!
+    votes = ratings.where.not(difficulty_vote: nil)
+    count = votes.count
+    community = votes.average(:difficulty_vote)&.round(2)
+    effective = count >= DIFFICULTY_VOTE_CUTOFF ? community : author_difficulty
+    update_columns(avg_difficulty: community, difficulty_vote_count: count, effective_difficulty: effective)
   end
 
   private

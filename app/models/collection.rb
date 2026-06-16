@@ -1,5 +1,6 @@
 class Collection < ApplicationRecord
   belongs_to :author, class_name: "User"
+  belongs_to :folder, optional: true
 
   has_many :collection_puzzles, dependent: :destroy
   has_many :puzzles, through: :collection_puzzles
@@ -22,6 +23,27 @@ class Collection < ApplicationRecord
   validates :title, presence: true, length: { maximum: 100 }
 
   scope :publicly_visible, -> { visible_public }
+  scope :by_rating, -> { order(avg_rating: :desc) }
+  scope :by_popularity, -> { order(solve_count: :desc) }
+
+  # Refresh the denormalized rating/solve aggregates from member puzzles:
+  # average of members' star ratings and the sum of their solve counts. Also
+  # cascades to any series this collection belongs to, since their aggregates
+  # roll up these same puzzles.
+  def recompute_aggregates!
+    update_columns(
+      avg_rating: puzzles.where.not(avg_rating: nil).average(:avg_rating)&.round(2),
+      solve_count: puzzles.sum(:solve_count)
+    )
+    containing_series.each(&:recompute_aggregates!)
+  end
+
+  # Series that include this collection as an entry.
+  def containing_series
+    Series.joins(:series_entries)
+          .where(series_entries: { entryable_type: "Collection", entryable_id: id })
+          .distinct
+  end
 
   # Can this viewer open the collection? Author/admin always; otherwise by
   # visibility. Private is author-only (no per-user grants for collections yet);

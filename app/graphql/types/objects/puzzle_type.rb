@@ -4,10 +4,13 @@ module Types
       description "A variant sudoku puzzle"
 
       field :author, UserType, null: false, description: "Puzzle creator (the owning account)"
+      field :author_difficulty, Integer, null: true,
+        description: "Difficulty the setter chose, 1 (gentlest) to 5 (hardest); null if unset"
       field :author_name, String, null: true,
         description: "Free-form author credit from the published puzzle's metadata; null when left blank, " \
           "in which case attribution falls back to the author's display name"
-      field :avg_difficulty, Float, null: true, description: "Average difficulty rating from players (1–4 scale)"
+      field :avg_difficulty, Float, null: true,
+        description: "Community difficulty average from solver votes (1–5 scale)"
       field :avg_rating, Float, null: true, description: "Average star rating from players (1–5 scale)"
       field :box_layout, GraphQL::Types::JSON, null: true,
         description: "Custom box region definitions; null means standard 3×3 boxes"
@@ -19,6 +22,9 @@ module Types
       field :constraints, [ ConstraintType ], null: false, description: "Logical constraints attached to this puzzle"
       field :cosmetics, [ CosmeticType ], null: false, description: "Visual decorations attached to this puzzle"
       field :description, String, null: true, description: "Optional description or story text"
+      field :effective_difficulty, Float, null: true,
+        description: "Difficulty shown in the archive: the community average once there are enough votes, " \
+          "otherwise the setter's value; null until either exists"
       field :favorite_count, Integer, null: false, description: "Number of times this puzzle has been favorited"
       field :featured, Boolean, null: false, description: "Whether an admin has featured this puzzle"
       field :folder, FolderType, null: true,

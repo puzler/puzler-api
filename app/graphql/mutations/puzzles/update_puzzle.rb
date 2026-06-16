@@ -24,6 +24,9 @@ module Mutations
         end
 
         if puzzle.update(update_attrs)
+          # Author difficulty feeds the effective difficulty until community votes
+          # take over, so re-resolve it whenever it might have changed.
+          puzzle.recompute_difficulty! if update_attrs.key?(:author_difficulty)
           { puzzle:, errors: [] }
         else
           { puzzle: nil, errors: puzzle.errors.full_messages }

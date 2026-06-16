@@ -19,6 +19,7 @@ module Mutations
         unless collection.collection_puzzles.exists?(puzzle_id: puzzle.id)
           next_position = (collection.collection_puzzles.maximum(:position) || -1) + 1
           collection.collection_puzzles.create!(puzzle:, position: next_position)
+          collection.recompute_aggregates!
         end
 
         { collection: collection.reload, errors: [] }

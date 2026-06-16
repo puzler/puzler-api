@@ -21,6 +21,30 @@ class Series < ApplicationRecord
   validates :title, presence: true, length: { maximum: 100 }
 
   scope :publicly_visible, -> { visible_public }
+  scope :by_rating, -> { order(avg_rating: :desc) }
+  scope :by_popularity, -> { order(solve_count: :desc) }
+
+  # Refresh the denormalized rating/solve aggregates from member puzzles. A
+  # series entry is either a puzzle (counts directly) or a collection (counts
+  # via its member puzzles), so both paths are flattened before aggregating.
+  def recompute_aggregates!
+    puzzles = member_puzzles
+    rated = puzzles.filter_map(&:avg_rating)
+    update_columns(
+      avg_rating: rated.any? ? (rated.sum / rated.size).round(2) : nil,
+      solve_count: puzzles.sum(&:solve_count)
+    )
+  end
+
+  # Distinct puzzles reachable from this series: those entered directly plus
+  # those inside entered collections.
+  def member_puzzles
+    entries = series_entries.includes(:entryable)
+    direct = entries.select { |e| e.entryable_type == "Puzzle" }.map(&:entryable)
+    via_collections = entries.select { |e| e.entryable_type == "Collection" }
+                             .flat_map { |e| e.entryable&.puzzles&.to_a || [] }
+    (direct + via_collections).compact.uniq
+  end
 
   # Can this viewer open the series? Author/admin always; otherwise by
   # visibility. Private is author-only; the patron/subscriber tiers are stubbed.

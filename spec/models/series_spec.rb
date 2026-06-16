@@ -78,4 +78,40 @@ RSpec.describe Series, type: :model do
       expect(dup).not_to be_valid
     end
   end
+
+  describe "#recompute_aggregates!" do
+    let(:series) { create(:series) }
+
+    it "rolls up direct puzzle entries", :aggregate_failures do
+      create(:series_entry, series:, entryable: create(:puzzle, avg_rating: 4.0, solve_count: 10))
+      create(:series_entry, series:, entryable: create(:puzzle, avg_rating: 2.0, solve_count: 5))
+      series.recompute_aggregates!
+      expect(series.avg_rating).to eq(3.0)
+      expect(series.solve_count).to eq(15)
+    end
+
+    it "rolls up puzzles nested inside entered collections" do
+      collection = create(:collection)
+      create(:collection_puzzle, collection:, puzzle: create(:puzzle, solve_count: 8))
+      create(:series_entry, series:, entryable: collection)
+      series.recompute_aggregates!
+      expect(series.solve_count).to eq(8)
+    end
+
+    context "when a puzzle is reachable directly and via a collection" do
+      let(:puzzle) { create(:puzzle, avg_rating: 5.0, solve_count: 3) }
+      let(:collection) { create(:collection) }
+
+      before do
+        create(:collection_puzzle, collection:, puzzle:)
+        create(:series_entry, series:, entryable: collection)
+        create(:series_entry, series:, entryable: puzzle)
+      end
+
+      it "counts that puzzle only once" do
+        series.recompute_aggregates!
+        expect([ series.solve_count, series.avg_rating ]).to eq([ 3, 5.0 ])
+      end
+    end
+  end
 end

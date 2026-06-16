@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe "Mutation: ratePuzzle", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($puzzleId: ID!, $stars: Int, $difficultyVote: RatingDifficultyEnum) {
+      mutation($puzzleId: ID!, $stars: Int, $difficultyVote: Int) {
         ratePuzzle(input: { puzzleId: $puzzleId, stars: $stars, difficultyVote: $difficultyVote }) {
           rating { stars difficultyVote }
           errors
@@ -18,16 +18,27 @@ RSpec.describe "Mutation: ratePuzzle", type: :graphql do
   context "when authenticated" do
     it "creates a rating", :aggregate_failures do
       result = execute_query(mutation,
-        variables: { puzzleId: puzzle.id, stars: 5, difficultyVote: "HARD" },
+        variables: { puzzleId: puzzle.id, stars: 5, difficultyVote: 4 },
         context: auth_context(user))
       expect(gql_data(result, "ratePuzzle", "rating", "stars")).to eq(5)
-      expect(gql_data(result, "ratePuzzle", "rating", "difficultyVote")).to eq("HARD")
+      expect(gql_data(result, "ratePuzzle", "rating", "difficultyVote")).to eq(4)
     end
 
     it "updates an existing rating" do
       create(:rating, puzzle: puzzle, user: user, stars: 3)
       execute_query(mutation, variables: { puzzleId: puzzle.id, stars: 5 }, context: auth_context(user))
       expect(puzzle.ratings.find_by(user: user).stars).to eq(5)
+    end
+
+    it "rejects a difficulty vote outside 1-5" do
+      result = execute_query(mutation, variables: { puzzleId: puzzle.id, difficultyVote: 7 }, context: auth_context(user))
+      expect(gql_data(result, "ratePuzzle", "errors")).to be_present
+    end
+
+    it "recomputes the puzzle's community difficulty", :aggregate_failures do
+      execute_query(mutation, variables: { puzzleId: puzzle.id, difficultyVote: 4 }, context: auth_context(user))
+      expect(puzzle.reload.avg_difficulty).to eq(4.0)
+      expect(puzzle.difficulty_vote_count).to eq(1)
     end
   end
 

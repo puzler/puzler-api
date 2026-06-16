@@ -4,6 +4,7 @@ module Types
       description "A subscribable, ordered container of puzzles and collections"
 
       field :author, UserType, null: false, description: "The setter who owns the series"
+      field :avg_rating, Float, null: true, description: "Average star rating across member puzzles (1-5 scale)"
       field :description, String, null: true, description: "Optional description"
       field :entries, [ SeriesEntryType ], null: false,
         description: "Entries in order; non-authors see only the publicly-visible ones"
@@ -11,6 +12,7 @@ module Types
       field :id, ID, null: false, description: "Unique series ID"
       field :share_token, String, null: true,
         description: "Unguessable share key for unlisted access; only visible to the author"
+      field :solve_count, Integer, null: false, description: "Total solves across member puzzles"
       field :subscribed, Boolean, null: false,
         description: "Whether the current user is subscribed to this series"
       field :subscriber_count, Integer, null: false, description: "Number of subscribers"

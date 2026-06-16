@@ -70,4 +70,30 @@ RSpec.describe User, type: :model do
       expect(user.resolved_avatar_url).to include("/rails/active_storage/representations/")
     end
   end
+
+  describe "#recompute_setter_stats!" do
+    let(:setter) { create(:user) }
+
+    # Build a setter whose published puzzles carry the given ratings, newest
+    # first (index 0 = most recent), then recompute and return them.
+    def setter_with(ratings)
+      user = create(:user)
+      ratings.each_with_index { |r, i| create(:puzzle, :published, author: user, avg_rating: r, published_at: i.days.ago) }
+      user.tap(&:recompute_setter_stats!)
+    end
+
+    it "stays new with no published puzzles", :aggregate_failures do
+      setter.recompute_setter_stats!
+      expect(setter.setter_score).to eq(0.0)
+      expect(setter).to be_setter_new
+    end
+
+    it "reaches experienced with enough well-rated puzzles" do
+      expect(setter_with([ 4.5, 4.5, 4.5, 4.5, 4.5 ])).to be_setter_experienced
+    end
+
+    it "weights recent ratings more than old ones (same ratings, opposite recency)" do
+      expect(setter_with([ 5, 5, 5, 2 ]).setter_score).to be > setter_with([ 2, 5, 5, 5 ]).setter_score
+    end
+  end
 end

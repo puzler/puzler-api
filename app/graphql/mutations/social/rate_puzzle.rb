@@ -3,8 +3,8 @@ module Mutations
     class RatePuzzle < Mutations::BaseMutation
       description "Rate a published puzzle or cast a difficulty vote"
 
-      argument :difficulty_vote, Types::Enums::RatingDifficultyEnum, required: false,
-        description: "Difficulty assessment (easy, medium, hard, or expert)"
+      argument :difficulty_vote, Integer, required: false,
+        description: "Community difficulty assessment from 1 (gentlest) to 5 (hardest)"
       argument :puzzle_id, ID, required: true,
         description: "ID of the puzzle to rate"
       argument :stars, Integer, required: false,
@@ -35,11 +35,14 @@ module Mutations
       private
 
       def update_puzzle_averages(puzzle)
-        ratings = puzzle.ratings
         puzzle.update_columns(
-          avg_rating: ratings.where.not(stars: nil).average(:stars)&.round(2),
-          avg_difficulty: ratings.where.not(difficulty_vote: nil).average(:difficulty_vote)&.round(2)
+          avg_rating: puzzle.ratings.where.not(stars: nil).average(:stars)&.round(2)
         )
+        # Community difficulty average + effective-difficulty switchover.
+        puzzle.recompute_difficulty!
+        # Star rating feeds the author's setter score; containers roll up too.
+        puzzle.refresh_container_aggregates!
+        puzzle.author.recompute_setter_stats!
       end
     end
   end

@@ -5,8 +5,10 @@ module Schemas
       description "Puzzle archive queries"
       graphql_name "PuzzleQueries"
 
-      field :my_puzzles, [ Types::Objects::PuzzleType ], null: false,
-        description: "All puzzles belonging to the current user" do
+      field :my_puzzles, Types::Objects::PuzzleConnectionType, null: false, connection: false,
+        description: "A page of puzzles belonging to the current user, with search/filter/sort" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
         argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by status (draft or published)"
       end
 
@@ -25,20 +27,14 @@ module Schemas
         argument :id, ID, required: true, description: "Version ID to look up"
       end
 
-      field :puzzles, [ Types::Objects::PuzzleType ], null: false,
-        description: "Browse the published puzzle archive with optional filters" do
-        argument :author_username, String, required: false, description: "Filter by setter username"
-        argument :constraint_types, [ String ], required: false,
-          description: "Filter to puzzles using any of these constraint types"
-        argument :difficulty, String, required: false,
-          description: "Filter by difficulty band: easy, medium, hard, or expert"
-        argument :page, Integer, required: false, default_value: 1, description: "Page number (1-based)"
-        argument :per_page, Integer, required: false, default_value: 20, description: "Results per page"
-        argument :sort, String, required: false, default_value: "newest",
-          description: "Sort order: newest, rating, or popular"
-        argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by status"
-        argument :tags, [ String ], required: false, description: "Filter by tag slugs (any match)"
+      field :puzzles, Types::Objects::PuzzleConnectionType, null: false, connection: false,
+        description: "Browse the published puzzle archive with search/filter/sort/pagination" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
       end
+
+      field :puzzle_grid_sizes, [ Types::Objects::GridSizeType ], null: false,
+        description: "Distinct grid sizes present in the published archive, with counts, for the size facet"
 
       def puzzle(id:)
         record = Puzzle.find_by(id:)
@@ -54,31 +50,28 @@ module Schemas
         record
       end
 
-      def puzzles(page:, per_page:, tags: nil, difficulty: nil, author_username: nil,
-                  constraint_types: nil, status: nil, sort: "newest")
+      def puzzles(filter: nil)
         scope = Puzzle.publicly_visible.includes(:author, :tags, :constraints)
-
-        scope = scope.joins(:tags).where(tags: { slug: tags }) if tags.present?
-        scope = scope.where("avg_difficulty BETWEEN ? AND ?", difficulty_range(difficulty)) if difficulty.present?
-        scope = scope.joins(:author).where(users: { username: author_username }) if author_username.present?
-        if constraint_types.present?
-          scope = scope.where("puzzles.constraint_types && ARRAY[?]::varchar[]", constraint_types)
-        end
-
-        scope = case sort
-        when "rating" then scope.by_rating
-        when "popular" then scope.by_popularity
-        else scope.by_newest
-        end
-
-        scope.offset((page - 1) * per_page).limit(per_page)
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(
+          scope, **args,
+          constraints: true, recent_by: :published_at, viewer: context[:current_user]
+        )
       end
 
-      def my_puzzles(status: nil)
+      def puzzle_grid_sizes
+        Puzzle.publicly_visible
+              .group(:grid_rows, :grid_cols).order("count_all DESC").count
+              .map { |(rows, cols), count| { rows:, cols:, count: } }
+      end
+
+      def my_puzzles(filter: nil, status: nil)
         raise GraphQL::ExecutionError, "Authentication required" unless context[:current_user]
 
-        scope = context[:current_user].puzzles
-        status ? scope.where(status:) : scope
+        scope = context[:current_user].puzzles.includes(:author, :folder)
+        scope = scope.where(status:) if status
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(scope, **args, constraints: true, folders: true, draft_bucket: true)
       end
 
       def puzzle_version(id:)
@@ -86,18 +79,6 @@ module Schemas
         return nil unless user
 
         PuzzleVersion.joins(:puzzle).find_by(id:, puzzles: { author_id: user.id })
-      end
-
-      private
-
-      def difficulty_range(difficulty)
-        case difficulty
-        when "easy" then [ 0, 1.5 ]
-        when "medium" then [ 1.5, 2.5 ]
-        when "hard" then [ 2.5, 3.5 ]
-        when "expert" then [ 3.5, 4.0 ]
-        else [ 0, 4.0 ]
-        end
       end
     end
 

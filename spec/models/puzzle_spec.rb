@@ -92,4 +92,32 @@ RSpec.describe Puzzle, type: :model do
       end
     end
   end
+
+  describe "#recompute_difficulty!" do
+    let(:puzzle) { create(:puzzle, :published, author_difficulty: 2) }
+
+    def add_votes(*values)
+      values.each { |v| create(:rating, puzzle:, user: create(:user), difficulty_vote: v) }
+    end
+
+    it "uses the author's value below the community-vote cutoff", :aggregate_failures do
+      add_votes(5, 5, 5) # only 3 votes (< 4)
+      puzzle.recompute_difficulty!
+      expect(puzzle.difficulty_vote_count).to eq(3)
+      expect(puzzle.effective_difficulty).to eq(2) # still the author's value
+    end
+
+    it "switches to the community average once the cutoff is reached", :aggregate_failures do
+      add_votes(4, 4, 5, 5) # 4 votes, avg 4.5
+      puzzle.recompute_difficulty!
+      expect(puzzle.avg_difficulty).to eq(4.5)
+      expect(puzzle.effective_difficulty).to eq(4.5)
+    end
+
+    it "is null when neither the author nor enough votes set it" do
+      bare = create(:puzzle, :published)
+      bare.recompute_difficulty!
+      expect(bare.effective_difficulty).to be_nil
+    end
+  end
 end

@@ -84,7 +84,9 @@ RSpec.describe "Series queries", type: :graphql do
     end
 
     it "returns the author's own series" do
-      expect(ids("mySeries")).to contain_exactly(mine.id)
+      # mySeries is a paginated connection; nodes holds the records.
+      result = execute_query("{ mySeries { nodes { id } } }", context: auth_context(author))
+      expect(gql_data(result, "mySeries", "nodes").map { |s| s["id"].to_i }).to contain_exactly(mine.id)
     end
 
     it "returns the viewer's subscriptions" do

@@ -8,6 +8,9 @@ class User < ApplicationRecord
          jwt_revocation_strategy: self
 
   enum :role, { user: 0, admin: 1 }
+  # Setter experience tier, derived from setter_score by recompute_setter_stats!.
+  # Prefixed because `new` collides with the class method.
+  enum :setter_tier, { new: 0, rising: 1, experienced: 2 }, prefix: :setter
 
   # Standardized 256x256 avatar: square-cropped, EXIF stripped (libvips drops
   # metadata when transforming), served via the named variant below.
@@ -51,6 +54,32 @@ class User < ApplicationRecord
     Warden::JWTAuth::UserEncoder.new.call(self, :user, nil).first
   end
 
+  # Recency decay applied per puzzle (newest weighted 1, each older × this) when
+  # blending an author's ratings into their setter score.
+  SETTER_RECENCY_DECAY = 0.85
+
+  # Recompute the denormalized setter score + tier from the author's published
+  # public puzzles: blend volume (saturating, log scale) with a recency-weighted
+  # average star rating (newest puzzles count most). The tier gates on BOTH
+  # enough puzzles AND a high enough recency-weighted rating. Stored so the
+  # archive can filter/sort by setter experience cheaply.
+  def recompute_setter_stats!
+    ratings = puzzles.publicly_visible.order(published_at: :desc).pluck(:avg_rating)
+    count = ratings.size
+
+    weighted_rating = recency_weighted_average(ratings)
+    volume = Math.log10(count + 1)
+    score = (volume * (weighted_rating / 5.0) * 5).round(3)
+
+    tier =
+      if count >= 5 && weighted_rating >= 4.0 then :experienced
+      elsif count >= 2 && weighted_rating >= 3.0 then :rising
+      else :new
+      end
+
+    update_columns(setter_score: score, setter_tier: User.setter_tiers[tier])
+  end
+
   # Uploaded avatar wins (served as the normalized :display variant); the
   # avatar_url column holds an OAuth profile image captured at first sign-in
   # and acts as the fallback.
@@ -65,6 +94,22 @@ class User < ApplicationRecord
   end
 
   private
+
+  # Geometric recency-weighted mean of the present ratings (input is newest-first;
+  # nil ratings are skipped but still consume a recency slot so an unrated recent
+  # puzzle doesn't inflate older ones). Returns 0.0 when nothing is rated.
+  def recency_weighted_average(ratings)
+    num = 0.0
+    den = 0.0
+    ratings.each_with_index do |rating, index|
+      next if rating.nil?
+
+      weight = SETTER_RECENCY_DECAY**index
+      num += rating * weight
+      den += weight
+    end
+    den.zero? ? 0.0 : num / den
+  end
 
   def default_display_name
     self.display_name = username if display_name.blank?

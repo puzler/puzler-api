@@ -3,6 +3,6 @@ FactoryBot.define do
     association :puzzle, :published
     association :user
     stars { 4 }
-    difficulty_vote { "medium" }
+    difficulty_vote { 3 }
   end
 end

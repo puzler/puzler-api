@@ -17,6 +17,7 @@ module Mutations
         raise GraphQL::ExecutionError, "Entry not found" unless series
 
         entry.destroy
+        series.recompute_aggregates!
         { series: series.reload, errors: [] }
       end
     end

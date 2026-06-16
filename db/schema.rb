@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_15_010003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,15 +76,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
 
   create_table "collections", force: :cascade do |t|
     t.bigint "author_id", null: false
+    t.float "avg_rating"
     t.datetime "created_at", null: false
     t.text "description"
+    t.bigint "folder_id"
     t.integer "mode", default: 0, null: false
     t.string "share_token"
+    t.integer "solve_count", default: 0, null: false
     t.boolean "timed", default: false, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "visibility", default: 0, null: false
     t.index ["author_id"], name: "index_collections_on_author_id"
+    t.index ["folder_id"], name: "index_collections_on_folder_id"
     t.index ["mode"], name: "index_collections_on_mode"
     t.index ["share_token"], name: "index_collections_on_share_token", unique: true
     t.index ["visibility"], name: "index_collections_on_visibility"
@@ -200,6 +204,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
   end
 
   create_table "puzzles", force: :cascade do |t|
+    t.integer "author_difficulty"
     t.bigint "author_id", null: false
     t.float "avg_difficulty"
     t.float "avg_rating"
@@ -207,6 +212,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
     t.string "constraint_types", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.text "description"
+    t.integer "difficulty_vote_count", default: 0, null: false
+    t.float "effective_difficulty"
     t.integer "favorite_count", default: 0, null: false
     t.boolean "featured", default: false, null: false
     t.bigint "folder_id"
@@ -228,6 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
     t.integer "visibility", default: 0, null: false
     t.index ["author_id"], name: "index_puzzles_on_author_id"
     t.index ["constraint_types"], name: "index_puzzles_on_constraint_types", using: :gin
+    t.index ["effective_difficulty"], name: "index_puzzles_on_effective_difficulty"
     t.index ["folder_id"], name: "index_puzzles_on_folder_id"
     t.index ["published_at"], name: "index_puzzles_on_published_at"
     t.index ["published_version_id"], name: "index_puzzles_on_published_version_id"
@@ -251,9 +259,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
 
   create_table "series", force: :cascade do |t|
     t.bigint "author_id", null: false
+    t.float "avg_rating"
     t.datetime "created_at", null: false
     t.text "description"
     t.string "share_token", null: false
+    t.integer "solve_count", default: 0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "visibility", default: 0, null: false
@@ -323,11 +333,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
     t.datetime "reset_password_sent_at"
     t.string "reset_password_token"
     t.integer "role", default: 0, null: false
+    t.float "setter_score", default: 0.0, null: false
+    t.integer "setter_tier", default: 0, null: false
     t.datetime "updated_at", null: false
     t.string "username", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["setter_tier"], name: "index_users_on_setter_tier"
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
@@ -338,6 +351,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_14_120001) do
   add_foreign_key "collection_solve_times", "collections"
   add_foreign_key "collection_solve_times", "puzzles"
   add_foreign_key "collection_solve_times", "users"
+  add_foreign_key "collections", "folders"
   add_foreign_key "collections", "users", column: "author_id"
   add_foreign_key "comments", "comments", column: "parent_id"
   add_foreign_key "comments", "puzzles"

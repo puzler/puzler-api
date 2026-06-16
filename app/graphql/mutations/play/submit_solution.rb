@@ -34,6 +34,7 @@ module Mutations
             cell_state:
           )
           play.puzzle.increment!(:solve_count)
+          play.puzzle.refresh_container_aggregates!
         end
 
         { solved:, errors: [] }

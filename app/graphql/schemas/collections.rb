@@ -20,11 +20,17 @@ module Schemas
         argument :collection_id, ID, required: true, description: "The collection"
       end
 
-      field :my_collections, [ Types::Objects::CollectionType ], null: false,
-        description: "The current user's collections, newest first"
+      field :my_collections, Types::Objects::CollectionConnectionType, null: false, connection: false,
+        description: "A page of the current user's collections, with search/filter/sort" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
+      end
 
       field :my_folders, [ Types::Objects::FolderType ], null: false,
-        description: "The current user's folders, in sort order"
+        description: "The current user's folders, flat, in sort order (for move-target lists)"
+
+      field :my_folder_tree, [ Types::Objects::FolderType ], null: false,
+        description: "The current user's top-level folders; nest via each folder's children"
 
       def collection(id:)
         record = Collection.find_by(id:)
@@ -57,14 +63,21 @@ module Schemas
         end
       end
 
-      def my_collections
+      def my_collections(filter: nil)
         require_current_user!
-        context[:current_user].collections.order(created_at: :desc)
+        scope = context[:current_user].collections.includes(:author, :folder)
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(scope, **args, folders: true)
       end
 
       def my_folders
         require_current_user!
         context[:current_user].folders.order(:position)
+      end
+
+      def my_folder_tree
+        require_current_user!
+        context[:current_user].folders.where(parent_id: nil).order(:position)
       end
 
       private
@@ -89,6 +102,10 @@ module Schemas
         description: "Delete a collection"
       field :delete_folder, mutation: ::Mutations::Folders::DeleteFolder,
         description: "Delete a folder"
+      field :move_collection_to_folder, mutation: ::Mutations::Folders::MoveCollectionToFolder,
+        description: "File or unfile a collection"
+      field :move_folder, mutation: ::Mutations::Folders::MoveFolder,
+        description: "Reparent a folder"
       field :move_puzzle_to_folder, mutation: ::Mutations::Folders::MovePuzzleToFolder,
         description: "File or unfile a puzzle"
       field :record_collection_solve_time, mutation: ::Mutations::Collections::RecordCollectionSolveTime,

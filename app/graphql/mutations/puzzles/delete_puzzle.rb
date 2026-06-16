@@ -16,7 +16,10 @@ module Mutations
         puzzle = current_user.puzzles.find_by(id:)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
+        was_published = puzzle.published?
         puzzle.destroy
+        # A removed published puzzle changes the author's setter score.
+        current_user.recompute_setter_stats! if was_published
         { success: true, errors: [] }
       end
     end

@@ -4,7 +4,10 @@ module Types
       description "An ordered, shareable grouping of puzzles (a series)"
 
       field :author, UserType, null: false, description: "The setter who owns the collection"
+      field :avg_rating, Float, null: true, description: "Average star rating across member puzzles (1-5 scale)"
       field :description, String, null: true, description: "Optional description"
+      field :folder, FolderType, null: true,
+        description: "Folder this collection is filed in; only visible to the author"
       field :id, ID, null: false, description: "Unique collection ID"
       field :mode, Types::Enums::CollectionModeEnum, null: false, description: "Ordering mode: unordered or sequence"
       field :puzzle_count, Integer, null: false, description: "Number of puzzles the viewer can see in this collection"
@@ -12,6 +15,7 @@ module Types
         description: "Puzzles in order; non-authors see only the publicly-visible ones"
       field :share_token, String, null: true,
         description: "Unguessable share key for unlisted access; only visible to the author"
+      field :solve_count, Integer, null: false, description: "Total solves across member puzzles"
       field :timed, Boolean, null: false, description: "Whether solves are timed (competition mode)"
       field :title, String, null: false, description: "Collection title"
       field :visibility, Types::Enums::CollectionVisibilityEnum, null: false,
@@ -30,6 +34,10 @@ module Types
       # link. (Plain unlisted collections keep the token author-only.)
       def share_token
         object.share_token if author_or_admin? || object.visible_containers_only?
+      end
+
+      def folder
+        object.folder if author_or_admin?
       end
 
       private

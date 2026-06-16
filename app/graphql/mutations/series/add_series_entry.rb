@@ -27,6 +27,7 @@ module Mutations
         unless series.series_entries.exists?(entryable_type:, entryable_id: entryable.id)
           next_position = (series.series_entries.maximum(:position) || -1) + 1
           series.series_entries.create!(entryable:, position: next_position)
+          series.recompute_aggregates!
         end
 
         { series: series.reload, errors: [] }

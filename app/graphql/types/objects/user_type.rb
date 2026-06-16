@@ -24,6 +24,10 @@ module Types
         argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by puzzle status"
       end
       field :role, Types::Enums::UserRoleEnum, null: false, description: "Account role: user or admin"
+      field :setter_score, Float, null: false,
+        description: "Raw setter score behind the tier (volume blended with recency-weighted rating)"
+      field :setter_tier, Types::Enums::SetterTierEnum, null: false,
+        description: "Setter experience tier: new, rising, or experienced"
       field :solve_count, Integer, null: false, description: "Number of puzzles this user has completed"
       field :username, String, null: false, description: "Unique handle used in profile URLs and lookups"
 

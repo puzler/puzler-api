@@ -14,7 +14,8 @@ module Mutations
         collection = current_user.collections.find_by(id: collection_id)
         raise GraphQL::ExecutionError, "Collection not found" unless collection
 
-        collection.collection_puzzles.where(puzzle_id:).destroy_all
+        removed = collection.collection_puzzles.where(puzzle_id:).destroy_all
+        collection.recompute_aggregates! if removed.any?
         { collection: collection.reload, errors: [] }
       end
     end

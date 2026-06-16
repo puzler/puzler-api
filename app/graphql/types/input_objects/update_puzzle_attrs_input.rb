@@ -3,6 +3,8 @@ module Types
     class UpdatePuzzleAttrsInput < BaseInputObject
       description "Fields that can be updated on a puzzle"
 
+      argument :author_difficulty, Integer, required: false,
+        description: "Setter's chosen difficulty from 1 (gentlest) to 5 (hardest)"
       argument :box_layout, GraphQL::Types::JSON, required: false,
         description: "Custom box region definitions; null means standard 3×3 boxes"
       argument :description, String, required: false,

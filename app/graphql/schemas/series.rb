@@ -15,8 +15,11 @@ module Schemas
         argument :token, String, required: true, description: "The series' share token"
       end
 
-      field :my_series, [ Types::Objects::SeriesType ], null: false,
-        description: "The current user's series, newest first"
+      field :my_series, Types::Objects::SeriesConnectionType, null: false, connection: false,
+        description: "A page of the current user's series, with search/filter/sort" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
+      end
 
       field :my_subscriptions, [ Types::Objects::SeriesType ], null: false,
         description: "Series the current user is subscribed to, newest subscription first"
@@ -38,9 +41,11 @@ module Schemas
         record
       end
 
-      def my_series
+      def my_series(filter: nil)
         require_current_user!
-        context[:current_user].series.order(created_at: :desc)
+        scope = context[:current_user].series.includes(:author)
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(scope, **args)
       end
 
       def my_subscriptions
