@@ -36,3 +36,6 @@
 /coverage/
 
 /config/credentials/production.key
+
+# Ignore macOS Finder metadata.
+.DS_Store
