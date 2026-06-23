@@ -21,6 +21,12 @@ module Schemas
           description: "Search, filter, sort, and pagination options"
       end
 
+      field :public_series, Types::Objects::SeriesConnectionType, null: false, connection: false,
+        description: "Browse the public series archive with search/filter/sort/pagination" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
+      end
+
       field :my_subscriptions, [ Types::Objects::SeriesType ], null: false,
         description: "Series the current user is subscribed to, newest subscription first"
 
@@ -44,6 +50,12 @@ module Schemas
       def my_series(filter: nil)
         require_current_user!
         scope = context[:current_user].series.includes(:author)
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(scope, **args)
+      end
+
+      def public_series(filter: nil)
+        scope = ::Series.publicly_visible.includes(:author)
         args = filter ? filter.to_listing_args : {}
         OwnedListing.apply(scope, **args)
       end

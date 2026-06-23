@@ -33,6 +33,54 @@ RSpec.describe "Collection queries", type: :graphql do
     end
   end
 
+  describe "collections (archive connection)" do
+    let(:query) do
+      "query($f: ListingFilterInput) { collections(filter: $f) { nodes { id } pageInfo { totalCount } } }"
+    end
+
+    def archive_ids(**filter)
+      result = execute_query(query, variables: { f: filter })
+      gql_data(result, "collections", "nodes").map { |c| c["id"] }
+    end
+
+    it "returns only public collections, hiding private/unlisted/container-only ones" do
+      public_collection = create(:collection, visibility: :public)
+      create(:collection, visibility: :private)
+      create(:collection, visibility: :unlisted)
+      create(:collection, visibility: :containers_only)
+      expect(archive_ids).to eq([ public_collection.id.to_s ])
+    end
+
+    it "searches by title and author", :aggregate_failures do
+      setter = create(:user, username: "zelda_sets", display_name: "Zelda")
+      mine = create(:collection, visibility: :public, author: setter, title: "Killer Weekly")
+      create(:collection, visibility: :public, title: "Thermo Monthly")
+      expect(archive_ids(search: "killer")).to eq([ mine.id.to_s ])
+      expect(archive_ids(search: "zelda_sets")).to eq([ mine.id.to_s ])
+    end
+
+    it "filters by setter tier and minimum rating", :aggregate_failures do
+      pro = create(:user, setter_tier: :experienced)
+      pro_collection = create(:collection, visibility: :public, author: pro, avg_rating: 4.6)
+      create(:collection, visibility: :public, avg_rating: 2.0)
+      expect(archive_ids(setterTier: "EXPERIENCED")).to eq([ pro_collection.id.to_s ])
+      expect(archive_ids(minRating: 4.0)).to eq([ pro_collection.id.to_s ])
+    end
+
+    it "sorts by rating", :aggregate_failures do
+      high = create(:collection, visibility: :public, avg_rating: 4.8)
+      low = create(:collection, visibility: :public, avg_rating: 1.2)
+      expect(archive_ids(sort: "RATING")).to eq([ high.id.to_s, low.id.to_s ])
+    end
+
+    it "paginates with totalCount", :aggregate_failures do
+      create_list(:collection, 3, visibility: :public)
+      result = execute_query(query, variables: { f: { perPage: 2 } })
+      expect(gql_data(result, "collections", "nodes").size).to eq(2)
+      expect(gql_data(result, "collections", "pageInfo", "totalCount")).to eq(3)
+    end
+  end
+
   describe "collection(id)" do
     let(:query) { "query($id: ID!) { collection(id: $id) { id } }" }
 

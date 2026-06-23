@@ -15,6 +15,12 @@ module Schemas
         argument :token, String, required: true, description: "The collection's share token"
       end
 
+      field :collections, Types::Objects::CollectionConnectionType, null: false, connection: false,
+        description: "Browse the public collection archive with search/filter/sort/pagination" do
+        argument :filter, Types::InputObjects::ListingFilterInput, required: false,
+          description: "Search, filter, sort, and pagination options"
+      end
+
       field :collection_leaderboard, [ Types::Objects::CollectionLeaderboardEntryType ], null: false,
         description: "Ranked solver times for a timed collection (solvers who completed every puzzle)" do
         argument :collection_id, ID, required: true, description: "The collection"
@@ -61,6 +67,12 @@ module Schemas
           user = users[user_id]
           { rank: index + 1, total_seconds: secs, username: user.username, display_name: user.display_name }
         end
+      end
+
+      def collections(filter: nil)
+        scope = Collection.publicly_visible.includes(:author)
+        args = filter ? filter.to_listing_args : {}
+        OwnedListing.apply(scope, **args)
       end
 
       def my_collections(filter: nil)

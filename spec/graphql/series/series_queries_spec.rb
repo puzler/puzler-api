@@ -70,6 +70,53 @@ RSpec.describe "Series queries", type: :graphql do
     end
   end
 
+  describe "publicSeries (archive connection)" do
+    let(:query) do
+      "query($f: ListingFilterInput) { publicSeries(filter: $f) { nodes { id } pageInfo { totalCount } } }"
+    end
+
+    def archive_ids(**filter)
+      result = execute_query(query, variables: { f: filter })
+      gql_data(result, "publicSeries", "nodes").map { |s| s["id"] }
+    end
+
+    it "returns only public series, hiding private/unlisted ones" do
+      public_series = create(:series, visibility: :public)
+      create(:series, visibility: :private)
+      create(:series, visibility: :unlisted)
+      expect(archive_ids).to eq([ public_series.id.to_s ])
+    end
+
+    it "searches by title and author", :aggregate_failures do
+      setter = create(:user, username: "zelda_sets", display_name: "Zelda")
+      mine = create(:series, visibility: :public, author: setter, title: "Killer Marathon")
+      create(:series, visibility: :public, title: "Thermo Run")
+      expect(archive_ids(search: "killer")).to eq([ mine.id.to_s ])
+      expect(archive_ids(search: "zelda_sets")).to eq([ mine.id.to_s ])
+    end
+
+    it "filters by setter tier and minimum rating", :aggregate_failures do
+      pro = create(:user, setter_tier: :experienced)
+      pro_series = create(:series, visibility: :public, author: pro, avg_rating: 4.6)
+      create(:series, visibility: :public, avg_rating: 2.0)
+      expect(archive_ids(setterTier: "EXPERIENCED")).to eq([ pro_series.id.to_s ])
+      expect(archive_ids(minRating: 4.0)).to eq([ pro_series.id.to_s ])
+    end
+
+    it "sorts by rating", :aggregate_failures do
+      high = create(:series, visibility: :public, avg_rating: 4.8)
+      low = create(:series, visibility: :public, avg_rating: 1.2)
+      expect(archive_ids(sort: "RATING")).to eq([ high.id.to_s, low.id.to_s ])
+    end
+
+    it "paginates with totalCount", :aggregate_failures do
+      create_list(:series, 3, visibility: :public)
+      result = execute_query(query, variables: { f: { perPage: 2 } })
+      expect(gql_data(result, "publicSeries", "nodes").size).to eq(2)
+      expect(gql_data(result, "publicSeries", "pageInfo", "totalCount")).to eq(3)
+    end
+  end
+
   describe "mySeries / mySubscriptions" do
     let(:mine) { create(:series, author:) }
     let(:followed) { create(:series, visibility: :public) }
