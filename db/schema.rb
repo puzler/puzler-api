@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_15_010003) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_23_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -318,13 +318,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_010003) do
     t.index ["user_id"], name: "index_user_oauth_identities_on_user_id"
   end
 
+  create_table "user_themes", force: :cascade do |t|
+    t.jsonb "appearance", default: {}, null: false
+    t.string "base_preset_id", default: "classic", null: false
+    t.jsonb "constraints", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "schema_version", default: 1, null: false
+    t.string "uid", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "position"], name: "index_user_themes_on_user_id_and_position"
+    t.index ["user_id", "uid"], name: "index_user_themes_on_user_id_and_uid", unique: true
+    t.index ["user_id"], name: "index_user_themes_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
+    t.string "active_theme_id", default: "classic", null: false
     t.string "avatar_url"
     t.text "bio"
     t.jsonb "color_palette", default: {}, null: false
     t.datetime "created_at", null: false
     t.string "display_name", null: false
     t.string "email", default: "", null: false
+    t.boolean "enable_custom_styles", default: true, null: false
     t.string "encrypted_password", default: "", null: false
     t.string "jti", null: false
     t.boolean "password_set", default: true, null: false
@@ -380,4 +398,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_010003) do
   add_foreign_key "series_subscriptions", "series"
   add_foreign_key "series_subscriptions", "users"
   add_foreign_key "user_oauth_identities", "users"
+  add_foreign_key "user_themes", "users"
 end

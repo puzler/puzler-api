@@ -3,6 +3,8 @@ module Types
     class UserType < BaseObject
       description "A registered user"
 
+      field :active_theme_id, String, null: true,
+        description: "The user's selected theme: a built-in preset id or a saved theme id (only visible to the user themselves)"
       field :avatar_url, String, null: true, method: :resolved_avatar_url, description: "Profile picture URL"
       field :bio, String, null: true, description: "Short biography shown on the user's profile"
       field :color_palette, GraphQL::Types::JSON, null: true,
@@ -11,6 +13,8 @@ module Types
       field :display_name, String, null: false,
         description: "Free-form name shown to others (not unique)"
       field :email, String, null: true, description: "User's email address (only visible to the user themselves)"
+      field :enable_custom_styles, Boolean, null: true,
+        description: "Whether the user's custom grid/constraint styling is applied (only visible to the user themselves)"
       field :id, ID, null: false, description: "Unique user ID"
       field :oauth_connections, [ OauthIdentityType ], null: true,
         description: "Linked OAuth providers (only visible to the user themselves)"
@@ -29,6 +33,8 @@ module Types
       field :setter_tier, Types::Enums::SetterTierEnum, null: false,
         description: "Setter experience tier: new, rising, or experienced"
       field :solve_count, Integer, null: false, description: "Number of puzzles this user has completed"
+      field :user_themes, [ Types::Objects::UserThemeType ], null: true,
+        description: "The user's saved themes, in sort order (only visible to the user themselves)"
       field :username, String, null: false, description: "Unique handle used in profile URLs and lookups"
 
       def email
@@ -45,6 +51,18 @@ module Types
 
       def color_palette
         object.color_palette if viewer_is_self?
+      end
+
+      def active_theme_id
+        object.active_theme_id if viewer_is_self?
+      end
+
+      def enable_custom_styles
+        object.enable_custom_styles if viewer_is_self?
+      end
+
+      def user_themes
+        object.user_themes.order(:position, :id) if viewer_is_self?
       end
 
       def password_set

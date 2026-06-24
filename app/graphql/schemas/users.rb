@@ -28,8 +28,12 @@ module Schemas
 
       field :change_password, mutation: ::Mutations::Users::ChangePassword,
         description: "Set or change the current user's password"
+      field :create_user_theme, mutation: ::Mutations::Users::CreateUserTheme,
+        description: "Create a saved theme for the current user"
       field :delete_account, mutation: ::Mutations::Users::DeleteAccount,
         description: "Permanently delete the current user's account"
+      field :delete_user_theme, mutation: ::Mutations::Users::DeleteUserTheme,
+        description: "Delete one of the current user's saved themes"
       field :disconnect_oauth_provider, mutation: ::Mutations::Users::DisconnectOauthProvider,
         description: "Remove a linked OAuth provider"
       field :prepare_oauth_connect, mutation: ::Mutations::Users::PrepareOauthConnect,
@@ -40,6 +44,10 @@ module Schemas
         description: "Update the current user's solver-page preferences (settings and/or color palette)"
       field :update_profile, mutation: ::Mutations::Users::UpdateProfile,
         description: "Update the current user's profile information"
+      field :update_theme_preferences, mutation: ::Mutations::Users::UpdateThemePreferences,
+        description: "Update the current user's theme selection and the custom-styles gate"
+      field :update_user_theme, mutation: ::Mutations::Users::UpdateUserTheme,
+        description: "Update one of the current user's saved themes"
       field :upload_avatar, mutation: ::Mutations::Users::UploadAvatar,
         description: "Upload and set the current user's avatar"
     end

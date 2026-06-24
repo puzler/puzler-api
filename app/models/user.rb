@@ -35,6 +35,7 @@ class User < ApplicationRecord
   has_many :favorited_puzzles, through: :favorites, source: :puzzle
   has_many :puzzle_access_grants, dependent: :destroy
   has_many :accessible_puzzles, through: :puzzle_access_grants, source: :puzzle
+  has_many :user_themes, dependent: :destroy
 
   # username is the unique handle used in profile URLs, lookups, and access
   # grants — kept strict (letters/numbers/underscores).
