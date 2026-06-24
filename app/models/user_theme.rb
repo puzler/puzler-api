@@ -3,7 +3,7 @@ class UserTheme < ApplicationRecord
 
   # Mirrors the frontend's BuiltInThemeId (utils/theme.ts). A user theme always records which
   # built-in it derived from, for provenance and "reset to default".
-  BASE_PRESET_IDS = %w[classic light dark].freeze
+  BASE_PRESET_IDS = %w[classic light dark high_contrast].freeze
 
   # `uid` is the client-generated stable identity (see the migration); unique per user so the
   # same uid can exist for different users without collision.
