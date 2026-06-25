@@ -1,18 +1,12 @@
+# frozen_string_literal: true
+
 module Types
   module Objects
     class SubscriptionType < BaseObject
-      description "WebSocket subscriptions — scaffolded for future collaborative and live features"
+      description "Realtime events delivered over ActionCable"
 
-      # WebSocket foundation — no features yet, but the channel is wired up.
-      # Future use: collaborative solving events, live competition stats.
-      field :puzzle_session_event, String, null: true,
-        description: "Real-time events for a puzzle session" do
-        argument :puzzle_id, ID, required: true, description: "ID of the puzzle session to subscribe to"
-      end
-
-      def puzzle_session_event(puzzle_id:)
-        object
-      end
+      field :progress_updated, subscription: ::Subscriptions::ProgressUpdated,
+        description: "A watched play session's progress changed (live sync / collaboration)"
     end
   end
 end

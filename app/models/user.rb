@@ -36,6 +36,9 @@ class User < ApplicationRecord
   has_many :puzzle_access_grants, dependent: :destroy
   has_many :accessible_puzzles, through: :puzzle_access_grants, source: :puzzle
   has_many :user_themes, dependent: :destroy
+  has_many :puzzle_play_participations, class_name: "PuzzlePlayParticipant", dependent: :destroy
+  has_many :consumed_play_share_tokens, class_name: "PuzzlePlayShareToken",
+    foreign_key: :consumed_by_id, dependent: :nullify, inverse_of: :consumed_by
 
   # username is the unique handle used in profile URLs, lookups, and access
   # grants — kept strict (letters/numbers/underscores).

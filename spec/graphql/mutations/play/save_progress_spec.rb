@@ -31,12 +31,16 @@ RSpec.describe "Mutation: saveProgress", type: :graphql do
     end
   end
 
-  context "when saving an anonymous session" do
-    let(:play) { create(:puzzle_play) }
+  context "when a collaborator saves a shared session" do
+    let(:owner) { create(:user) }
+    let(:collaborator) { create(:user) }
+    let(:play) { create(:puzzle_play, user: owner) }
 
-    it "saves progress without authentication" do
+    it "is authorized as a participant" do
+      create(:puzzle_play_participant, puzzle_play: play, user: collaborator)
       result = execute_query(mutation,
-        variables: { puzzlePlayId: play.id, cellState: cell_state, timeElapsedSeconds: 60 })
+        variables: { puzzlePlayId: play.id, cellState: cell_state, timeElapsedSeconds: 60 },
+        context: auth_context(collaborator))
       expect(gql_data(result, "saveProgress", "errors")).to be_empty
     end
   end

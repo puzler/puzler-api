@@ -16,5 +16,11 @@ module Mutations
     def require_auth!
       raise GraphQL::ExecutionError, "Authentication required" unless current_user
     end
+
+    # Broadcast a play session's latest state to everyone watching it (the owner's
+    # other tabs/devices; collaborators in Phase 7).
+    def trigger_progress_updated(play)
+      ApiSchema.subscriptions.trigger(:progress_updated, { puzzle_play_id: play.id }, play)
+    end
   end
 end

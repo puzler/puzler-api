@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -161,6 +161,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000001) do
     t.index ["puzzle_id", "user_id"], name: "index_puzzle_access_grants_on_puzzle_id_and_user_id", unique: true
     t.index ["puzzle_id"], name: "index_puzzle_access_grants_on_puzzle_id"
     t.index ["user_id"], name: "index_puzzle_access_grants_on_user_id"
+  end
+
+  create_table "puzzle_play_participants", force: :cascade do |t|
+    t.bigint "added_via_token_id"
+    t.datetime "created_at", null: false
+    t.bigint "puzzle_play_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["added_via_token_id"], name: "index_puzzle_play_participants_on_added_via_token_id"
+    t.index ["puzzle_play_id", "user_id"], name: "index_puzzle_play_participants_on_puzzle_play_id_and_user_id", unique: true
+    t.index ["puzzle_play_id"], name: "index_puzzle_play_participants_on_puzzle_play_id"
+    t.index ["user_id"], name: "index_puzzle_play_participants_on_user_id"
+  end
+
+  create_table "puzzle_play_share_tokens", force: :cascade do |t|
+    t.datetime "consumed_at"
+    t.bigint "consumed_by_id"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id", null: false
+    t.bigint "puzzle_play_id", null: false
+    t.datetime "revoked_at"
+    t.boolean "single_use", default: false, null: false
+    t.string "token", null: false
+    t.datetime "updated_at", null: false
+    t.index ["consumed_by_id"], name: "index_puzzle_play_share_tokens_on_consumed_by_id"
+    t.index ["created_by_id"], name: "index_puzzle_play_share_tokens_on_created_by_id"
+    t.index ["puzzle_play_id"], name: "index_puzzle_play_share_tokens_on_puzzle_play_id"
+    t.index ["token"], name: "index_puzzle_play_share_tokens_on_token", unique: true
   end
 
   create_table "puzzle_plays", force: :cascade do |t|
@@ -385,6 +413,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000001) do
   add_foreign_key "puzzle_access_grants", "puzzles"
   add_foreign_key "puzzle_access_grants", "users"
   add_foreign_key "puzzle_access_grants", "users", column: "granted_by_id"
+  add_foreign_key "puzzle_play_participants", "puzzle_play_share_tokens", column: "added_via_token_id"
+  add_foreign_key "puzzle_play_participants", "puzzle_plays"
+  add_foreign_key "puzzle_play_participants", "users"
+  add_foreign_key "puzzle_play_share_tokens", "puzzle_plays"
+  add_foreign_key "puzzle_play_share_tokens", "users", column: "consumed_by_id"
+  add_foreign_key "puzzle_play_share_tokens", "users", column: "created_by_id"
   add_foreign_key "puzzle_plays", "puzzles"
   add_foreign_key "puzzle_plays", "users"
   add_foreign_key "puzzle_tags", "puzzles"
