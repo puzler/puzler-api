@@ -32,11 +32,11 @@ RSpec.describe "Mutation: startPlay", type: :graphql do
   end
 
   context "when unauthenticated" do
-    it "creates an anonymous play session", :aggregate_failures do
-      result = execute_query(mutation, variables: { puzzleId: puzzle.id })
-      data = gql_data(result, "startPlay")
-      expect(data["errors"]).to be_empty
-      expect(data["puzzlePlay"]).not_to be_nil
+    it "does not create a server play session (guests persist locally)", :aggregate_failures do
+      result = nil
+      expect { result = execute_query(mutation, variables: { puzzleId: puzzle.id }) }.not_to change(PuzzlePlay, :count)
+      expect(gql_data(result, "startPlay", "errors")).to be_empty
+      expect(gql_data(result, "startPlay", "puzzlePlay")).to be_nil
     end
   end
 

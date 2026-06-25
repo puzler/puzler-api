@@ -68,6 +68,11 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
+  # Action Cable rejects cross-origin WebSocket handshakes unless the frontend
+  # origin is whitelisted — without this, GraphQL subscriptions silently never
+  # connect from the Vite dev server.
+  config.action_cable.allowed_request_origins = Rails.application.frontend_origins
+
   # Uncomment if you wish to allow Action Cable access from any origin.
   # config.action_cable.disable_request_forgery_protection = true
 

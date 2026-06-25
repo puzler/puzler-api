@@ -34,7 +34,8 @@ Rails.application.configure do
 
   # The SPA lives on a different origin than the API, so ActionCable must allow
   # WebSocket connections from the frontend (it rejects cross-origin by default).
-  config.action_cable.allowed_request_origins = [ ENV.fetch("FRONTEND_URL", "http://localhost:5173") ]
+  # frontend_origins accepts both the apex and `www` forms of FRONTEND_URL.
+  config.action_cable.allowed_request_origins = Rails.application.frontend_origins
 
   # Render terminates TLS at its edge and forwards plain HTTP to the container.
   # assume_ssl makes Rails treat those requests as secure, so force_ssl issues

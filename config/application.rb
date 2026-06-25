@@ -52,5 +52,29 @@ module Api
     config.session_store :cookie_store, key: "_puzler_session", same_site: :lax
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use config.session_store, config.session_options
+
+    # Browser origins allowed to call the API (CORS) and open Action Cable
+    # WebSockets. We accept both the apex and `www` forms of the configured
+    # frontend host, since both DNS names resolve to the same SPA and we don't
+    # want to care which one the visitor landed on. Driven by the single
+    # `FRONTEND_URL` env var, falling back to the Vite dev server locally.
+    def frontend_origins
+      configured = ENV.fetch("FRONTEND_URL", "http://localhost:5173")
+      Array(configured).flat_map { |url| origin_variants(url) }.uniq
+    end
+
+    private
+
+    # Expand a URL into its apex + `www` origin variants ("scheme://host[:port]").
+    # Bare hosts without a dot (e.g. "localhost") are returned unchanged.
+    def origin_variants(url)
+      uri = URI(url)
+      host = uri.host
+      return [ url ] unless host&.include?(".")
+
+      bare = host.delete_prefix("www.")
+      port = uri.port && uri.port != uri.default_port ? ":#{uri.port}" : ""
+      [ bare, "www.#{bare}" ].map { |h| "#{uri.scheme}://#{h}#{port}" }
+    end
   end
 end

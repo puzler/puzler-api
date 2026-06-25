@@ -9,6 +9,8 @@ module Types
         description: "When the puzzle was solved; null if still in progress"
       field :id, ID, null: false, description: "Unique play session ID"
       field :is_solved, Boolean, null: false, description: "True when the puzzle has been completed"
+      field :progress_state, GraphQL::Types::JSON, null: false,
+        description: "Full session state (undo/redo history, timer, selection, input mode), owned by the frontend"
       field :puzzle, PuzzleType, null: false, description: "The puzzle being played"
       field :started_at, GraphQL::Types::ISO8601DateTime, null: true, description: "When this session was started"
       field :time_elapsed_seconds, Integer, null: true, description: "Total seconds elapsed in this session"

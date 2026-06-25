@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_23_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_25_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -168,11 +168,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_000002) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.boolean "is_solved", default: false, null: false
+    t.jsonb "progress_state", default: {}, null: false
     t.bigint "puzzle_id", null: false
     t.datetime "started_at"
     t.integer "time_elapsed_seconds", default: 0
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.index ["puzzle_id", "user_id"], name: "index_puzzle_plays_active_by_user", where: "(is_solved = false)"
     t.index ["puzzle_id"], name: "index_puzzle_plays_on_puzzle_id"
     t.index ["user_id"], name: "index_puzzle_plays_on_user_id"
   end

@@ -5,6 +5,8 @@ module Mutations
 
       argument :cell_state, GraphQL::Types::JSON, required: true,
         description: "Current cell state keyed by cell coordinate"
+      argument :progress_state, GraphQL::Types::JSON, required: false, default_value: {},
+        description: "Full session state (undo/redo history, timer, selection, input mode)"
       argument :puzzle_play_id, ID, required: true,
         description: "ID of the play session to update"
       argument :time_elapsed_seconds, Integer, required: true,
@@ -15,12 +17,16 @@ module Mutations
       field :puzzle_play, Types::Objects::PuzzlePlayType, null: true,
         description: "The updated play session"
 
-      def resolve(puzzle_play_id:, cell_state:, time_elapsed_seconds:)
+      def resolve(puzzle_play_id:, cell_state:, time_elapsed_seconds:, progress_state: {})
         play = PuzzlePlay.find_by(id: puzzle_play_id)
         raise GraphQL::ExecutionError, "Play session not found" unless play
         raise GraphQL::ExecutionError, "Not authorized" if play.user_id && play.user_id != current_user&.id
 
-        if play.update(cell_state:, time_elapsed_seconds:)
+        # Never let a late autosave (e.g. from another tab) clobber a finished
+        # solve; the completed board is already persisted.
+        return { puzzle_play: play, errors: [ "Session already solved" ] } if play.is_solved
+
+        if play.update(cell_state:, time_elapsed_seconds:, progress_state:)
           { puzzle_play: play, errors: [] }
         else
           { puzzle_play: nil, errors: play.errors.full_messages }
