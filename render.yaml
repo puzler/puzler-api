@@ -60,19 +60,18 @@ services:
       - key: API_URL
         sync: false
 
-  # Sidekiq worker — runs background jobs (currently PrunePlayJob, which reaps
-  # abandoned guest-hosted plays once their room empties). Same Docker image as the
-  # web service; only the start command differs. It reads the shared presence
-  # registry from Redis to decide what is still live.
+  # Sidekiq worker — runs background jobs (PrunePlayJob reaps abandoned guest-hosted
+  # plays as rooms empty; PruneAbandonedPlaysJob is the hourly backstop). Same Docker
+  # image as the web service; only the start command differs. It reads the shared
+  # presence registry from Redis to decide what is still live.
   #
-  # NOTE: free workers spin down when idle and have no inbound request to wake them
-  # back up, so queued jobs can sit until the next deploy/restart. Bump to `starter`
-  # for always-on background processing.
+  # Render has no free tier for workers, and always-on is what we want anyway so
+  # queued + scheduled jobs run without spin-down delay.
   - type: worker
     name: puzler-sidekiq
     runtime: docker
     region: oregon
-    plan: free
+    plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .
     dockerCommand: bundle exec sidekiq
