@@ -20,7 +20,7 @@ module Mutations
       def resolve(puzzle_play_id:, cell_state:, time_elapsed_seconds:, progress_state: {})
         play = PuzzlePlay.find_by(id: puzzle_play_id)
         raise GraphQL::ExecutionError, "Play session not found" unless play
-        raise GraphQL::ExecutionError, "Not authorized" unless play.accessible_by?(current_user)
+        raise GraphQL::ExecutionError, "Not authorized" unless play.accessible_by?(current_actor)
 
         # Never let a late autosave (e.g. from another tab) clobber a finished
         # solve; the completed board is already persisted.

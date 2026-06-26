@@ -15,14 +15,17 @@ module Mutations
         puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
-        # Server-side progress is for signed-in users only; guests persist to
-        # localStorage, so we never create anonymous play rows. Returning a nil
-        # play tells the client to fall back to its local snapshot.
-        return { puzzle_play: nil, errors: [] } unless current_user
+        actor = current_actor
+        return { puzzle_play: nil, errors: [] } unless actor
 
-        play = current_user.puzzle_plays.in_progress.find_or_create_by(puzzle:) do |p|
-          p.started_at = Time.current
-        end
+        play =
+          if actor.user?
+            actor.user.puzzle_plays.in_progress.find_or_create_by(puzzle:) { |p| p.started_at = Time.current }
+          else
+            # Guest: resume an already-promoted guest-hosted play; never create one
+            # here (solo guests stay localStorage-only until they share to host).
+            PuzzlePlay.guest_hosted.in_progress.find_by(puzzle:, guest_token: actor.guest_token)
+          end
 
         { puzzle_play: play, errors: [] }
       end

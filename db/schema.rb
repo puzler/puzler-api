@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_26_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -163,13 +163,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
     t.index ["user_id"], name: "index_puzzle_access_grants_on_user_id"
   end
 
+  create_table "puzzle_play_blocked_actors", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "guest_token"
+    t.bigint "puzzle_play_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["puzzle_play_id", "guest_token"], name: "index_pp_blocked_on_play_and_guest", unique: true, where: "(guest_token IS NOT NULL)"
+    t.index ["puzzle_play_id", "user_id"], name: "index_pp_blocked_on_play_and_user", unique: true, where: "(user_id IS NOT NULL)"
+    t.index ["puzzle_play_id"], name: "index_puzzle_play_blocked_actors_on_puzzle_play_id"
+    t.index ["user_id"], name: "index_puzzle_play_blocked_actors_on_user_id"
+  end
+
   create_table "puzzle_play_participants", force: :cascade do |t|
     t.bigint "added_via_token_id"
     t.datetime "created_at", null: false
+    t.string "guest_token"
     t.bigint "puzzle_play_id", null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
     t.index ["added_via_token_id"], name: "index_puzzle_play_participants_on_added_via_token_id"
+    t.index ["puzzle_play_id", "guest_token"], name: "index_pp_participants_on_play_and_guest", unique: true, where: "(guest_token IS NOT NULL)"
     t.index ["puzzle_play_id", "user_id"], name: "index_puzzle_play_participants_on_puzzle_play_id_and_user_id", unique: true
     t.index ["puzzle_play_id"], name: "index_puzzle_play_participants_on_puzzle_play_id"
     t.index ["user_id"], name: "index_puzzle_play_participants_on_user_id"
@@ -177,9 +191,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
 
   create_table "puzzle_play_share_tokens", force: :cascade do |t|
     t.datetime "consumed_at"
+    t.string "consumed_by_guest_token"
     t.bigint "consumed_by_id"
     t.datetime "created_at", null: false
-    t.bigint "created_by_id", null: false
+    t.string "created_by_guest_token"
+    t.bigint "created_by_id"
     t.bigint "puzzle_play_id", null: false
     t.datetime "revoked_at"
     t.boolean "single_use", default: false, null: false
@@ -195,6 +211,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
     t.jsonb "cell_state", default: {}, null: false
     t.datetime "completed_at"
     t.datetime "created_at", null: false
+    t.string "guest_token"
     t.boolean "is_solved", default: false, null: false
     t.jsonb "progress_state", default: {}, null: false
     t.bigint "puzzle_id", null: false
@@ -202,6 +219,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
     t.integer "time_elapsed_seconds", default: 0
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.index ["guest_token"], name: "index_puzzle_plays_on_guest_token"
+    t.index ["puzzle_id", "guest_token"], name: "index_puzzle_plays_active_by_guest", where: "(is_solved = false)"
     t.index ["puzzle_id", "user_id"], name: "index_puzzle_plays_active_by_user", where: "(is_solved = false)"
     t.index ["puzzle_id"], name: "index_puzzle_plays_on_puzzle_id"
     t.index ["user_id"], name: "index_puzzle_plays_on_user_id"
@@ -413,6 +432,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_000003) do
   add_foreign_key "puzzle_access_grants", "puzzles"
   add_foreign_key "puzzle_access_grants", "users"
   add_foreign_key "puzzle_access_grants", "users", column: "granted_by_id"
+  add_foreign_key "puzzle_play_blocked_actors", "puzzle_plays"
+  add_foreign_key "puzzle_play_blocked_actors", "users"
   add_foreign_key "puzzle_play_participants", "puzzle_play_share_tokens", column: "added_via_token_id"
   add_foreign_key "puzzle_play_participants", "puzzle_plays"
   add_foreign_key "puzzle_play_participants", "users"

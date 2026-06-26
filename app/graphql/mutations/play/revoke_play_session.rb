@@ -11,10 +11,10 @@ module Mutations
         description: "The play session that was unshared"
 
       def resolve(puzzle_play_id:)
-        require_auth!
+        require_actor!
         play = PuzzlePlay.find_by(id: puzzle_play_id)
         raise GraphQL::ExecutionError, "Play session not found" unless play
-        raise GraphQL::ExecutionError, "Not authorized" unless play.user_id == current_user.id
+        raise GraphQL::ExecutionError, "Not authorized" unless play.owned_by?(current_actor)
 
         play.share_tokens.where(revoked_at: nil).update_all(revoked_at: Time.current)
         play.participants.destroy_all

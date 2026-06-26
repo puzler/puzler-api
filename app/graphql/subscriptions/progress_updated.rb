@@ -17,7 +17,8 @@ module Subscriptions
     def subscribe(puzzle_play_id:)
       play = PuzzlePlay.find_by(id: puzzle_play_id)
       raise GraphQL::ExecutionError, "Play session not found" unless play
-      raise GraphQL::ExecutionError, "Not authorized" unless play.accessible_by?(context[:current_user])
+      actor = Actor.from_context(current_user: context[:current_user], guest_token: context[:guest_token])
+      raise GraphQL::ExecutionError, "Not authorized" unless play.accessible_by?(actor)
 
       :no_response
     end

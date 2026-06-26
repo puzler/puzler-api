@@ -3,7 +3,7 @@ require "rails_helper"
 RSpec.describe GraphqlChannel, type: :channel do
   let(:user) { create(:user) }
 
-  before { stub_connection(current_user: user) }
+  before { stub_connection(current_user: user, guest_token: nil) }
 
   it "executes a plain query over the cable and replies once", :aggregate_failures do
     subscribe

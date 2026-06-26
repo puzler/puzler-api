@@ -1,15 +1,20 @@
 module ApplicationCable
   class Connection < ActionCable::Connection::Base
-    # Subscriptions are for signed-in users (live progress sync + collaboration).
-    # A browser can't set an Authorization header on the WebSocket handshake, so
-    # the JWT rides the cable URL as a `token` query param; we decode it exactly
-    # like HTTP requests (see JwtAuthenticatable). Guests never open the cable
-    # (they make no subscriptions), so rejecting tokenless connections is safe.
-    identified_by :current_user
+    # Accept signed-in users (JWT in ?token=) and guests (an opaque, client-
+    # generated ?guest= token from localStorage). A guest token is self-asserted
+    # and grants nothing on its own — every stream/mutation re-checks
+    # accessible_by?(actor), so it reaches a play only once that guest owns or
+    # joins it. Reject only when BOTH are absent (a truly anonymous socket).
+    identified_by :current_user, :guest_token
 
     def connect
       self.current_user = find_verified_user
-      reject_unauthorized_connection unless current_user
+      self.guest_token = request.params[:guest].presence
+      reject_unauthorized_connection unless current_user || guest_token
+    end
+
+    def current_actor
+      Actor.from_context(current_user: current_user, guest_token: guest_token)
     end
 
     private

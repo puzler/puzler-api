@@ -25,6 +25,13 @@ module JwtAuthenticatable
     @current_user
   end
 
+  # Guests identify with an opaque, client-generated token (localStorage), sent
+  # as a header since they have no JWT. Self-asserted — access is still gated by
+  # PuzzlePlay#accessible_by?.
+  def guest_token
+    request.headers["X-Guest-Token"].presence
+  end
+
   def require_current_user!
     head :unauthorized unless current_user
   end

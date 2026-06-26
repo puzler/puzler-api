@@ -7,6 +7,10 @@ module GraphqlHelpers
     { current_user: user }
   end
 
+  def guest_context(token)
+    { guest_token: token }
+  end
+
   # Dig into the data hash of a result using a camelCase field path.
   def gql_data(result, *keys)
     keys.reduce(result["data"]) { |node, key| node&.fetch(key, nil) }

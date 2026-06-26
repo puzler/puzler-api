@@ -40,6 +40,21 @@ RSpec.describe "Mutation: startPlay", type: :graphql do
     end
   end
 
+  context "when a guest" do
+    it "does not create a server play for a solo guest", :aggregate_failures do
+      result = nil
+      expect { result = execute_query(mutation, variables: { puzzleId: puzzle.id }, context: guest_context("g_solo")) }
+        .not_to change(PuzzlePlay, :count)
+      expect(gql_data(result, "startPlay", "puzzlePlay")).to be_nil
+    end
+
+    it "resumes an already-promoted guest-hosted play" do
+      promoted = create(:puzzle_play, puzzle: puzzle, user: nil, guest_token: "g_host")
+      result = execute_query(mutation, variables: { puzzleId: puzzle.id }, context: guest_context("g_host"))
+      expect(gql_data(result, "startPlay", "puzzlePlay", "id")).to eq(promoted.id.to_s)
+    end
+  end
+
   context "when the puzzle does not exist" do
     it "returns an error" do
       result = execute_query(mutation, variables: { puzzleId: 0 })

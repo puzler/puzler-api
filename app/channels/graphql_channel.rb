@@ -14,7 +14,7 @@ class GraphqlChannel < ApplicationCable::Channel
   def execute(data)
     result = ApiSchema.execute(
       data["query"],
-      context: { channel: self, current_user: current_user },
+      context: { channel: self, current_user: current_user, guest_token: guest_token },
       variables: data["variables"] || {},
       operation_name: data["operationName"]
     )
