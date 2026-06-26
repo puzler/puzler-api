@@ -59,3 +59,42 @@ services:
         sync: false
       - key: API_URL
         sync: false
+
+  # Sidekiq worker — runs background jobs (currently PrunePlayJob, which reaps
+  # abandoned guest-hosted plays once their room empties). Same Docker image as the
+  # web service; only the start command differs. It reads the shared presence
+  # registry from Redis to decide what is still live.
+  #
+  # NOTE: free workers spin down when idle and have no inbound request to wake them
+  # back up, so queued jobs can sit until the next deploy/restart. Bump to `starter`
+  # for always-on background processing.
+  - type: worker
+    name: puzler-sidekiq
+    runtime: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: bundle exec sidekiq
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: "true"
+      # Same secret as the web service — set it on this service too (sync:false
+      # vars are per-service in a Blueprint).
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: puzler-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: puzler-redis
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+      - key: API_URL
+        sync: false

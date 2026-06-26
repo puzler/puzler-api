@@ -36,6 +36,10 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
 
   config.include GraphqlHelpers, type: :graphql
+
+  # The presence registry is process-global; clear it between examples so liveness
+  # state never leaks across tests.
+  config.before { PresenceRegistry.reset! }
 end
 
 Shoulda::Matchers.configure do |config|

@@ -33,8 +33,14 @@ gem "pagy"
 # CORS
 gem "rack-cors"
 
-# Redis for Action Cable
+# Redis for Action Cable + the shared presence registry
 gem "redis", ">= 4.0.1"
+
+# Background jobs (e.g. pruning abandoned guest-hosted plays), processed by a
+# dedicated Sidekiq worker in production. sidekiq-cron schedules the periodic
+# backstop sweep.
+gem "sidekiq"
+gem "sidekiq-cron"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

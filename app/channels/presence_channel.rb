@@ -24,6 +24,7 @@ class PresenceChannel < ApplicationCable::Channel
   # A newcomer asks the existing clients to re-announce themselves so it learns the
   # full roster. Also the re-broadcast a client sends after renaming itself.
   def announce(data)
+    PresenceRegistry.add(@play.id, connection_id) # refresh liveness TTL (heartbeat)
     broadcast_join(data["display_name"])
   end
 
@@ -46,9 +47,10 @@ class PresenceChannel < ApplicationCable::Channel
     )
   end
 
-  # Per-subscription id (this channel instance) so two tabs of the same actor count
-  # as two live connections — closing one leaves the room live for the other.
+  # A process-unique id for this subscription so two tabs of the same actor count
+  # as two live connections (closing one leaves the room live for the other), and
+  # so ids never collide across web processes the way object_id could.
   def connection_id
-    object_id
+    @connection_id ||= SecureRandom.uuid
   end
 end
