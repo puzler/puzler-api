@@ -17,7 +17,7 @@ gem "omniauth-rails_csrf_protection"
 
 # File storage (ActiveStorage S3/R2 backend)
 gem "aws-sdk-s3", require: false
-gem "image_processing", "~> 1.2" # avatar variants via libvips (in the Docker image)
+gem "image_processing", "~> 2.0" # avatar variants via libvips (in the Docker image)
 
 # SudokuPad (f-puzzles) conversion: lz-string compression, byte-compatible with
 # the JS lz-string lib SudokuPad uses (verified: compress_to_base64 matches).
