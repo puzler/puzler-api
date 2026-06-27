@@ -20,6 +20,10 @@ module Mutations
         puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
+        if puzzle.comments_require_solve? && !puzzle.solver?(current_user)
+          return { comment: nil, errors: [ "Only confirmed solvers can comment on this puzzle" ] }
+        end
+
         comment = current_user.comments.build(puzzle:, body:, parent_id:)
         if comment.save
           { comment:, errors: [] }

@@ -17,6 +17,10 @@ module Types
       field :collection_ids, [ ID ], null: false,
         description: "IDs of the author's collections containing this puzzle; only visible to the author"
       field :comments, [ CommentType ], null: false, description: "Top-level comments, newest first"
+      field :comments_require_solve_effective, Boolean, null: false, method: :comments_require_solve?,
+        description: "Whether comments are gated to confirmed solvers (the per-puzzle override, or the author's default)"
+      field :comments_require_solve_override, Boolean, null: true,
+        description: "Per-puzzle comment-gate override; null inherits the author default (author only)"
       field :constraint_types, [ String ], null: false,
         description: "Constraint-type tags from the published version, for archive filtering"
       field :constraints, [ ConstraintType ], null: false, description: "Logical constraints attached to this puzzle"
@@ -38,6 +42,8 @@ module Types
       field :is_favorited, Boolean, null: false,
         description: "Whether the current user has favorited this puzzle"
       field :my_rating, RatingType, null: true, description: "Current user's rating for this puzzle"
+      field :page_description_html, String, null: true,
+        description: "Sanitized rich author description (HTML) shown on the public puzzle page"
       field :patreon_campaign_id, String, null: true,
         description: "Linked Patreon campaign for future patron integration"
       field :published_at, GraphQL::Types::ISO8601DateTime, null: true,
@@ -54,10 +60,16 @@ module Types
         description: "SHA-256 of the canonical solution, used for client-side completion detection"
       field :solve_count, Integer, null: false, description: "Number of times this puzzle has been solved"
       field :status, Types::Enums::PuzzleStatusEnum, null: false, description: "Lifecycle status: draft or published"
+      field :sudokupad_includes_solution, Boolean, null: false,
+        description: "Whether the SudokuPad link embeds the solution (so SudokuPad can solve-check)"
+      field :sudokupad_url, String, null: true,
+        description: "Short SudokuPad link for this puzzle, or null when none is available (e.g. a non-square grid)"
       field :tags, [ TagType ], null: false, description: "Tags categorizing this puzzle"
       field :title, String, null: false, description: "Puzzle title"
       field :versions, [ PuzzleVersionType ], null: false,
         description: "All saved versions, oldest first; only visible to the author"
+      field :viewer_has_solved, Boolean, null: false,
+        description: "Whether the current user has completed this puzzle (drives the comment composer gate)"
       field :visibility, Types::Enums::PuzzleVisibilityEnum, null: false,
         description: "Access mode: private, unlisted, public, patrons_only, subscribers_only, or containers_only"
 
@@ -127,10 +139,42 @@ module Types
         object.comments.top_level.by_newest.includes(:user, :replies)
       end
 
+      def comments_require_solve_override
+        object.comments_require_solve_override if author_or_admin?
+      end
+
+      def viewer_has_solved
+        object.solver?(context[:current_user])
+      end
+
+      def sudokupad_url
+        return nil unless sudokupad_available?
+
+        serving_solution_link? ? object.sudokupad_solution_url : object.sudokupad_url
+      end
+
+      def sudokupad_includes_solution
+        sudokupad_available? && serving_solution_link?
+      end
+
       private
 
       def author_or_admin?
         context[:current_user]&.id == object.author_id || context[:current_user]&.admin?
+      end
+
+      # Never surface a SudokuPad link for an unreachable puzzle. (The query
+      # already gates viewability; this guards the raw fields independently.)
+      def sudokupad_available?
+        return false if object.draft? || object.visible_private?
+
+        (serving_solution_link? ? object.sudokupad_solution_url : object.sudokupad_url).present?
+      end
+
+      # The solution-embedded link is served only when the author opted in AND we
+      # actually built one; otherwise we serve the solution-less link.
+      def serving_solution_link?
+        object.author.include_solution_in_sudokupad_export && object.sudokupad_solution_url.present?
       end
     end
   end

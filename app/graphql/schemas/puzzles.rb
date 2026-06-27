@@ -87,12 +87,16 @@ module Schemas
       description "Mutations for creating and managing puzzles"
       graphql_name "PuzzleMutations"
 
+      field :configure_puzzle_page, mutation: ::Mutations::Puzzles::ConfigurePuzzlePage,
+        description: "Save a puzzle's publish-page settings (comment gating and SudokuPad links)"
       field :create_puzzle, mutation: ::Mutations::Puzzles::CreatePuzzle,
         description: "Create a new draft puzzle"
       field :delete_puzzle, mutation: ::Mutations::Puzzles::DeletePuzzle,
         description: "Permanently delete a puzzle"
       field :delete_puzzle_version, mutation: ::Mutations::Puzzles::DeletePuzzleVersion,
         description: "Delete a saved puzzle version"
+      field :export_sudokupad_link, mutation: ::Mutations::Puzzles::ExportSudokupadLink,
+        description: "Build a short SudokuPad link from a Puzler definition"
       field :grant_puzzle_access, mutation: ::Mutations::Puzzles::GrantPuzzleAccess,
         description: "Grant a user access to a puzzle by username"
       field :publish_puzzle_version, mutation: ::Mutations::Puzzles::PublishPuzzleVersion,
@@ -105,10 +109,14 @@ module Schemas
         description: "Change a puzzle's access mode"
       field :unpublish_puzzle, mutation: ::Mutations::Puzzles::UnpublishPuzzle,
         description: "Return a published puzzle to draft"
+      field :update_page_description, mutation: ::Mutations::Puzzles::UpdatePageDescription,
+        description: "Save the sanitized rich description for a puzzle's public page"
       field :update_puzzle, mutation: ::Mutations::Puzzles::UpdatePuzzle,
         description: "Update metadata or content on a puzzle"
       field :update_puzzle_version_label, mutation: ::Mutations::Puzzles::UpdatePuzzleVersionLabel,
         description: "Rename a saved puzzle version"
+      field :upload_description_image, mutation: ::Mutations::Puzzles::UploadDescriptionImage,
+        description: "Upload an image for a puzzle's rich description"
     end
   end
 end

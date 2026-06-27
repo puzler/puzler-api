@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -258,6 +258,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
     t.float "avg_difficulty"
     t.float "avg_rating"
     t.jsonb "box_layout"
+    t.boolean "comments_require_solve_override"
     t.string "constraint_types", default: [], null: false, array: true
     t.datetime "created_at", null: false
     t.text "description"
@@ -269,6 +270,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
     t.jsonb "given_digits", default: {}, null: false
     t.integer "grid_cols", default: 9, null: false
     t.integer "grid_rows", default: 9, null: false
+    t.text "page_description_html"
     t.string "patreon_campaign_id"
     t.datetime "published_at"
     t.bigint "published_version_id"
@@ -278,6 +280,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
     t.string "solution_hash"
     t.integer "solve_count", default: 0, null: false
     t.integer "status", default: 0, null: false
+    t.text "sudokupad_solution_url"
+    t.text "sudokupad_url"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.integer "version_counter", default: 0, null: false
@@ -388,11 +392,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
     t.string "avatar_url"
     t.text "bio"
     t.jsonb "color_palette", default: {}, null: false
+    t.boolean "comments_require_solve_default", default: false, null: false
     t.datetime "created_at", null: false
     t.string "display_name", null: false
     t.string "email", default: "", null: false
     t.boolean "enable_custom_styles", default: true, null: false
     t.string "encrypted_password", default: "", null: false
+    t.boolean "include_solution_in_sudokupad_export", default: true, null: false
     t.string "jti", null: false
     t.boolean "onboarding_disabled", default: false, null: false
     t.jsonb "onboarding_seen", default: {}, null: false

@@ -1,6 +1,25 @@
 require "rails_helper"
 
 RSpec.describe User, type: :model do
+  describe "#include_solution_in_sudokupad_export change" do
+    let(:user) { create(:user, include_solution_in_sudokupad_export: true) }
+
+    before { allow(SudokupadLinkRefreshJob).to receive(:perform_later) }
+
+    it "enqueues a link refresh for each published puzzle (skipping drafts)" do
+      published = create(:puzzle, :published, author: user)
+      create(:puzzle, author: user) # draft — skipped
+      user.update!(include_solution_in_sudokupad_export: false)
+      expect(SudokupadLinkRefreshJob).to have_received(:perform_later).with(published.id).once
+    end
+
+    it "does not enqueue when an unrelated field changes" do
+      create(:puzzle, :published, author: user)
+      user.update!(display_name: "Renamed")
+      expect(SudokupadLinkRefreshJob).not_to have_received(:perform_later)
+    end
+  end
+
   describe "display_name" do
     it "defaults to the username when blank on create" do
       user = create(:user, username: "alice", display_name: nil)

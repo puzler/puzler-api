@@ -21,6 +21,11 @@ class Puzzle < ApplicationRecord
   has_many :access_grants, class_name: "PuzzleAccessGrant", dependent: :destroy
   has_many :granted_users, through: :access_grants, source: :user
 
+  # Images embedded in the rich page description. Owned here so they can be
+  # purged when removed from the HTML (see reconcile_description_images!) or when
+  # the puzzle is destroyed.
+  has_many_attached :description_images
+
   # Lifecycle (draft → published) and access mode (who can see it) are
   # independent axes. "private"/"public" collide with Ruby keywords, so the
   # enum methods are prefixed: visible_private?, visible_public!, etc.
@@ -68,6 +73,53 @@ class Puzzle < ApplicationRecord
     when "private" then user.present? && access_grants.exists?(user_id: user.id)
     else false # patrons_only / subscribers_only — stubbed
     end
+  end
+
+  # Whether comments are gated to confirmed solvers. The per-puzzle override
+  # wins when set; otherwise we inherit the author's account default.
+  def comments_require_solve?
+    comments_require_solve_override.nil? ? author.comments_require_solve_default : comments_require_solve_override
+  end
+
+  # Has this user successfully completed this puzzle? Used for the comment gate
+  # and the "solved" badge on comments.
+  def solver?(user)
+    user.present? && puzzle_plays.completed.exists?(user_id: user.id)
+  end
+
+  # Drop any attached description image whose blob no longer appears in the saved
+  # HTML (its signed_id is embedded in the rails blob URL). Keeps R2 tidy as the
+  # author edits the description. Purges async so saving stays fast.
+  def reconcile_description_images!(html = page_description_html)
+    html = html.to_s
+    description_images.attachments.each do |attachment|
+      attachment.purge_later unless html.include?(attachment.blob.signed_id)
+    end
+  end
+
+  # (Re)build the cached SudokuPad short links from the published version, via the
+  # backend converter. Stores the solution-less link always, and the
+  # solution-embedded link only when the author opts in. Best-effort: a
+  # non-square/unsupported puzzle or a createlink failure leaves the column blank
+  # (LinkBuilder falls back to the long ?puzzleid= URL on a shortener failure).
+  def refresh_sudokupad_links!
+    version = published_version
+    unless version
+      update_columns(sudokupad_url: nil, sudokupad_solution_url: nil)
+      return
+    end
+
+    plain = Sudokupad::LinkBuilder.build(
+      definition: version.definition, include_solution: false, fallback_author: author.display_name
+    )
+    solution_link =
+      if author.include_solution_in_sudokupad_export
+        Sudokupad::LinkBuilder.build(
+          definition: version.definition, solution: version.solution,
+          include_solution: true, fallback_author: author.display_name
+        )
+      end
+    update_columns(sudokupad_url: plain&.dig(:short_url), sudokupad_solution_url: solution_link&.dig(:short_url))
   end
 
   # After this puzzle's rating/solve aggregates change, refresh the denormalized

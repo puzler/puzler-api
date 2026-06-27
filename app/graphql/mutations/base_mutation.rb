@@ -17,6 +17,10 @@ module Mutations
       context[:guest_token]
     end
 
+    def request_ip
+      context[:request_ip]
+    end
+
     # The acting identity: a logged-in user OR a guest (see app/models/actor.rb).
     def current_actor
       Actor.from_context(current_user: current_user, guest_token: guest_token)

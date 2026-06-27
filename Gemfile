@@ -19,6 +19,10 @@ gem "omniauth-rails_csrf_protection"
 gem "aws-sdk-s3", require: false
 gem "image_processing", "~> 1.2" # avatar variants via libvips (in the Docker image)
 
+# SudokuPad (f-puzzles) conversion: lz-string compression, byte-compatible with
+# the JS lz-string lib SudokuPad uses (verified: compress_to_base64 matches).
+gem "lzstring-ruby", "~> 1.0"
+
 # GraphQL
 gem "graphql"
 gem "graphiql-rails" # API Explorer, mounted at /explorer in all environments
@@ -62,4 +66,5 @@ end
 group :test do
   gem "shoulda-matchers"
   gem "simplecov", require: false
+  gem "webmock", require: false
 end

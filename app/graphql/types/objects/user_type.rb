@@ -45,6 +45,8 @@ module Types
         description: "Number of this user's publicly visible series"
       field :puzzle_count, Integer, null: false,
         description: "Number of published or featured puzzles by this user"
+      field :puzzle_preferences, Types::Objects::PuzzlePreferencesType, null: true,
+        description: "The user's per-account puzzle defaults (only visible to the user themselves)"
       field :puzzles, [ PuzzleType ], null: false, description: "Puzzles created by this user" do
         argument :status, Types::Enums::PuzzleStatusEnum, required: false, description: "Filter by puzzle status"
       end
@@ -111,6 +113,10 @@ module Types
 
       def onboarding_disabled
         object.onboarding_disabled if viewer_is_self?
+      end
+
+      def puzzle_preferences
+        object if viewer_is_self?
       end
 
       def puzzles(status: nil)

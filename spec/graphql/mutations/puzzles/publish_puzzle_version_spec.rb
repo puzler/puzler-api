@@ -50,4 +50,12 @@ RSpec.describe "Mutation: publishPuzzleVersion / unpublishPuzzle", type: :graphq
     expect(data["status"]).to eq("DRAFT")
     expect(data["publishedVersion"]).to be_nil
   end
+
+  it "caches a SudokuPad link built server-side from the published version" do
+    gridded = create(:puzzle_version, puzzle:, definition: { "grid" => { "rows" => 9, "cols" => 9 }, "meta" => { "name" => "P" } })
+    stub_request(:post, "https://sudokupad.app/admin/createlink")
+      .to_return(status: 200, body: { result: "success", shortid: "pub1" }.to_json)
+    execute_query(publish, variables: { puzzleId: puzzle.id, versionId: gridded.id, visibility: "PUBLIC" }, context: auth_context(user))
+    expect(puzzle.reload.sudokupad_url).to eq("https://sudokupad.app/pub1")
+  end
 end

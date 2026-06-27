@@ -61,6 +61,10 @@ class User < ApplicationRecord
 
   before_update :mark_password_set_and_rotate_jti, if: :will_save_change_to_encrypted_password?
 
+  # When the author flips whether their SudokuPad links embed the solution,
+  # rebuild the cached links on all their published puzzles to match.
+  after_update :refresh_sudokupad_links, if: :saved_change_to_include_solution_in_sudokupad_export?
+
   def generate_jwt
     Warden::JWTAuth::UserEncoder.new.call(self, :user, nil).first
   end
@@ -115,6 +119,12 @@ class User < ApplicationRecord
   end
 
   private
+
+  # Enqueue a link rebuild per published puzzle (async — each makes a createlink
+  # call). Draft puzzles have no published version, so nothing to refresh.
+  def refresh_sudokupad_links
+    puzzles.where(status: :published).find_each { |puzzle| SudokupadLinkRefreshJob.perform_later(puzzle.id) }
+  end
 
   # Geometric recency-weighted mean of the present ratings (input is newest-first;
   # nil ratings are skipped but still consume a recency slot so an unrated recent

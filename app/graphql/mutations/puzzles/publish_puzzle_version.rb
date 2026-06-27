@@ -35,6 +35,8 @@ module Mutations
 
         if puzzle.update(attrs)
           current_user.recompute_setter_stats!
+          # Build the cached SudokuPad links from the now-published version.
+          puzzle.refresh_sudokupad_links!
           { puzzle:, errors: [] }
         else
           { puzzle: nil, errors: puzzle.errors.full_messages }

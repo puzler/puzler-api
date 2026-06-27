@@ -48,6 +48,8 @@ module Schemas
         description: "Update the current user's profile information"
       field :update_profile_visibility, mutation: ::Mutations::Users::UpdateProfileVisibility,
         description: "Update the current user's public-profile visibility preferences"
+      field :update_puzzle_preferences, mutation: ::Mutations::Users::UpdatePuzzlePreferences,
+        description: "Update the current user's per-account puzzle defaults"
       field :update_theme_preferences, mutation: ::Mutations::Users::UpdateThemePreferences,
         description: "Update the current user's theme selection and the custom-styles gate"
       field :update_user_theme, mutation: ::Mutations::Users::UpdateUserTheme,

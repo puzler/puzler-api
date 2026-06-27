@@ -42,4 +42,25 @@ RSpec.describe "Mutation: createComment", type: :graphql do
       expect(gql_errors(result).first["message"]).to eq("Authentication required")
     end
   end
+
+  context "when the puzzle gates comments to confirmed solvers" do
+    let(:gated) { create(:puzzle, :published, comments_require_solve_override: true) }
+
+    def submit(puzzle)
+      gql_data(execute_query(mutation, variables: { puzzleId: puzzle.id, body: "hi" }, context: auth_context(user)), "createComment")
+    end
+
+    it "blocks a non-solver with a friendly error", :aggregate_failures do
+      data = submit(gated)
+      expect(data["comment"]).to be_nil
+      expect(data["errors"].first).to include("confirmed solvers")
+    end
+
+    it "allows a confirmed solver", :aggregate_failures do
+      create(:puzzle_play, :solved, puzzle: gated, user: user)
+      data = submit(gated)
+      expect(data["errors"]).to be_empty
+      expect(data["comment"]["body"]).to eq("hi")
+    end
+  end
 end
