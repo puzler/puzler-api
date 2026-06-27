@@ -12,6 +12,13 @@ class User < ApplicationRecord
   # Prefixed because `new` collides with the class method.
   enum :setter_tier, { new: 0, rising: 1, experienced: 2 }, prefix: :setter
 
+  # How much of this user's solving activity their public profile reveals — an
+  # escalating disclosure, each level less private than the last (see
+  # SOLVE_HISTORY_LEVELS). Prefixed for readable predicate/scope names
+  # (solve_history_hidden?, etc.).
+  enum :solve_history_visibility, { hidden: 0, count: 1, puzzles: 2, detailed: 3 },
+       prefix: :solve_history
+
   # Standardized 256x256 avatar: square-cropped, EXIF stripped (libvips drops
   # metadata when transforming), served via the named variant below.
   AVATAR_VARIANT = { resize_to_fill: [ 256, 256 ] }.freeze
@@ -56,6 +63,16 @@ class User < ApplicationRecord
 
   def generate_jwt
     Warden::JWTAuth::UserEncoder.new.call(self, :user, nil).first
+  end
+
+  # The solve-history disclosure levels in order of increasing openness. Used to
+  # express the four-level gate ("is this user disclosing at least <level>?") in
+  # one place so the GraphQL resolvers stay declarative.
+  SOLVE_HISTORY_LEVELS = %w[hidden count puzzles detailed].freeze
+
+  # True when this user's solve-history disclosure is at or above `level`.
+  def solve_history_at_least?(level)
+    SOLVE_HISTORY_LEVELS.index(solve_history_visibility) >= SOLVE_HISTORY_LEVELS.index(level.to_s)
   end
 
   # Recency decay applied per puzzle (newest weighted 1, each older × this) when

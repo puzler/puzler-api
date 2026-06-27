@@ -65,6 +65,13 @@ class OwnedListing
       Page.new(nodes:, total_count: total, page:, per_page:)
     end
 
+    # An empty page, for resolvers that gate a listing off (e.g. a profile
+    # section a viewer isn't allowed to see) but must still satisfy a non-null
+    # connection contract.
+    def empty_page(per_page: DEFAULT_PER_PAGE)
+      Page.new(nodes: [], total_count: 0, page: 1, per_page:)
+    end
+
     private
 
     # The author table is joined by `filter` before this runs.

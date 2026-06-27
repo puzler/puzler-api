@@ -71,6 +71,36 @@ RSpec.describe User, type: :model do
     end
   end
 
+  describe "solve-history visibility" do
+    it "defaults a new account to 'count'" do
+      expect(create(:user).solve_history_visibility).to eq("count")
+    end
+
+    it "defaults the section toggles (stats on, the rest off)", :aggregate_failures do
+      user = create(:user)
+      expect(user.show_stats).to be(true)
+      expect(user.show_favorites).to be(false)
+      expect(user.show_subscriptions).to be(false)
+      expect(user.show_activity).to be(false)
+    end
+
+    describe "#solve_history_at_least?" do
+      it "treats the levels as an escalating order", :aggregate_failures do
+        user = build(:user, solve_history_visibility: :puzzles)
+        expect(user.solve_history_at_least?(:hidden)).to be(true)
+        expect(user.solve_history_at_least?(:count)).to be(true)
+        expect(user.solve_history_at_least?(:puzzles)).to be(true)
+        expect(user.solve_history_at_least?(:detailed)).to be(false)
+      end
+
+      it "is true at every level for a detailed profile, and only hidden for a hidden one", :aggregate_failures do
+        expect(build(:user, solve_history_visibility: :detailed).solve_history_at_least?(:detailed)).to be(true)
+        expect(build(:user, solve_history_visibility: :hidden).solve_history_at_least?(:count)).to be(false)
+        expect(build(:user, solve_history_visibility: :hidden).solve_history_at_least?(:hidden)).to be(true)
+      end
+    end
+  end
+
   describe "#recompute_setter_stats!" do
     let(:setter) { create(:user) }
 

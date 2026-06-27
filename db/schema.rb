@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_26_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_26_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -402,6 +402,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000004) do
     t.integer "role", default: 0, null: false
     t.float "setter_score", default: 0.0, null: false
     t.integer "setter_tier", default: 0, null: false
+    t.boolean "show_activity", default: false, null: false
+    t.boolean "show_favorites", default: false, null: false
+    t.boolean "show_stats", default: true, null: false
+    t.boolean "show_subscriptions", default: false, null: false
+    t.integer "solve_history_visibility", default: 1, null: false
     t.datetime "updated_at", null: false
     t.string "username", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
