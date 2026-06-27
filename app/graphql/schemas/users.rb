@@ -40,6 +40,8 @@ module Schemas
         description: "Get a URL to start connecting an OAuth provider"
       field :remove_avatar, mutation: ::Mutations::Users::RemoveAvatar,
         description: "Remove the current user's uploaded avatar"
+      field :update_onboarding, mutation: ::Mutations::Users::UpdateOnboarding,
+        description: "Update the current user's onboarding/walkthrough state"
       field :update_player_prefs, mutation: ::Mutations::Users::UpdatePlayerPrefs,
         description: "Update the current user's solver-page preferences (settings and/or color palette)"
       field :update_profile, mutation: ::Mutations::Users::UpdateProfile,

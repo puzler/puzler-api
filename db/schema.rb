@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_26_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_26_000006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -394,6 +394,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_000005) do
     t.boolean "enable_custom_styles", default: true, null: false
     t.string "encrypted_password", default: "", null: false
     t.string "jti", null: false
+    t.boolean "onboarding_disabled", default: false, null: false
+    t.jsonb "onboarding_seen", default: {}, null: false
     t.boolean "password_set", default: true, null: false
     t.jsonb "player_settings", default: {}, null: false
     t.datetime "remember_created_at"

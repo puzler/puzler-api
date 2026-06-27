@@ -61,6 +61,33 @@ RSpec.describe "Queries: profile", type: :graphql do
     end
   end
 
+  # Drive the content-driven profile tabs: these counts must be public even when
+  # the owner has hidden their aggregate stats panel.
+  describe "public content counts (always public)" do
+    let(:query) do
+      <<~GQL
+        query($username: String!) {
+          user(username: $username) { puzzleCount publicCollectionCount publicSeriesCount }
+        }
+      GQL
+    end
+
+    before do
+      create(:puzzle, :published, author: owner)
+      create(:collection, author: owner, visibility: :public)
+      create(:collection, author: owner, visibility: :private)
+      create(:series, author: owner, visibility: :public)
+      owner.update!(show_stats: false)
+    end
+
+    it "exposes public puzzle, collection, and series counts to anyone, ignoring show_stats", :aggregate_failures do
+      data = profile(query, viewer: other)
+      expect(data["puzzleCount"]).to eq(1)
+      expect(data["publicCollectionCount"]).to eq(1)
+      expect(data["publicSeriesCount"]).to eq(1)
+    end
+  end
+
   describe "solvedPuzzles (four-level gate)" do
     let(:query) do
       <<~GQL

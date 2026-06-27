@@ -27,6 +27,10 @@ module Types
       field :id, ID, null: false, description: "Unique user ID"
       field :oauth_connections, [ OauthIdentityType ], null: true,
         description: "Linked OAuth providers (only visible to the user themselves)"
+      field :onboarding_disabled, Boolean, null: true,
+        description: "Whether the user has turned off guided walkthroughs (only visible to the user themselves)"
+      field :onboarding_seen, GraphQL::Types::JSON, null: true,
+        description: "Map of tour keys the user has completed (only visible to the user themselves)"
       field :password_set, Boolean, null: true,
         description: "Whether the user has set a password they know (only visible to the user themselves)"
       field :player_settings, GraphQL::Types::JSON, null: true,
@@ -35,6 +39,10 @@ module Types
         description: "Aggregate public metrics; null unless visible to the viewer"
       field :profile_visibility, Types::Objects::ProfileVisibilityType, null: false, method: :itself,
         description: "Owner-controlled visibility preferences for this profile (public, so the client knows which sections to render)"
+      field :public_collection_count, Integer, null: false,
+        description: "Number of this user's publicly visible collections"
+      field :public_series_count, Integer, null: false,
+        description: "Number of this user's publicly visible series"
       field :puzzle_count, Integer, null: false,
         description: "Number of published or featured puzzles by this user"
       field :puzzles, [ PuzzleType ], null: false, description: "Puzzles created by this user" do
@@ -97,6 +105,14 @@ module Types
         object.password_set if viewer_is_self?
       end
 
+      def onboarding_seen
+        object.onboarding_seen if viewer_is_self?
+      end
+
+      def onboarding_disabled
+        object.onboarding_disabled if viewer_is_self?
+      end
+
       def puzzles(status: nil)
         scope = object.puzzles
         status ? scope.where(status: status) : scope.publicly_visible
@@ -104,6 +120,16 @@ module Types
 
       def puzzle_count
         object.puzzles.publicly_visible.count
+      end
+
+      # Always-public counts so the profile can decide which setter tabs to show
+      # even when the owner has hidden their aggregate stats panel.
+      def public_collection_count
+        object.collections.publicly_visible.count
+      end
+
+      def public_series_count
+        object.series.publicly_visible.count
       end
 
       def solve_count
