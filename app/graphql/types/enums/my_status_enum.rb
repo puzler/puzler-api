@@ -8,6 +8,7 @@ module Types
       value "SOLVED", value: "SOLVED", description: "Puzzles the viewer has solved"
       value "UNSOLVED", value: "UNSOLVED", description: "Puzzles the viewer has not solved"
       value "FAVORITED", value: "FAVORITED", description: "Puzzles the viewer has favorited"
+      value "SHARED_WITH_ME", value: "SHARED_WITH_ME", description: "Private puzzles other users have shared with the viewer"
     end
   end
 end

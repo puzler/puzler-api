@@ -51,10 +51,19 @@ module Schemas
       end
 
       def puzzles(filter: nil)
-        scope = Puzzle.publicly_visible.includes(:author, :tags, :constraints)
         args = filter ? filter.to_listing_args : {}
+        # "Shared with me" swaps the base scope to the viewer's granted puzzles
+        # (published + private only — drafts aren't viewable, and a puzzle later
+        # flipped public already shows in the normal archive). apply_my_status
+        # no-ops on this value, so the rest of the pipeline runs unchanged.
+        scope =
+          if args[:my_status] == "SHARED_WITH_ME" && context[:current_user]
+            context[:current_user].accessible_puzzles.where(status: :published, visibility: :private)
+          else
+            Puzzle.publicly_visible
+          end
         OwnedListing.apply(
-          scope, **args,
+          scope.includes(:author, :tags, :constraints), **args,
           constraints: true, recent_by: :published_at, viewer: context[:current_user]
         )
       end

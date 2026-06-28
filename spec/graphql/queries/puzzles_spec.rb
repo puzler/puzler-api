@@ -132,6 +132,31 @@ RSpec.describe "Queries: puzzles", type: :graphql do
       end
     end
 
+    context "when filtering by shared-with-me" do
+      let(:viewer) { create(:user) }
+      let(:sharer) { create(:user) }
+      let!(:shared) { create(:puzzle, :access_private, author: sharer) }
+      let!(:public_puzzle) { create(:puzzle, :published) }
+
+      before do
+        shared.access_grants.create!(user: viewer, granted_by: sharer)
+        create(:puzzle, :access_private, author: sharer)              # private, but not granted to the viewer
+        create(:puzzle, :access_private, author: viewer)              # the viewer's own private puzzle
+        draft = create(:puzzle, visibility: :private, author: sharer) # granted, but a draft (not viewable)
+        draft.access_grants.create!(user: viewer, granted_by: sharer)
+      end
+
+      it "returns only the published private puzzles granted to the viewer" do
+        expect(archive_ids(context: auth_context(viewer), myStatus: "SHARED_WITH_ME")).to eq([ shared.id.to_s ])
+      end
+
+      it "falls back to the public archive for anonymous viewers (no private leak)", :aggregate_failures do
+        ids = archive_ids(myStatus: "SHARED_WITH_ME")
+        expect(ids).to eq([ public_puzzle.id.to_s ])
+        expect(ids).not_to include(shared.id.to_s)
+      end
+    end
+
     it "paginates with totalCount", :aggregate_failures do
       create_list(:puzzle, 3, :published)
       result = execute_query(query, variables: { filter: { perPage: 2 } })

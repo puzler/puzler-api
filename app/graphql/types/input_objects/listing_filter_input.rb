@@ -22,7 +22,7 @@ module Types
         description: "Whether constraint filters match ANY or ALL of the selected types"
       argument :min_rating, Float, required: false, description: "Only puzzles with at least this average star rating"
       argument :my_status, Types::Enums::MyStatusEnum, required: false,
-        description: "Filter by the current viewer's relationship (solved/unsolved/favorited)"
+        description: "Filter by the current viewer's relationship (solved/unsolved/favorited/shared-with-me)"
       argument :page, Integer, required: false, default_value: 1, description: "Page number (1-based)"
       argument :per_page, Integer, required: false, default_value: 20, description: "Results per page"
       argument :search, String, required: false,
