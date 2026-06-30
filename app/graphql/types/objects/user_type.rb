@@ -27,10 +27,6 @@ module Types
       field :id, ID, null: false, description: "Unique user ID"
       field :oauth_connections, [ OauthIdentityType ], null: true,
         description: "Linked OAuth providers (only visible to the user themselves)"
-      field :onboarding_disabled, Boolean, null: true,
-        description: "Whether the user has turned off guided walkthroughs (only visible to the user themselves)"
-      field :onboarding_seen, GraphQL::Types::JSON, null: true,
-        description: "Map of tour keys the user has completed (only visible to the user themselves)"
       field :password_set, Boolean, null: true,
         description: "Whether the user has set a password they know (only visible to the user themselves)"
       field :player_settings, GraphQL::Types::JSON, null: true,
@@ -105,14 +101,6 @@ module Types
 
       def password_set
         object.password_set if viewer_is_self?
-      end
-
-      def onboarding_seen
-        object.onboarding_seen if viewer_is_self?
-      end
-
-      def onboarding_disabled
-        object.onboarding_disabled if viewer_is_self?
       end
 
       def puzzle_preferences

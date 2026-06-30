@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_30_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -400,8 +400,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_000002) do
     t.string "encrypted_password", default: "", null: false
     t.boolean "include_solution_in_sudokupad_export", default: true, null: false
     t.string "jti", null: false
-    t.boolean "onboarding_disabled", default: false, null: false
-    t.jsonb "onboarding_seen", default: {}, null: false
     t.boolean "password_set", default: true, null: false
     t.jsonb "player_settings", default: {}, null: false
     t.datetime "remember_created_at"

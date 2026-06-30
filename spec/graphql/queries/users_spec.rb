@@ -53,13 +53,12 @@ RSpec.describe "Queries: users", type: :graphql do
         query($username: String!) {
           user(username: $username) {
             username email passwordSet oauthConnections { provider createdAt }
-            onboardingSeen onboardingDisabled
           }
         }
       GQL
     end
 
-    let(:user) { create(:user, onboarding_seen: { "home" => true }, onboarding_disabled: true) }
+    let(:user) { create(:user) }
 
     before { create(:user_oauth_identity, user: user) }
 
@@ -72,18 +71,11 @@ RSpec.describe "Queries: users", type: :graphql do
       expect(data["oauthConnections"]).to contain_exactly(a_hash_including("provider" => "google"))
     end
 
-    it "exposes onboarding state to the user themselves", :aggregate_failures do
-      data = gql_data(execute_query(query, variables: { username: user.username }, context: auth_context(user)), "user")
-      expect(data["onboardingSeen"]).to eq({ "home" => true })
-      expect(data["onboardingDisabled"]).to be(true)
-    end
-
     it "hides them from other viewers" do
       result = execute_query(query, variables: { username: user.username }, context: auth_context(create(:user)))
 
       expect(gql_data(result, "user")).to include(
-        "username" => user.username, "email" => nil, "passwordSet" => nil, "oauthConnections" => nil,
-        "onboardingSeen" => nil, "onboardingDisabled" => nil
+        "username" => user.username, "email" => nil, "passwordSet" => nil, "oauthConnections" => nil
       )
     end
   end
