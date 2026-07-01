@@ -22,6 +22,7 @@ module Mutations
           label: attrs.label.presence,
           solution: attrs.solution || {},
           solution_hash: SolutionHasher.hash(attrs.solution),
+          solution_code: attrs.solution_code.presence,
           solve_message: attrs.solve_message.presence,
           constraint_types: ConstraintTypeExtractor.extract(attrs.definition)
         )

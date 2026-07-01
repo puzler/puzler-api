@@ -2,6 +2,7 @@ class PuzzleVersion < ApplicationRecord
   belongs_to :puzzle
 
   validates :version_number, presence: true, uniqueness: { scope: :puzzle_id }
+  validates :solution_code, length: { maximum: 255 }, allow_nil: true
 
   before_validation :assign_version_number, on: :create
 
@@ -12,11 +13,24 @@ class PuzzleVersion < ApplicationRecord
     label.presence || "v#{version_number}"
   end
 
+  # Does `input` match this version's setter-defined solution code? Whitespace- and
+  # case-insensitive so "R1 R2…" style codes are forgiving to type. Blank code or
+  # blank input never matches (the puzzle only accepts in-app solves).
+  def solution_code_matches?(input)
+    return false if solution_code.blank? || input.blank?
+
+    ActiveSupport::SecurityUtils.secure_compare(normalize_code(solution_code), normalize_code(input))
+  end
+
   def published?
     puzzle.published_version_id == id
   end
 
   private
+
+  def normalize_code(str)
+    str.to_s.gsub(/\s+/, "").upcase
+  end
 
   # Draws from the puzzle's monotonic counter so numbers are never reused, even
   # after older versions are deleted. with_lock guards concurrent saves.

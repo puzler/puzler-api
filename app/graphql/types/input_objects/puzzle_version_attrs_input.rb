@@ -9,6 +9,8 @@ module Types
         description: "Optional name for this version (defaults to v{n})"
       argument :solution, GraphQL::Types::JSON, required: false,
         description: "Solution grid; required before this version can be published"
+      argument :solution_code, String, required: false,
+        description: "Optional setter code letting off-site solvers claim a solve (blank = in-app solves only)"
       argument :solve_message, String, required: false,
         description: "Custom message shown on a correct solve (blank uses the default)"
     end

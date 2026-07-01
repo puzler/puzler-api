@@ -17,6 +17,8 @@ module Types
       field :label, String, null: true, description: "Optional author-provided name"
       field :solution, GraphQL::Types::JSON, null: true,
         description: "Solution grid for this version; only visible to the author"
+      field :solution_code, String, null: true,
+        description: "Setter's off-site solution code; only visible to the author"
       field :solution_hash, String, null: true,
         description: "SHA-256 of the solution, used for client-side completion detection"
       field :solve_message, String, null: true,
@@ -29,6 +31,12 @@ module Types
 
       def solution
         return object.solution if author_or_admin?
+
+        nil
+      end
+
+      def solution_code
+        return object.solution_code if author_or_admin?
 
         nil
       end

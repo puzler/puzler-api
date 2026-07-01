@@ -87,6 +87,45 @@ class Puzzle < ApplicationRecord
     user.present? && puzzle_plays.completed.exists?(user_id: user.id)
   end
 
+  # Actor-aware solver check: a guest's completed play (keyed by guest_token)
+  # counts too, so off-site/guest solves gate the same UI as logged-in solves.
+  def solved_by?(actor)
+    return false unless actor
+    return solver?(actor.user) if actor.user?
+
+    puzzle_plays.completed.exists?(guest_token: actor.guest_token)
+  end
+
+  # Is this actor the puzzle's author? Authors can play their own puzzle but never
+  # count as a solver (no is_solved, no solve_count, no rating). Guests are never
+  # the author.
+  def authored_by?(actor)
+    actor&.user? && actor.user_id == author_id
+  end
+
+  # Record a completed solve for `actor`, the single chokepoint every solve path
+  # funnels through (in-app board submit and off-site solution code). No-op for the
+  # author. Idempotent per actor: solve_count is bumped only the first time this
+  # actor completes the puzzle. Records against the actor's own play (the one their
+  # StartPlay created, or a fresh one for a solo guest / off-site solver). Returns
+  # :author, :already, or :recorded.
+  def record_solve!(actor, cell_state: nil, time_elapsed_seconds: nil)
+    return :author if authored_by?(actor)
+    return :already if solved_by?(actor)
+
+    play = puzzle_plays.find_or_initialize_by(actor.owner_attrs)
+    play.is_solved = true
+    play.completed_at = Time.current
+    play.started_at ||= Time.current
+    play.cell_state = cell_state unless cell_state.nil?
+    play.time_elapsed_seconds = time_elapsed_seconds unless time_elapsed_seconds.nil?
+    play.save!
+
+    increment!(:solve_count)
+    refresh_container_aggregates!
+    :recorded
+  end
+
   # Drop any attached description image whose blob no longer appears in the saved
   # HTML (its signed_id is embedded in the rails blob URL). Keeps R2 tidy as the
   # author edits the description. Purges async so saving stays fast.

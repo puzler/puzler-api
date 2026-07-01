@@ -23,6 +23,8 @@ module Schemas
         description: "Start or resume a play session for a published puzzle"
       field :submit_solution, mutation: ::Mutations::Play::SubmitSolution,
         description: "Submit a completed solution for server-side validation"
+      field :submit_solution_code, mutation: ::Mutations::Play::SubmitSolutionCode,
+        description: "Claim a solve via the setter's solution code (for off-site solves)"
     end
   end
 end

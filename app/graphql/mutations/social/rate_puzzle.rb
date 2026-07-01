@@ -20,6 +20,11 @@ module Mutations
         puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
 
+        # Authors rate their own puzzle only via the author-difficulty setting, and
+        # ratings are reserved for confirmed solvers (an off-site code solve counts).
+        return { rating: nil, errors: [ "Authors cannot rate their own puzzle" ] } if puzzle.authored_by?(current_actor)
+        return { rating: nil, errors: [ "Only solvers can rate this puzzle" ] } unless puzzle.solver?(current_user)
+
         rating = current_user.ratings.find_or_initialize_by(puzzle:)
         rating.stars = stars if stars
         rating.difficulty_vote = difficulty_vote if difficulty_vote

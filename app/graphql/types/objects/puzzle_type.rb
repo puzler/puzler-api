@@ -38,6 +38,8 @@ module Types
       field :granted_users, [ UserType ], null: false,
         description: "Users explicitly granted access to this private puzzle; only visible to the author"
       field :grid, GridType, null: false, description: "Grid dimensions"
+      field :has_solution_code, Boolean, null: false,
+        description: "Whether the published version accepts an off-site solution code to claim a solve"
       field :id, ID, null: false, description: "Unique puzzle ID"
       field :is_favorited, Boolean, null: false,
         description: "Whether the current user has favorited this puzzle"
@@ -75,6 +77,10 @@ module Types
 
       def grid
         { rows: object.grid_rows, cols: object.grid_cols }
+      end
+
+      def has_solution_code
+        object.published_version&.solution_code.present?
       end
 
       # The setter's free-text credit lives in the published version's definition
@@ -144,7 +150,7 @@ module Types
       end
 
       def viewer_has_solved
-        object.solver?(context[:current_user])
+        object.solved_by?(Actor.from_context(current_user: context[:current_user], guest_token: context[:guest_token]))
       end
 
       def sudokupad_url

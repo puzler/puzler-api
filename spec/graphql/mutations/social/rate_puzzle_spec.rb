@@ -15,7 +15,10 @@ RSpec.describe "Mutation: ratePuzzle", type: :graphql do
   let(:user)   { create(:user) }
   let(:puzzle) { create(:puzzle, :published) }
 
-  context "when authenticated" do
+  context "when a confirmed solver rates" do
+    # Ratings are gated to solvers, so credit the rater with a completed play.
+    before { create(:puzzle_play, :solved, user: user, puzzle: puzzle) }
+
     it "creates a rating", :aggregate_failures do
       result = execute_query(mutation,
         variables: { puzzleId: puzzle.id, stars: 5, difficultyVote: 4 },
@@ -39,6 +42,24 @@ RSpec.describe "Mutation: ratePuzzle", type: :graphql do
       execute_query(mutation, variables: { puzzleId: puzzle.id, difficultyVote: 4 }, context: auth_context(user))
       expect(puzzle.reload.avg_difficulty).to eq(4.0)
       expect(puzzle.difficulty_vote_count).to eq(1)
+    end
+  end
+
+  context "when the rater has not solved the puzzle" do
+    it "is rejected", :aggregate_failures do
+      result = execute_query(mutation, variables: { puzzleId: puzzle.id, stars: 4 }, context: auth_context(user))
+      expect(gql_data(result, "ratePuzzle", "rating")).to be_nil
+      expect(gql_data(result, "ratePuzzle", "errors")).to include(a_string_matching(/solvers/))
+    end
+  end
+
+  context "when the author rates their own puzzle" do
+    before { create(:puzzle_play, :solved, user: puzzle.author, puzzle: puzzle) }
+
+    it "is rejected even after playing it", :aggregate_failures do
+      result = execute_query(mutation, variables: { puzzleId: puzzle.id, stars: 5 }, context: auth_context(puzzle.author))
+      expect(gql_data(result, "ratePuzzle", "rating")).to be_nil
+      expect(gql_data(result, "ratePuzzle", "errors")).to include(a_string_matching(/Authors cannot rate/))
     end
   end
 
