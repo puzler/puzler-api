@@ -29,6 +29,43 @@ RSpec.describe PresenceChannel, type: :channel do
       expect { perform(:cursor, "cells" => %w[r0c0 r0c1]) }
         .to have_broadcasted_to(play).with(hash_including("type" => "cursor", "actorId" => "user:#{owner.id}", "isHost" => true))
     end
+
+    it "relays a server-stamped cell batch to the play" do
+      subscribe(play_id: play.id, display_name: "Owner")
+      states = { "r0c0" => { "value" => 5 } }
+      expect { perform(:cells, "states" => states) }
+        .to have_broadcasted_to(play).with(hash_including("type" => "cells", "states" => states, "actorId" => "user:#{owner.id}"))
+    end
+
+    it "drops a cell relay that is not a hash or is oversized", :aggregate_failures do
+      subscribe(play_id: play.id, display_name: "Owner")
+      expect { perform(:cells, "states" => %w[not a hash]) }.not_to have_broadcasted_to(play)
+      oversized = (0..PresenceChannel::MAX_RELAY_CELLS).to_h { |i| [ "r#{i}c0", { "value" => 1 } ] }
+      expect { perform(:cells, "states" => oversized) }.not_to have_broadcasted_to(play)
+    end
+
+    it "broadcasts a stamped catch-up request" do
+      subscribe(play_id: play.id, display_name: "Owner")
+      expect { perform(:request_cells) }
+        .to have_broadcasted_to(play).with(hash_including("type" => "request_cells", "actorId" => "user:#{owner.id}"))
+    end
+  end
+
+  context "when a participant is kicked after subscribing" do
+    let(:guest_token) { "g_kicked" }
+
+    before do
+      stub_connection(current_user: nil, guest_token: guest_token)
+      create(:puzzle_play_participant, :guest, puzzle_play: play, guest_token: guest_token)
+      subscribe(play_id: play.id, display_name: "Guest")
+    end
+
+    it "stops relaying their cursor and cells once access is revoked", :aggregate_failures do
+      play.participants.where(guest_token: guest_token).destroy_all
+      expect { perform(:cursor, "cells" => %w[r0c0]) }.not_to have_broadcasted_to(play)
+      expect { perform(:cells, "states" => { "r0c0" => { "value" => 1 } }) }.not_to have_broadcasted_to(play)
+      expect { perform(:request_cells) }.not_to have_broadcasted_to(play)
+    end
   end
 
   context "when the actor is a guest" do

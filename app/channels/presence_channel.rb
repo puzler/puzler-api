@@ -3,6 +3,10 @@
 # server-stamped with the sender's actorId (user/guest key) and isHost flag so
 # neither can be spoofed; the displayName is client-supplied and purely cosmetic.
 class PresenceChannel < ApplicationCable::Channel
+  # Generous cap on cells per relay message: covers a full board on the largest
+  # supported grids while bounding what one message can carry.
+  MAX_RELAY_CELLS = 512
+
   def subscribed
     @play = PuzzlePlay.find_by(id: params[:play_id])
     return reject unless @play&.accessible_by?(current_actor)
@@ -29,11 +33,43 @@ class PresenceChannel < ApplicationCable::Channel
   end
 
   def cursor(data)
+    return unless relayable?
+
     cells = Array(data["cells"]).first(81)
     PresenceChannel.broadcast_to(@play, stamp({ type: "cursor", cells: cells }, data["display_name"]))
   end
 
+  # Live cell-state relay: fan a batch of changed cells out to the other clients
+  # on this play, so collaborators see edits immediately instead of waiting for
+  # the debounced SaveProgress autosave. Purely ephemeral — nothing is persisted
+  # here; SaveProgress remains the durable path and late joiners hydrate from it.
+  def cells(data)
+    return unless relayable?
+
+    states = data["states"]
+    return unless states.is_a?(Hash) && states.size <= MAX_RELAY_CELLS
+
+    PresenceChannel.broadcast_to(@play, stamp({ type: "cells", states: states }, nil))
+  end
+
+  # A (re)connecting client asks peers to re-relay their full boards, so it
+  # catches up on edits it missed while its cable was down (relays are
+  # fire-and-forget and never replayed).
+  def request_cells(_data = {})
+    return unless relayable?
+
+    PresenceChannel.broadcast_to(@play, stamp({ type: "request_cells" }, nil))
+  end
+
   private
+
+  # Kicking removes the participant row (and optionally blocks the actor), but a
+  # kicked client's existing subscription lives on until it unsubscribes. Re-check
+  # access on every relay action so that lingering subscription can't keep
+  # injecting cursor or cell state into the session.
+  def relayable?
+    @play.accessible_by?(current_actor)
+  end
 
   def broadcast_join(display_name)
     PresenceChannel.broadcast_to(@play, stamp({ type: "join" }, display_name))
