@@ -19,7 +19,8 @@ RSpec.describe Fpuzzles::Encoder do
         "singleCellMarks" => { "odd_cells" => [ "r1c1" ], "minimums" => [ "r1c3" ], "row_index_cells" => [ "r0c6", "r1c0" ], "col_index_cells" => [ "r0c6" ] },
         "connectorDots" => {
           "r2c0|r2c1" => { "type" => "difference_dots", "value" => 3 }, "r2c2|r2c3" => { "type" => "ratio_dots", "value" => nil },
-          "r2c4|r2c5" => { "type" => "xv", "value" => "X" }, "+r3c3" => { "type" => "quadruples", "value" => [ 1, 2, 3 ] }
+          "r2c4|r2c5" => { "type" => "xv", "value" => "X" }, "+r3c3" => { "type" => "quadruples", "value" => [ 1, 2, 3 ] },
+          "r2c6|r2c7" => { "type" => "inequality", "value" => "<" }, "r5c5|r6c5" => { "type" => "inequality", "value" => ">" }
         },
         "outerClues" => {
           "o:r-1c2" => { "type" => "skyscrapers", "value" => 3 },
@@ -113,6 +114,11 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["line"]).to include(include("lines" => [ %w[R7C1 R7C2] ], "outlineC" => "#00B5AD", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R6C8 R6C9] ], "outlineC" => "#F0C300", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R5C8 R5C9] ], "outlineC" => "#AC8AFF", "width" => 0.3))
+  end
+
+  it "exports inequality signs as border-centred glyphs, rotated when stacked", :aggregate_failures do
+    expect(data["text"]).to include(include("cells" => %w[R3C7 R3C8], "value" => "<", "size" => 0.3))
+    expect(data["text"]).to include(include("cells" => %w[R6C6 R7C6], "value" => "∨", "size" => 0.3))
   end
 
   it "maps a lockout line to the native lockout field" do

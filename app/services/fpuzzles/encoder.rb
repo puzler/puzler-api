@@ -213,6 +213,15 @@ module Fpuzzles
           push("difference", { "cells" => pair, "value" => dot["value"].nil? ? "" : dot["value"].to_s })
         when "ratio_dots"
           push("ratio", { "cells" => pair, "value" => dot["value"].nil? ? "" : dot["value"].to_s })
+        when "inequality"
+          if %w[< >].include?(dot["value"])
+            # No f-puzzles equivalent: a cosmetic glyph centred on the border.
+            # Stacked cells rotate the sign to point up/down at the smaller
+            # (first) cell of the sorted border key.
+            stacked = parse_key(a)[0] != parse_key(b)[0]
+            glyph = stacked ? (dot["value"] == "<" ? "∧" : "∨") : dot["value"]
+            push("text", { "cells" => pair, "value" => glyph, "fontC" => "#000000", "size" => 0.3 })
+          end
         when "xv"
           if %w[X V].include?(dot["value"]) then push("xv", { "cells" => pair, "value" => dot["value"] })
           else @warnings << "An XV marker with no X/V letter was dropped."
