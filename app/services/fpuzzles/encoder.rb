@@ -22,7 +22,7 @@ module Fpuzzles
     LITTLE_KILLER_DIR = { "up-left" => "UL", "up-right" => "UR", "down-left" => "DL", "down-right" => "DR" }.freeze
     CONSTRAINT_LINE_FIELD = {
       "renban" => "renban", "german_whispers" => "whispers", "palindrome" => "palindrome",
-      "region_sum" => "regionsumline", "between_lines" => "betweenline"
+      "region_sum" => "regionsumline", "between_lines" => "betweenline", "lockout_lines" => "lockout"
     }.freeze
     UNRENDERED_LINE_COSMETIC = {
       "renban" => { "outlineC" => "#F067F0", "width" => 0.4 },

@@ -39,7 +39,8 @@ RSpec.describe Fpuzzles::Encoder do
           { "id" => "i13", "type" => "entropic_lines", "data" => { "cells" => [ "r7c0", "r7c1" ] } },
           { "id" => "i14", "type" => "modular_lines", "data" => { "cells" => [ "r6c0", "r6c1" ] } },
           { "id" => "i15", "type" => "nabner_lines", "data" => { "cells" => [ "r5c7", "r5c8" ] } },
-          { "id" => "i16", "type" => "zipper_lines", "data" => { "cells" => [ "r4c7", "r4c8" ] } }
+          { "id" => "i16", "type" => "zipper_lines", "data" => { "cells" => [ "r4c7", "r4c8" ] } },
+          { "id" => "i17", "type" => "lockout_lines", "data" => { "cells" => [ "r3c7", "r3c8" ] } }
         ]
       }
     }
@@ -112,6 +113,10 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["line"]).to include(include("lines" => [ %w[R7C1 R7C2] ], "outlineC" => "#00B5AD", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R6C8 R6C9] ], "outlineC" => "#F0C300", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R5C8 R5C9] ], "outlineC" => "#AC8AFF", "width" => 0.3))
+  end
+
+  it "maps a lockout line to the native lockout field" do
+    expect(data["lockout"]).to eq([ { "lines" => [ %w[R4C8 R4C9] ] } ])
   end
 
   it "maps a diamond shape with combined rotation angle", :aggregate_failures do
