@@ -17,7 +17,12 @@ module Mutations
         return deny unless collection.collection_puzzles.exists?(puzzle_id:)
         return { recorded: false, errors: [ "Invalid time" ] } if seconds.to_i <= 0
 
-        CollectionSolveTime.record_best(collection:, puzzle: Puzzle.find(puzzle_id), user: current_user, seconds:)
+        # find_by, not find: the membership check above doesn't survive a
+        # concurrent puzzle deletion, and that race shouldn't 500.
+        puzzle = Puzzle.find_by(id: puzzle_id)
+        return deny unless puzzle
+
+        CollectionSolveTime.record_best(collection:, puzzle:, user: current_user, seconds:)
         { recorded: true, errors: [] }
       end
 

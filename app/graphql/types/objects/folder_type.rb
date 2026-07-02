@@ -16,11 +16,11 @@ module Types
       end
 
       def puzzle_count
-        object.puzzles.size
+        context.dataloader.with(Sources::FolderCounts, Puzzle).load(object.id)
       end
 
       def collection_count
-        object.collections.size
+        context.dataloader.with(Sources::FolderCounts, Collection).load(object.id)
       end
     end
   end

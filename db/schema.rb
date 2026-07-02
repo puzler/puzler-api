@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_30_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -221,7 +221,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_000002) do
     t.bigint "user_id"
     t.index ["guest_token"], name: "index_puzzle_plays_on_guest_token"
     t.index ["puzzle_id", "guest_token"], name: "index_puzzle_plays_active_by_guest", where: "(is_solved = false)"
+    t.index ["puzzle_id", "guest_token"], name: "index_puzzle_plays_solved_by_guest", where: "is_solved"
     t.index ["puzzle_id", "user_id"], name: "index_puzzle_plays_active_by_user", where: "(is_solved = false)"
+    t.index ["puzzle_id", "user_id"], name: "index_puzzle_plays_solved_by_user", where: "is_solved"
     t.index ["puzzle_id"], name: "index_puzzle_plays_on_puzzle_id"
     t.index ["user_id"], name: "index_puzzle_plays_on_user_id"
   end
@@ -287,11 +289,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_30_000002) do
     t.datetime "updated_at", null: false
     t.integer "version_counter", default: 0, null: false
     t.integer "visibility", default: 0, null: false
+    t.index ["author_id", "status"], name: "index_puzzles_on_author_and_status"
     t.index ["author_id"], name: "index_puzzles_on_author_id"
     t.index ["constraint_types"], name: "index_puzzles_on_constraint_types", using: :gin
     t.index ["effective_difficulty"], name: "index_puzzles_on_effective_difficulty"
     t.index ["folder_id"], name: "index_puzzles_on_folder_id"
     t.index ["published_at"], name: "index_puzzles_on_published_at"
+    t.index ["published_at"], name: "index_puzzles_publicly_visible", order: :desc, where: "((status = 1) AND (visibility = 2))"
     t.index ["published_version_id"], name: "index_puzzles_on_published_version_id"
     t.index ["share_token"], name: "index_puzzles_on_share_token", unique: true
     t.index ["solution_hash"], name: "index_puzzles_on_solution_hash"

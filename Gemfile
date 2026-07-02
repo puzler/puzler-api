@@ -37,6 +37,10 @@ gem "pagy"
 # CORS
 gem "rack-cors"
 
+# Request throttling (login attempts, GraphQL volume, signup abuse). Uses the
+# same Redis as Action Cable for counters so limits hold across processes.
+gem "rack-attack"
+
 # Redis for Action Cable + the shared presence registry
 gem "redis", ">= 4.0.1"
 
@@ -48,6 +52,8 @@ gem "sidekiq-cron"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+  # N+1 detection: logs in development, raises in specs (config/initializers/bullet.rb)
+  gem "bullet"
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "faker"
