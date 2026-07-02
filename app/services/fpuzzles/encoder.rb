@@ -29,6 +29,12 @@ module Fpuzzles
       "german_whispers" => { "outlineC" => "#67F067", "width" => 0.3 },
       "region_sum" => { "outlineC" => "#2ECBFF", "width" => 0.25 }
     }.freeze
+    # Lines with no f-puzzles constraint field at all: exported as a cosmetic line
+    # only, in the constraint's classic colour.
+    COSMETIC_ONLY_LINE = {
+      "dutch_whispers" => { "outlineC" => "#FF9A00", "width" => 0.3 },
+      "entropic_lines" => { "outlineC" => "#FA9678", "width" => 0.3 }
+    }.freeze
     THERMO_COLOR = "#aaaaaa".freeze
     THERMO_STROKE_WIDTH = 12
     THERMO_BULB_RADIUS = 18
@@ -264,8 +270,8 @@ module Fpuzzles
             end
             push("clone", { "cells" => Array(data["cells"]).map { |k| fp_cell(k) }, "cloneCells" => clone_cells })
           end
-        when "dutch_whispers"
-          push("line", { "lines" => [ Array(data["cells"]).map { |k| fp_cell(k) } ], "outlineC" => "#FF9A00", "width" => 0.3, "isNewConstraint" => true })
+        when *COSMETIC_ONLY_LINE.keys
+          push("line", { "lines" => [ Array(data["cells"]).map { |k| fp_cell(k) } ] }.merge(COSMETIC_ONLY_LINE[inst["type"]]).merge("isNewConstraint" => true))
         when "cosmetic_line"
           preset = find_preset("linePresets", data["presetId"])
           push("line", {

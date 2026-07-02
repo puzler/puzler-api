@@ -35,7 +35,8 @@ RSpec.describe Fpuzzles::Encoder do
           { "id" => "i4", "type" => "killer_cage", "data" => { "cells" => [ "r0c7", "r0c8" ], "sum" => 10 } },
           { "id" => "i6", "type" => "clone", "data" => { "cells" => [ "r0c0" ], "copies" => [ { "dRow" => 1, "dCol" => 1 } ] } },
           { "id" => "i10", "type" => "shape", "data" => { "pos" => { "x" => 4.5, "y" => 4.5 }, "content" => "X", "rotation" => 30, "presetId" => "sp1" } },
-          { "id" => "i12", "type" => "renban", "data" => { "cells" => [ "r8c5", "r8c6" ] } }
+          { "id" => "i12", "type" => "renban", "data" => { "cells" => [ "r8c5", "r8c6" ] } },
+          { "id" => "i13", "type" => "entropic_lines", "data" => { "cells" => [ "r7c0", "r7c1" ] } }
         ]
       }
     }
@@ -101,6 +102,12 @@ RSpec.describe Fpuzzles::Encoder do
   it "maps a renban line plus its cosmetic fallback", :aggregate_failures do
     expect(data["renban"]).to eq([ { "lines" => [ %w[R9C6 R9C7] ] } ])
     expect(data["line"]).to include(include("outlineC" => "#F067F0", "width" => 0.4))
+  end
+
+  it "exports an entropic line as a cosmetic-only line" do
+    expect(data["line"]).to include(
+      include("lines" => [ %w[R8C1 R8C2] ], "outlineC" => "#FA9678", "width" => 0.3, "isNewConstraint" => true)
+    )
   end
 
   it "maps a diamond shape with combined rotation angle", :aggregate_failures do
