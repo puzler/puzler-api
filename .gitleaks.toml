@@ -1,0 +1,10 @@
+# Gitleaks config for the bin/check secrets gate.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Rails encrypted credentials are committed by design; gitleaks pattern-matches their base64 ciphertext as API keys. The plaintext never touches the repo (config/master.key and config/credentials/*.key are gitignored)."
+paths = [
+  '''config/credentials\.yml\.enc''',
+  '''config/credentials/.*\.yml\.enc''',
+]

@@ -1,0 +1,6 @@
+# Historical finding, triaged 2026-07-01: the devise:install generator's
+# commented-out sample config.secret_key in the initial commit. It was never
+# uncommented, so nothing ever signed with it (Devise uses secret_key_base
+# from encrypted credentials). Removed from the current tree; the line lives
+# on in git history, which this fingerprint acknowledges.
+d26d15439505a80bd0f02ab96fb0bbe7ea64a6c8:config/initializers/devise.rb:generic-api-key:19
