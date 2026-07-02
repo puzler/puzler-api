@@ -34,7 +34,8 @@ module Fpuzzles
     COSMETIC_ONLY_LINE = {
       "dutch_whispers" => { "outlineC" => "#FF9A00", "width" => 0.3 },
       "entropic_lines" => { "outlineC" => "#FA9678", "width" => 0.3 },
-      "modular_lines" => { "outlineC" => "#00B5AD", "width" => 0.3 }
+      "modular_lines" => { "outlineC" => "#00B5AD", "width" => 0.3 },
+      "nabner_lines" => { "outlineC" => "#F0C300", "width" => 0.3 }
     }.freeze
     THERMO_COLOR = "#aaaaaa".freeze
     THERMO_STROKE_WIDTH = 12

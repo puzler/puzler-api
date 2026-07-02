@@ -37,7 +37,8 @@ RSpec.describe Fpuzzles::Encoder do
           { "id" => "i10", "type" => "shape", "data" => { "pos" => { "x" => 4.5, "y" => 4.5 }, "content" => "X", "rotation" => 30, "presetId" => "sp1" } },
           { "id" => "i12", "type" => "renban", "data" => { "cells" => [ "r8c5", "r8c6" ] } },
           { "id" => "i13", "type" => "entropic_lines", "data" => { "cells" => [ "r7c0", "r7c1" ] } },
-          { "id" => "i14", "type" => "modular_lines", "data" => { "cells" => [ "r6c0", "r6c1" ] } }
+          { "id" => "i14", "type" => "modular_lines", "data" => { "cells" => [ "r6c0", "r6c1" ] } },
+          { "id" => "i15", "type" => "nabner_lines", "data" => { "cells" => [ "r5c7", "r5c8" ] } }
         ]
       }
     }
@@ -105,9 +106,10 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["line"]).to include(include("outlineC" => "#F067F0", "width" => 0.4))
   end
 
-  it "exports entropic and modular lines as cosmetic-only lines", :aggregate_failures do
+  it "exports entropic, modular and nabner lines as cosmetic-only lines", :aggregate_failures do
     expect(data["line"]).to include(include("lines" => [ %w[R8C1 R8C2] ], "outlineC" => "#FA9678", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R7C1 R7C2] ], "outlineC" => "#00B5AD", "width" => 0.3))
+    expect(data["line"]).to include(include("lines" => [ %w[R6C8 R6C9] ], "outlineC" => "#F0C300", "width" => 0.3))
   end
 
   it "maps a diamond shape with combined rotation angle", :aggregate_failures do
