@@ -10,9 +10,7 @@ module Mutations
         description: "True when the comment was successfully deleted"
 
       def resolve(id:)
-        require_auth!
-        comment = current_user.comments.find_by(id:)
-        raise GraphQL::ExecutionError, "Comment not found" unless comment
+        comment = require_owned!(:comments, "Comment", id:)
 
         comment.destroy
         { success: true }

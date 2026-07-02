@@ -1,8 +1,8 @@
 module Types
   module Objects
     # One item in a user's recent public activity feed: a published puzzle, a
-    # review they wrote, or a puzzle they solved. Resolved from a plain hash built
-    # in UserType#activity (each field reads the matching hash key by default).
+    # review they wrote, or a puzzle they solved. Resolved from a
+    # UserActivityFeed::Event (each field calls the matching struct reader).
     # The associated puzzle is always present; comment is present only for
     # REVIEW_WRITTEN items.
     class ProfileActivityType < BaseObject

@@ -40,6 +40,19 @@ RSpec.configure do |config|
   # The presence registry is process-global; clear it between examples so liveness
   # state never leaks across tests.
   config.before { PresenceRegistry.reset! }
+
+  # Bullet only detects N+1s inside a "request"; wrap each example so any spec
+  # (GraphQL resolvers especially) fails loudly on an unbatched query pattern.
+  config.around do |example|
+    if defined?(Bullet) && Bullet.enable?
+      Bullet.start_request
+      example.run
+      Bullet.perform_out_of_channel_notifications if Bullet.notification?
+      Bullet.end_request
+    else
+      example.run
+    end
+  end
 end
 
 Shoulda::Matchers.configure do |config|

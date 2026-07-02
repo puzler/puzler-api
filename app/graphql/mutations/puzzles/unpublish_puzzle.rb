@@ -9,9 +9,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The unpublished puzzle"
 
       def resolve(id:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id:)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id:)
 
         if puzzle.update(published_version: nil, status: :draft)
           current_user.recompute_setter_stats!

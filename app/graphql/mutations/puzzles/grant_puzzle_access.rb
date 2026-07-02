@@ -10,9 +10,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The puzzle, with its updated grants"
 
       def resolve(puzzle_id:, username:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         user = User.find_by("LOWER(username) = ?", username.downcase)
         return { puzzle: nil, errors: [ "No user named #{username}" ] } unless user

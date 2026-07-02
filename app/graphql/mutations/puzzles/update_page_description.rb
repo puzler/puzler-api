@@ -14,9 +14,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The updated puzzle"
 
       def resolve(puzzle_id:, html:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         clean = HtmlSanitizer.sanitize(html, allowed_image_hosts: DescriptionImageHost.allowed)
         if puzzle.update(page_description_html: clean)

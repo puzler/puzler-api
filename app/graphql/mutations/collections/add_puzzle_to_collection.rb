@@ -10,11 +10,8 @@ module Mutations
       field :errors, [ String ], null: false, description: "Validation errors, if any"
 
       def resolve(collection_id:, puzzle_id:)
-        require_auth!
-        collection = current_user.collections.find_by(id: collection_id)
-        raise GraphQL::ExecutionError, "Collection not found" unless collection
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        collection = require_owned!(:collections, "Collection", id: collection_id)
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         unless collection.collection_puzzles.exists?(puzzle_id: puzzle.id)
           next_position = (collection.collection_puzzles.maximum(:position) || -1) + 1

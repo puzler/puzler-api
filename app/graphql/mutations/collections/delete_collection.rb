@@ -9,9 +9,7 @@ module Mutations
       field :success, Boolean, null: false, description: "Whether the collection was deleted"
 
       def resolve(id:)
-        require_auth!
-        collection = current_user.collections.find_by(id:)
-        raise GraphQL::ExecutionError, "Collection not found" unless collection
+        collection = require_owned!(:collections, "Collection", id:)
 
         collection.destroy
         { success: true, errors: [] }

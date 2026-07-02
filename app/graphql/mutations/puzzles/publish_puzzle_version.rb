@@ -12,9 +12,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The published puzzle"
 
       def resolve(puzzle_id:, version_id:, visibility: nil, tag_slugs: nil)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         version = puzzle.versions.find_by(id: version_id)
         raise GraphQL::ExecutionError, "Version not found" unless version

@@ -38,7 +38,7 @@ class Puzzle < ApplicationRecord
       containers_only: 5 },
     prefix: :visible
 
-  before_create :generate_share_token
+  include ShareTokenable
 
   # Once a puzzle has this many community difficulty votes, its effective
   # difficulty switches from the author's value to the community average.
@@ -181,12 +181,5 @@ class Puzzle < ApplicationRecord
     community = votes.average(:difficulty_vote)&.round(2)
     effective = count >= DIFFICULTY_VOTE_CUTOFF ? community : author_difficulty
     update_columns(avg_difficulty: community, difficulty_vote_count: count, effective_difficulty: effective)
-  end
-
-  private
-
-  # Unguessable URL key for share/solve links (mirrors the jti pattern on User).
-  def generate_share_token
-    self.share_token ||= SecureRandom.urlsafe_base64(16)
   end
 end

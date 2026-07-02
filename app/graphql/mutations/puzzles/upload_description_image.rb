@@ -18,9 +18,7 @@ module Mutations
       field :url, String, null: true, description: "Hosted URL of the stored image"
 
       def resolve(file:, puzzle_id:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         processed = ImageNormalizer.new(file, max_bytes: MAX_BYTES, max_dimension: MAX_DIMENSION, label: "Image").call
         blob = ActiveStorage::Blob.create_and_upload!(

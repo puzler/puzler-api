@@ -18,7 +18,7 @@ class Collection < ApplicationRecord
     prefix: :visible
   enum :mode, { unordered: 0, sequence: 1 }
 
-  before_create :generate_share_token
+  include ShareTokenable
 
   validates :title, presence: true, length: { maximum: 100 }
 
@@ -56,12 +56,5 @@ class Collection < ApplicationRecord
     when "unlisted", "containers_only" then share_token.present? && share_token == self.share_token
     else false
     end
-  end
-
-  private
-
-  # Unguessable URL key for share/series links (mirrors Puzzle#generate_share_token).
-  def generate_share_token
-    self.share_token ||= SecureRandom.urlsafe_base64(16)
   end
 end

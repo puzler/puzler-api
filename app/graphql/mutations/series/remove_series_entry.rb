@@ -13,8 +13,7 @@ module Mutations
         entry = SeriesEntry.find_by(id: entry_id)
         raise GraphQL::ExecutionError, "Entry not found" unless entry
 
-        series = current_user.series.find_by(id: entry.series_id)
-        raise GraphQL::ExecutionError, "Entry not found" unless series
+        series = require_owned!(:series, "Entry", id: entry.series_id)
 
         entry.destroy
         series.recompute_aggregates!

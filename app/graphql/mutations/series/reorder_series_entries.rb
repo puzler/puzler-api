@@ -11,9 +11,7 @@ module Mutations
       field :series, Types::Objects::SeriesType, null: true, description: "The reordered series"
 
       def resolve(series_id:, ordered_entry_ids:)
-        require_auth!
-        series = current_user.series.find_by(id: series_id)
-        raise GraphQL::ExecutionError, "Series not found" unless series
+        series = require_owned!(:series, "Series", id: series_id)
 
         ordered_entry_ids.each_with_index do |entry_id, index|
           series.series_entries.where(id: entry_id).update_all(position: index)

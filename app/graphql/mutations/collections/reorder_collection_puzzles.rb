@@ -11,9 +11,7 @@ module Mutations
       field :errors, [ String ], null: false, description: "Validation errors, if any"
 
       def resolve(collection_id:, ordered_puzzle_ids:)
-        require_auth!
-        collection = current_user.collections.find_by(id: collection_id)
-        raise GraphQL::ExecutionError, "Collection not found" unless collection
+        collection = require_owned!(:collections, "Collection", id: collection_id)
 
         ordered_puzzle_ids.each_with_index do |puzzle_id, index|
           collection.collection_puzzles.where(puzzle_id:).update_all(position: index)

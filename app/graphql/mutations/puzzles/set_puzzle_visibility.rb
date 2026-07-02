@@ -14,9 +14,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The updated puzzle"
 
       def resolve(id:, visibility:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id:)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id:)
 
         unless SELECTABLE.include?(visibility)
           return { puzzle: nil, errors: [ "Unsupported visibility: #{visibility}" ] }

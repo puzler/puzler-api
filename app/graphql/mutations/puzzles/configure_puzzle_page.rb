@@ -14,9 +14,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The updated puzzle"
 
       def resolve(puzzle_id:, comments_require_solve_override: :unset)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         attrs = {}
         attrs[:comments_require_solve_override] = comments_require_solve_override unless comments_require_solve_override == :unset

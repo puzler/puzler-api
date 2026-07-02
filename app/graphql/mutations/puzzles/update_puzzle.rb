@@ -14,9 +14,7 @@ module Mutations
         description: "The updated puzzle"
 
       def resolve(id:, attrs:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id:)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id:)
 
         update_attrs = attrs.to_h.compact
         if update_attrs[:solution].present?

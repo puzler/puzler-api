@@ -10,9 +10,7 @@ module Mutations
       field :puzzle, Types::Objects::PuzzleType, null: true, description: "The moved puzzle"
 
       def resolve(puzzle_id:, folder_id: nil)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
         if folder_id.present? && !current_user.folders.exists?(id: folder_id)
           raise GraphQL::ExecutionError, "Folder not found"

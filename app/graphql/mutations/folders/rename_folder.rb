@@ -10,9 +10,7 @@ module Mutations
       field :folder, Types::Objects::FolderType, null: true, description: "The updated folder"
 
       def resolve(id:, name:)
-        require_auth!
-        folder = current_user.folders.find_by(id:)
-        raise GraphQL::ExecutionError, "Folder not found" unless folder
+        folder = require_owned!(:folders, "Folder", id:)
 
         if folder.update(name:)
           { folder:, errors: [] }

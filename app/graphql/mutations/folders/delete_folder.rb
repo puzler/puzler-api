@@ -9,9 +9,7 @@ module Mutations
       field :success, Boolean, null: false, description: "Whether the folder was deleted"
 
       def resolve(id:)
-        require_auth!
-        folder = current_user.folders.find_by(id:)
-        raise GraphQL::ExecutionError, "Folder not found" unless folder
+        folder = require_owned!(:folders, "Folder", id:)
 
         folder.destroy
         { success: true, errors: [] }

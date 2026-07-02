@@ -18,8 +18,7 @@ module Mutations
           return { series: nil, errors: [ "Unsupported entry type: #{entryable_type}" ] }
         end
 
-        series = current_user.series.find_by(id: series_id)
-        raise GraphQL::ExecutionError, "Series not found" unless series
+        series = require_owned!(:series, "Series", id: series_id)
 
         entryable = author_owned(entryable_type, entryable_id)
         raise GraphQL::ExecutionError, "#{entryable_type} not found" unless entryable

@@ -207,23 +207,11 @@ module Types
       def activity(limit: 30)
         return [] unless viewer_is_self? || object.show_activity
 
-        include_solves = viewer_is_self? || object.solve_history_at_least?(:puzzles)
-        public_ids = Puzzle.publicly_visible.select(:id)
-
-        events = object.puzzles.publicly_visible.order(published_at: :desc).limit(limit).map do |puzzle|
-          { kind: "PUBLISHED_PUZZLE", occurred_at: puzzle.published_at, puzzle:, comment: nil }
-        end
-        events += object.comments.top_level.where(puzzle_id: public_ids).by_newest.limit(limit)
-                        .includes(puzzle: :author).map do |comment|
-          { kind: "REVIEW_WRITTEN", occurred_at: comment.created_at, puzzle: comment.puzzle, comment: }
-        end
-        if include_solves
-          events += object.puzzle_plays.completed.where(puzzle_id: public_ids)
-                          .order(completed_at: :desc).limit(limit).includes(puzzle: :author).map do |play|
-            { kind: "SOLVE", occurred_at: play.completed_at || play.updated_at, puzzle: play.puzzle, comment: nil }
-          end
-        end
-        events.select { |event| event[:occurred_at] }.sort_by { |event| event[:occurred_at] }.reverse.first(limit)
+        UserActivityFeed.build(
+          object,
+          limit: limit,
+          include_solves: viewer_is_self? || object.solve_history_at_least?(:puzzles)
+        )
       end
 
       private

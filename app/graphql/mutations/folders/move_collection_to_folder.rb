@@ -10,9 +10,7 @@ module Mutations
       field :errors, [ String ], null: false, description: "Validation errors, if any"
 
       def resolve(collection_id:, folder_id: nil)
-        require_auth!
-        collection = current_user.collections.find_by(id: collection_id)
-        raise GraphQL::ExecutionError, "Collection not found" unless collection
+        collection = require_owned!(:collections, "Collection", id: collection_id)
 
         if folder_id.present? && !current_user.folders.exists?(id: folder_id)
           raise GraphQL::ExecutionError, "Folder not found"

@@ -34,6 +34,17 @@ module Mutations
       raise GraphQL::ExecutionError, "Identity required" unless current_actor
     end
 
+    # Fetch a record the caller must own, via a current_user association
+    # (passed by name so nothing touches current_user before the auth check).
+    # Raises the conventional "<Label> not found" error otherwise —
+    # deliberately indistinguishable from a nonexistent id, so ownership
+    # can't be probed by id-guessing.
+    def require_owned!(association, label, **finder)
+      require_auth!
+      current_user.public_send(association).find_by(**finder) ||
+        raise(GraphQL::ExecutionError, "#{label} not found")
+    end
+
     # Broadcast a play session's latest state to everyone watching it (the owner's
     # other tabs/devices; collaborators in Phase 7).
     def trigger_progress_updated(play)

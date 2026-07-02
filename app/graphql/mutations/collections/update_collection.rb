@@ -14,9 +14,7 @@ module Mutations
       field :errors, [ String ], null: false, description: "Validation errors, if any"
 
       def resolve(id:, attrs:)
-        require_auth!
-        collection = current_user.collections.find_by(id:)
-        raise GraphQL::ExecutionError, "Collection not found" unless collection
+        collection = require_owned!(:collections, "Collection", id:)
 
         data = attrs.to_h
         if data[:visibility] && SELECTABLE_VISIBILITY.exclude?(data[:visibility])

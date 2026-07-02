@@ -10,9 +10,7 @@ module Mutations
       field :folder, Types::Objects::FolderType, null: true, description: "The moved folder"
 
       def resolve(id:, parent_id: nil)
-        require_auth!
-        folder = current_user.folders.find_by(id:)
-        raise GraphQL::ExecutionError, "Folder not found" unless folder
+        folder = require_owned!(:folders, "Folder", id:)
 
         if parent_id.present? && !current_user.folders.exists?(id: parent_id)
           raise GraphQL::ExecutionError, "Parent folder not found"

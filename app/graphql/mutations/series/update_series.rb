@@ -13,9 +13,7 @@ module Mutations
       field :series, Types::Objects::SeriesType, null: true, description: "The updated series"
 
       def resolve(id:, attrs:)
-        require_auth!
-        series = current_user.series.find_by(id:)
-        raise GraphQL::ExecutionError, "Series not found" unless series
+        series = require_owned!(:series, "Series", id:)
 
         data = attrs.to_h
         if data[:visibility] && SELECTABLE_VISIBILITY.exclude?(data[:visibility])

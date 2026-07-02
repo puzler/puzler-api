@@ -16,7 +16,7 @@ class Series < ApplicationRecord
       containers_only: 5 },
     prefix: :visible
 
-  before_create :generate_share_token
+  include ShareTokenable
 
   validates :title, presence: true, length: { maximum: 100 }
 
@@ -24,26 +24,24 @@ class Series < ApplicationRecord
   scope :by_rating, -> { order(avg_rating: :desc) }
   scope :by_popularity, -> { order(solve_count: :desc) }
 
-  # Refresh the denormalized rating/solve aggregates from member puzzles. A
-  # series entry is either a puzzle (counts directly) or a collection (counts
-  # via its member puzzles), so both paths are flattened before aggregating.
+  # Refresh the denormalized rating/solve aggregates from member puzzles. This
+  # runs on every solve of a puzzle in the series, so it aggregates in SQL
+  # rather than loading every member puzzle into memory.
   def recompute_aggregates!
-    puzzles = member_puzzles
-    rated = puzzles.filter_map(&:avg_rating)
     update_columns(
-      avg_rating: rated.any? ? (rated.sum / rated.size).round(2) : nil,
-      solve_count: puzzles.sum(&:solve_count)
+      avg_rating: member_puzzles.average(:avg_rating)&.round(2),
+      solve_count: member_puzzles.sum(:solve_count)
     )
   end
 
   # Distinct puzzles reachable from this series: those entered directly plus
-  # those inside entered collections.
+  # those inside entered collections. A relation (deduped by primary key), so
+  # callers can aggregate or filter without materializing the whole set.
   def member_puzzles
-    entries = series_entries.includes(:entryable)
-    direct = entries.select { |e| e.entryable_type == "Puzzle" }.map(&:entryable)
-    via_collections = entries.select { |e| e.entryable_type == "Collection" }
-                             .flat_map { |e| e.entryable&.puzzles&.to_a || [] }
-    (direct + via_collections).compact.uniq
+    direct = series_entries.where(entryable_type: "Puzzle").select(:entryable_id)
+    entered_collections = series_entries.where(entryable_type: "Collection").select(:entryable_id)
+    via_collections = CollectionPuzzle.where(collection_id: entered_collections).select(:puzzle_id)
+    Puzzle.where(id: direct).or(Puzzle.where(id: via_collections))
   end
 
   # Can this viewer open the series? Author/admin always; otherwise by
@@ -56,12 +54,5 @@ class Series < ApplicationRecord
     when "unlisted" then share_token.present? && share_token == self.share_token
     else false
     end
-  end
-
-  private
-
-  # Unguessable URL key for share links (mirrors Collection#generate_share_token).
-  def generate_share_token
-    self.share_token ||= SecureRandom.urlsafe_base64(16)
   end
 end

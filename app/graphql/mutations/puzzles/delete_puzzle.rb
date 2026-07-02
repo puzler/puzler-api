@@ -12,9 +12,7 @@ module Mutations
         description: "True when the puzzle was successfully deleted"
 
       def resolve(id:)
-        require_auth!
-        puzzle = current_user.puzzles.find_by(id:)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+        puzzle = require_owned!(:puzzles, "Puzzle", id:)
 
         was_published = puzzle.published?
         puzzle.destroy

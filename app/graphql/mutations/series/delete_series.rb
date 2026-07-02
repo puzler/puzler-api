@@ -9,9 +9,7 @@ module Mutations
       field :errors, [ String ], null: false, description: "Validation errors, if any"
 
       def resolve(id:)
-        require_auth!
-        series = current_user.series.find_by(id:)
-        raise GraphQL::ExecutionError, "Series not found" unless series
+        series = require_owned!(:series, "Series", id:)
 
         series.destroy
         { deleted_id: id, errors: [] }
