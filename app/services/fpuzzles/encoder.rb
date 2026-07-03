@@ -194,6 +194,13 @@ module Fpuzzles
         cells = single_cell_marks[type]
         push(field, { "cells" => cells.map { |k| fp_cell(k) } }) if cells && !cells.empty?
       end
+      # Counting circles have no f-puzzles field: cosmetic outline rings.
+      (single_cell_marks["counting_circles"] || []).each do |key|
+        push("circle", {
+          "cells" => [ fp_cell(key) ], "baseC" => fp_color("none"), "outlineC" => "#666666",
+          "width" => 0.8, "height" => 0.8
+        })
+      end
     end
 
     def build_connector_dots

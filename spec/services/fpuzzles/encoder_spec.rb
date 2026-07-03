@@ -16,7 +16,7 @@ RSpec.describe Fpuzzles::Encoder do
         "custom" => [ { "type" => "anti_diff", "value" => 1 }, { "type" => "anti_diff", "value" => 3 } ]
       },
       "constraints" => {
-        "singleCellMarks" => { "odd_cells" => [ "r1c1" ], "minimums" => [ "r1c3" ], "row_index_cells" => [ "r0c6", "r1c0" ], "col_index_cells" => [ "r0c6" ] },
+        "singleCellMarks" => { "odd_cells" => [ "r1c1" ], "minimums" => [ "r1c3" ], "row_index_cells" => [ "r0c6", "r1c0" ], "col_index_cells" => [ "r0c6" ], "counting_circles" => [ "r6c6" ] },
         "connectorDots" => {
           "r2c0|r2c1" => { "type" => "difference_dots", "value" => 3 }, "r2c2|r2c3" => { "type" => "ratio_dots", "value" => nil },
           "r2c4|r2c5" => { "type" => "xv", "value" => "X" }, "+r3c3" => { "type" => "quadruples", "value" => [ 1, 2, 3 ] },
@@ -124,6 +124,10 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["text"]).to include(include("cells" => [ "R5C10" ], "value" => "7", "size" => 0.7))
     expect(data["text"]).to include(include("cells" => [ "R0C7" ], "value" => "12", "size" => 0.7))
     expect(data["text"]).to include(include("cells" => [ "R10C4" ], "value" => "34", "size" => 0.7))
+  end
+
+  it "exports counting circles as cosmetic outline rings" do
+    expect(data["circle"]).to include(include("cells" => [ "R7C7" ], "outlineC" => "#666666", "width" => 0.8))
   end
 
   it "exports a rossini clue as a cosmetic arrow glyph" do
