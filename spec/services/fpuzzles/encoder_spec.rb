@@ -24,7 +24,8 @@ RSpec.describe Fpuzzles::Encoder do
         },
         "outerClues" => {
           "o:r-1c2" => { "type" => "skyscrapers", "value" => 3 },
-          "o:r0c-1" => { "type" => "little_killers", "value" => 5, "direction" => "down-right" }
+          "o:r0c-1" => { "type" => "little_killers", "value" => 5, "direction" => "down-right" },
+          "o:r4c9" => { "type" => "numbered_rooms", "value" => 7 }
         }
       },
       "cosmetics" => {
@@ -114,6 +115,10 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["line"]).to include(include("lines" => [ %w[R7C1 R7C2] ], "outlineC" => "#00B5AD", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R6C8 R6C9] ], "outlineC" => "#F0C300", "width" => 0.3))
     expect(data["line"]).to include(include("lines" => [ %w[R5C8 R5C9] ], "outlineC" => "#AC8AFF", "width" => 0.3))
+  end
+
+  it "exports a numbered rooms clue as cosmetic text only" do
+    expect(data["text"]).to include(include("cells" => [ "R5C10" ], "value" => "7", "size" => 0.7))
   end
 
   it "exports inequality signs as border-centred glyphs, rotated when stacked", :aggregate_failures do

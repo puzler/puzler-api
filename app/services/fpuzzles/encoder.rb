@@ -19,6 +19,8 @@ module Fpuzzles
     SINGLE_FIELD = { "odd_cells" => "odd", "even_cells" => "even", "minimums" => "minimum", "maximums" => "maximum" }.freeze
     OUTER_FIELD = { "x_sums" => "xsum", "sandwich_sums" => "sandwichsum", "skyscrapers" => "skyscraper" }.freeze
     OUTER_UNRENDERED = %w[x_sums skyscrapers].freeze
+    # Outer clues with no f-puzzles field at all: exported as cosmetic text only.
+    OUTER_TEXT_ONLY = %w[numbered_rooms].freeze
     LITTLE_KILLER_DIR = { "up-left" => "UL", "up-right" => "UR", "down-left" => "DL", "down-right" => "DR" }.freeze
     CONSTRAINT_LINE_FIELD = {
       "renban" => "renban", "german_whispers" => "whispers", "palindrome" => "palindrome",
@@ -247,6 +249,8 @@ module Fpuzzles
           if OUTER_UNRENDERED.include?(clue["type"]) && present?(value)
             push("text", { "cells" => [ cell ], "value" => value, "fontC" => "#000000", "size" => 0.7 })
           end
+        elsif OUTER_TEXT_ONLY.include?(clue["type"]) && present?(value)
+          push("text", { "cells" => [ cell ], "value" => value, "fontC" => "#000000", "size" => 0.7 })
         end
       end
     end
