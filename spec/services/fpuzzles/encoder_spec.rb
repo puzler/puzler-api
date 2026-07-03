@@ -27,7 +27,8 @@ RSpec.describe Fpuzzles::Encoder do
           "o:r0c-1" => { "type" => "little_killers", "value" => 5, "direction" => "down-right" },
           "o:r4c9" => { "type" => "numbered_rooms", "value" => 7 },
           "o:r-1c6" => { "type" => "battlefield", "value" => 12 },
-          "o:r9c3" => { "type" => "next_to_nine", "value" => 34 }
+          "o:r9c3" => { "type" => "next_to_nine", "value" => 34 },
+          "o:r6c-1" => { "type" => "rossini", "value" => nil, "rossiniDirection" => "increasing" }
         }
       },
       "cosmetics" => {
@@ -123,6 +124,10 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["text"]).to include(include("cells" => [ "R5C10" ], "value" => "7", "size" => 0.7))
     expect(data["text"]).to include(include("cells" => [ "R0C7" ], "value" => "12", "size" => 0.7))
     expect(data["text"]).to include(include("cells" => [ "R10C4" ], "value" => "34", "size" => 0.7))
+  end
+
+  it "exports a rossini clue as a cosmetic arrow glyph" do
+    expect(data["text"]).to include(include("cells" => [ "R7C0" ], "value" => "→", "size" => 0.7))
   end
 
   it "exports inequality signs as border-centred glyphs, rotated when stacked", :aggregate_failures do

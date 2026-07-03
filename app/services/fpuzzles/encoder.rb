@@ -251,8 +251,25 @@ module Fpuzzles
           end
         elsif OUTER_TEXT_ONLY.include?(clue["type"]) && present?(value)
           push("text", { "cells" => [ cell ], "value" => value, "fontC" => "#000000", "size" => 0.7 })
+        elsif clue["type"] == "rossini"
+          if %w[increasing decreasing].include?(clue["rossiniDirection"])
+            glyph = rossini_glyph(pos, clue["rossiniDirection"])
+            push("text", { "cells" => [ cell ], "value" => glyph, "fontC" => "#000000", "size" => 0.7 })
+          else
+            @warnings << "A rossini clue with no direction was dropped."
+          end
         end
       end
+    end
+
+    # Arrow glyph for a rossini clue: along its row/column, pointing away from
+    # the clue's edge for "increasing" and at it for "decreasing".
+    def rossini_glyph(pos, direction)
+      increasing = direction == "increasing"
+      return increasing ? "→" : "←" if pos[1].negative?
+      return increasing ? "←" : "→" if pos[1] >= @size
+      return increasing ? "↓" : "↑" if pos[0].negative?
+      increasing ? "↑" : "↓"
     end
 
     def build_instances
