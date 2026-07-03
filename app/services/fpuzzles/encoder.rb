@@ -20,7 +20,7 @@ module Fpuzzles
     OUTER_FIELD = { "x_sums" => "xsum", "sandwich_sums" => "sandwichsum", "skyscrapers" => "skyscraper" }.freeze
     OUTER_UNRENDERED = %w[x_sums skyscrapers].freeze
     # Outer clues with no f-puzzles field at all: exported as cosmetic text only.
-    OUTER_TEXT_ONLY = %w[numbered_rooms battlefield].freeze
+    OUTER_TEXT_ONLY = %w[numbered_rooms battlefield next_to_nine].freeze
     LITTLE_KILLER_DIR = { "up-left" => "UL", "up-right" => "UR", "down-left" => "DL", "down-right" => "DR" }.freeze
     CONSTRAINT_LINE_FIELD = {
       "renban" => "renban", "german_whispers" => "whispers", "palindrome" => "palindrome",
