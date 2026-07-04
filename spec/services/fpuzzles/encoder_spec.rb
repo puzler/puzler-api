@@ -52,6 +52,15 @@ RSpec.describe Fpuzzles::Encoder do
   end
   let(:solution) { { "r0c0" => 1, "r0c1" => 2 } }
   let(:data) { result.data }
+  let(:stretched_definition) do
+    {
+      "grid" => { "rows" => 9, "cols" => 9 },
+      "cosmetics" => {
+        "shapePresets" => [ { "id" => "sp2", "style" => { "shapeType" => "circle", "fillColor" => "none", "strokeColor" => "#333333", "width" => 1.5, "height" => 0.6, "textColor" => "#000000" } } ],
+        "instances" => [ { "id" => "i20", "type" => "shape", "data" => { "pos" => { "x" => 4.5, "y" => 4.5 }, "presetId" => "sp2" } } ]
+      }
+    }
+  end
 
 
 
@@ -143,9 +152,15 @@ RSpec.describe Fpuzzles::Encoder do
     expect(data["lockout"]).to eq([ { "lines" => [ %w[R4C8 R4C9] ] } ])
   end
 
-  it "maps a diamond shape with combined rotation angle", :aggregate_failures do
+  it "maps a diamond shape with combined rotation angle and legacy size fallback", :aggregate_failures do
     shape = data["rectangle"].first
     expect(shape).to include("cells" => [ "R5C5" ], "value" => "X", "angle" => 75) # 45 (diamond) + 30
+    expect(shape).to include("width" => 0.5, "height" => 0.5) # legacy `size` fills both dimensions
+  end
+
+  it "maps explicit shape width and height" do
+    stretched = described_class.call(definition: stretched_definition).data
+    expect(stretched["circle"].first).to include("width" => 1.5, "height" => 0.6)
   end
 
   it "omits the solution when include_solution is false" do

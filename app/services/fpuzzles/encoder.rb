@@ -345,13 +345,19 @@ module Fpuzzles
       style = find_preset("shapePresets", data["presetId"])&.dig("style")
       is_diamond = style&.dig("shapeType") == "diamond"
       field = style&.dig("shapeType") == "circle" ? "circle" : "rectangle"
-      diameter = style&.dig("size") || 0.5
+      # Stored definitions from before explicit dimensions carry a single
+      # `size`; they are never re-serialized by the client, so the fallback is
+      # permanent. Diamonds with width != height export wrong by necessity: a
+      # 45-degree-rotated rectangle can't be a rhombus with unequal diagonals,
+      # and f-puzzles has no closer primitive.
+      width = style&.dig("width") || style&.dig("size") || 0.5
+      height = style&.dig("height") || style&.dig("size") || 0.5
       entry = {
         "cells" => [ fp_pos(cosmetic_pos(data)) ],
         "baseC" => fp_color(style&.dig("fillColor") || "none"),
         "outlineC" => style&.dig("strokeColor") || "#333333",
         "fontC" => style&.dig("textColor") || "#000000",
-        "width" => diameter, "height" => diameter,
+        "width" => width, "height" => height,
         "value" => data["content"] || ""
       }
       angle = (((is_diamond ? 45 : 0) + (data["rotation"] || 0)) % 360 + 360) % 360
