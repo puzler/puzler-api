@@ -39,8 +39,10 @@ RSpec.describe "Mutation: exportSudokupadLink", type: :graphql do
     expect(a_request(:post, endpoint)).not_to have_been_made
   end
 
-  it "requires authentication" do
-    result = execute_query(mutation, variables: { definition: definition }, context: {})
-    expect(gql_errors(result).first["message"]).to eq("Authentication required")
+  it "lets guests export too", :aggregate_failures do
+    stub_request(:post, endpoint).to_return(status: 200, body: { result: "success", shortid: "guest1" }.to_json)
+    data = run({ definition: definition, includeSolution: false }, context: { request_ip: "203.0.113.7" })
+    expect(data["url"]).to eq("https://sudokupad.app/guest1")
+    expect(data["errors"]).to be_empty
   end
 end

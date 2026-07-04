@@ -22,13 +22,14 @@ module Mutations
       field :warnings, [ String ], null: false, description: "Notes for anything that couldn't be represented"
 
       def resolve(definition:, solution: nil, include_solution: true)
-        require_auth!
+        # Open to guests too: exporting a link exposes nothing that isn't already
+        # in the definition the client sent us.
         return { url: nil, warnings: [], errors: [ "Puzzle data is too large" ] } if definition.to_json.bytesize > MAX_DEFINITION_BYTES
         return { url: nil, warnings: [], errors: [ "Too many requests; try again shortly" ] } if rate_limited?
 
         result = Sudokupad::LinkBuilder.build(
           definition: definition, solution: solution, include_solution: include_solution,
-          fallback_author: current_user.display_name
+          fallback_author: current_user&.display_name
         )
         return { url: nil, warnings: [], errors: [ "This puzzle can't be exported to SudokuPad (it needs a square grid)." ] } unless result
 
@@ -38,7 +39,8 @@ module Mutations
       private
 
       def rate_limited?
-        count = Rails.cache.increment("sudokupad_export:#{current_user.id}", 1, expires_in: RATE_WINDOW)
+        key = current_user ? "user:#{current_user.id}" : "ip:#{request_ip}"
+        count = Rails.cache.increment("sudokupad_export:#{key}", 1, expires_in: RATE_WINDOW)
         count.present? && count > RATE_LIMIT
       end
     end
