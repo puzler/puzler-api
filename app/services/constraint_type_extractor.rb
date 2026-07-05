@@ -2,26 +2,33 @@
 # (the frontend serializePuzzle output) so puzzles/puzzle_versions can store a
 # denormalized, GIN-indexable list for archive filtering. Given digits are
 # intentionally ignored — they aren't a filterable constraint.
+#
+# Input is normalized through PuzzleDefinition::Migrator first, so pre-v4
+# documents (old saved export files re-imported by clients, stale sessions)
+# extract identically to their migrated form. In v4 key presence is the chip
+# signal: one camelCase key per type under `constraints`/`cosmetics`, grouped
+# `globals`. Output: snake_case type strings, deduped and sorted.
 class ConstraintTypeExtractor
   def self.extract(definition)
     return [] if definition.blank?
 
-    data = definition.deep_stringify_keys
-    types = []
+    data = PuzzleDefinition::Migrator.v3_to_v4(definition.deep_stringify_keys)
+    keys = PuzzleDefinition::JsonKeys::JSON_KEY_TO_TYPE
+    types = (data["constraints"] || {}).keys.map { |key| keys[key] }
+    # Cosmetic KIND keys map back to types; preset arrays are siblings, not kinds.
+    types.concat((data["cosmetics"] || {}).keys.filter_map { |key| keys[key] })
 
-    # activeConstraints is the editor's authoritative list of constraint types.
-    Array(data["activeConstraints"]).each do |constraint|
-      types << constraint["type"] if constraint.is_a?(Hash)
-    end
-
-    # Global variants (diagonals, chess moves, nonconsecutive, ...) and custom
-    # global constraints live separately from activeConstraints.
     globals = data["globals"] || {}
-    types.concat(Array(globals["variants"]))
-    Array(globals["custom"]).each do |custom|
-      types << custom["type"] if custom.is_a?(Hash)
-    end
+    PuzzleDefinition::JsonKeys::GLOBAL_GROUPS.each do |group|
+      entry = globals[group[:key]]
+      next unless entry.is_a?(Hash)
 
+      types << group[:type]
+      group[:variants].each { |variant| types << variant[:type] if entry[variant[:key]] == true }
+      group[:custom_values].each do |field, custom_type|
+        types << custom_type if entry[field].is_a?(Array) && entry[field].any?
+      end
+    end
     types.compact.map(&:to_s).reject(&:empty?).uniq.sort
   end
 end

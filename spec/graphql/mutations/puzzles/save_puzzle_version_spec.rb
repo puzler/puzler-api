@@ -15,7 +15,7 @@ RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
   let(:user) { create(:user) }
   let(:puzzle) { create(:puzzle, author: user) }
   let(:definition) do
-    { "version" => 3, "activeConstraints" => [ { "type" => "thermometer" } ], "globals" => { "variants" => [ "diagonal_positive" ] } }
+    { "version" => 3, "activeConstraints" => [ { "type" => "thermometer" } ], "globals" => { "variants" => [ "positive_diagonal" ] } }
   end
 
   def save_version(context, **attrs)
@@ -28,7 +28,8 @@ RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
       data = save_version(auth_context(user), solution: { "r0c0" => 5 })
       expect(data["errors"]).to be_empty
       expect(data["version"]).to include("versionNumber" => 1, "displayName" => "v1", "isPublished" => false)
-      expect(data["version"]["constraintTypes"]).to contain_exactly("diagonal_positive", "thermometer")
+      # v3 input normalizes through the migrator: the variant keeps its group chip.
+      expect(data["version"]["constraintTypes"]).to contain_exactly("diagonals", "positive_diagonal", "thermometer")
       expect(data["version"]["solutionHash"]).to eq(SolutionHasher.hash("r0c0" => 5))
     end
 

@@ -1,9 +1,11 @@
 require "rails_helper"
 
 RSpec.describe Fpuzzles::Encoder do
-  # A definition exercising one of each constraint family (mirrors the frontend
-  # converter's coverage; full byte-parity with the frontend is validated
-  # separately). String keys, as stored in the jsonb.
+  # A PRE-v4 definition exercising one of each constraint family (mirrors the
+  # frontend converter's coverage). Kept deliberately in the old shape: the
+  # encoder normalizes every input through PuzzleDefinition::Migrator at entry,
+  # so this whole suite doubles as proof that migrate-at-entry preserves the
+  # legacy output. String keys, as stored in the jsonb.
   subject(:result) { described_class.call(definition: definition, solution: solution, include_solution: true, fallback_author: "fallback") }
 
   let(:definition) do
@@ -170,5 +172,119 @@ RSpec.describe Fpuzzles::Encoder do
 
   it "warns about an unsupported custom global" do
     expect(result.warnings).to include(a_string_matching(/anti_diff.*value 3/))
+  end
+
+  describe "with a v4-native document" do
+    # Plain methods, not lets: the outer group already carries five memoized
+    # helpers, and these fixtures don't need per-example teardown.
+    def v4_definition
+      {
+        "formatVersion" => 4,
+        "grid" => { "rows" => 9, "cols" => 9 },
+        "meta" => { "name" => "Native", "author" => "Ada" },
+        "givenDigits" => { "r1c1" => 6 },
+        "globals" => {
+          "diagonals" => { "positive" => true, "antiNegative" => true },
+          "chess" => { "knight" => true },
+          "antiKropki" => { "black" => true, "differences" => [ 1 ] },
+          "antiXv" => { "v" => true },
+          "disjointSets" => { "enabled" => true }
+        },
+        "constraints" => {
+          "renbanLines" => [ { "cells" => %w[r9c6 r9c7] } ],
+          "thermometers" => [ { "bulb" => "r5c1", "lines" => [ %w[r5c1 r5c2 r5c3], %w[r5c2 r6c2] ] } ],
+          "arrows" => [ { "bulbCells" => [ "r3c3" ], "arrows" => [ %w[r3c3 r3c4] ] } ],
+          "inequalities" => [ { "cells" => %w[r6c6 r7c6], "value" => ">" } ],
+          "quadruples" => [ { "cells" => %w[r3c3 r3c4 r4c3 r4c4], "values" => [ 1, 2, 3 ] } ],
+          "oddCells" => [ "r2c2" ],
+          "killerCages" => [ { "cells" => %w[r1c8 r1c9], "sum" => 10 } ],
+          "clones" => [ { "cells" => [ "r1c1" ], "copies" => [ { "dRow" => 1, "dCol" => 1 } ] } ],
+          "xSums" => [ { "cell" => "r0c3", "value" => 20 } ],
+          "littleKillers" => [ { "cell" => "r1c0", "value" => 5, "direction" => "down-right" } ],
+          "rossini" => [ { "cell" => "r7c0", "direction" => "increasing" } ]
+        },
+        "cosmetics" => {
+          "lines" => [ { "cells" => %w[r7c1 r7c2], "preset" => "line-1" } ],
+          "linePresets" => [ { "id" => "line-1", "label" => "Grey", "style" => { "color" => "#ABCDEF", "strokeWidth" => 16, "opacity" => 1 } } ],
+          "cellColors" => { "r1c6" => "color-1" },
+          "cellColorPresets" => [ { "id" => "color-1", "label" => "Blue", "color" => "#123456" } ],
+          "shapes" => [ { "pos" => { "x" => 5.5, "y" => 5.5 }, "content" => "X", "rotation" => 30, "preset" => "shape-1" } ],
+          "shapePresets" => [ { "id" => "shape-1", "label" => "D", "style" => { "shapeType" => "diamond", "fillColor" => "none", "strokeColor" => "#333333", "width" => 0.5, "height" => 0.5, "textColor" => "#000000" } } ],
+          "texts" => [ { "pos" => { "x" => 1.5, "y" => 10.5 }, "content" => "hi", "preset" => "text-1" } ],
+          "textPresets" => [ { "id" => "text-1", "label" => "T", "style" => { "color" => "#112233", "fontSize" => 25 } } ],
+          "cages" => [ { "cells" => %w[r8c1 r8c2], "sum" => 7, "preset" => "cage-1" } ],
+          "cagePresets" => [ { "id" => "cage-1", "label" => "C", "style" => { "cageColor" => "#445566", "textColor" => "#778899" } } ]
+        }
+      }
+    end
+
+    def v4_data
+      @v4_data ||= described_class.call(definition: v4_definition).data
+    end
+
+    it "reads 1-indexed meta and givens directly", :aggregate_failures do
+      expect(v4_data).to include("size" => 9, "title" => "Native", "author" => "Ada")
+      expect(v4_data["grid"][0][0]).to include("value" => 6, "given" => true)
+    end
+
+    it "maps grouped globals to flags, negatives, and the anti-diagonal line", :aggregate_failures do
+      expect(v4_data).to include("diagonal+" => true, "antiknight" => true, "disjointgroups" => true)
+      expect(v4_data).not_to include("diagonal-", "antiking", "nonconsecutive")
+      expect(v4_data["negative"]).to contain_exactly("ratio", "xv", "difference")
+      anti_diag = v4_data["line"].find { |l| l["outlineC"] == "#f06292" }
+      expect(anti_diag["lines"]).to eq([ %w[R1C1 R2C2 R3C3 R4C4 R5C5 R6C6 R7C7 R8C8 R9C9] ])
+    end
+
+    it "rebuilds branching thermometer lines root-to-leaf from bulb/lines" do
+      expect(v4_data["thermometer"].first["lines"]).to contain_exactly(%w[R5C1 R5C2 R5C3], %w[R5C1 R5C2 R6C2])
+    end
+
+    it "maps connectors from cell arrays", :aggregate_failures do
+      expect(v4_data["quadruple"]).to eq([ { "cells" => %w[R3C3 R3C4 R4C3 R4C4], "values" => [ 1, 2, 3 ] } ])
+      expect(v4_data["text"]).to include(include("cells" => %w[R6C6 R7C6], "value" => "∨", "size" => 0.3))
+      expect(v4_data["arrow"]).to eq([ { "lines" => [ %w[R3C3 R3C4] ], "cells" => [ "R3C3" ] } ])
+    end
+
+    it "maps outer clues from ring cells (no o: prefix, direction renamed)", :aggregate_failures do
+      expect(v4_data["xsum"]).to eq([ { "cell" => "R0C3", "value" => "20" } ])
+      expect(v4_data["littlekillersum"]).to eq([ { "cell" => "R1C0", "direction" => "DR", "value" => "5" } ])
+      expect(v4_data["text"]).to include(include("cells" => [ "R7C0" ], "value" => "→", "size" => 0.7))
+    end
+
+    it "maps cages, clones, and single-cell marks", :aggregate_failures do
+      expect(v4_data["killercage"]).to eq([ { "cells" => %w[R1C8 R1C9], "value" => "10" } ])
+      expect(v4_data["clone"].first).to include("cells" => [ "R1C1" ], "cloneCells" => [ "R2C2" ])
+      expect(v4_data["odd"]).to eq([ { "cell" => "R2C2" } ])
+      expect(v4_data["renban"]).to eq([ { "lines" => [ %w[R9C6 R9C7] ] } ])
+    end
+
+    it "styles cell colors, lines, and cages from slug-referenced presets", :aggregate_failures do
+      expect(v4_data["grid"][0][5]).to eq("c" => "#123456")
+      expect(v4_data["line"].find { |l| l["outlineC"] == "#ABCDEF" }).to include("lines" => [ %w[R7C1 R7C2] ], "width" => 0.25)
+      expect(v4_data["cage"]).to eq([ { "cells" => %w[R8C1 R8C2], "value" => "7", "outlineC" => "#445566", "fontC" => "#778899" } ])
+    end
+
+    it "places free-positioned shapes and texts from document coordinates", :aggregate_failures do
+      expect(v4_data["rectangle"].first).to include("cells" => [ "R5C5" ], "value" => "X", "angle" => 75, "width" => 0.5)
+      expect(v4_data["text"]).to include(include("cells" => [ "R10C1" ], "value" => "hi", "fontC" => "#112233", "size" => 0.5))
+    end
+
+    def regioned_result
+      @regioned_result ||= described_class.call(definition: {
+        "formatVersion" => 4,
+        "grid" => {
+          "rows" => 4, "cols" => 4,
+          "regions" => { "1" => %w[r1c1 r1c2 r2c1 r2c2], "2" => %w[r1c3 r1c4 r2c3] }
+        }
+      })
+    end
+
+    it "maps region-first grid.regions to per-cell region indices", :aggregate_failures do
+      grid = regioned_result.data["grid"]
+      expect(grid[0][0]["region"]).to eq(0)
+      expect(grid[0][2]["region"]).to eq(1)
+      expect(grid[1][3]).not_to have_key("region")
+      expect(regioned_result.warnings).to include(a_string_matching(/belong to no region/))
+    end
   end
 end
