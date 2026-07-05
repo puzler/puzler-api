@@ -287,4 +287,100 @@ RSpec.describe Fpuzzles::Encoder do
       expect(regioned_result.warnings).to include(a_string_matching(/belong to no region/))
     end
   end
+
+  describe "preset opacity and per-instance colors" do
+    # Cosmetic preset opacities bake into 8-digit hex (SudokuPad renders CSS
+    # hex alpha; the encoder's own TRANSPARENT relies on it), and v4
+    # per-instance setter colors apply wherever a color-bearing cosmetic is
+    # already emitted; the rest aggregate into one fidelity warning.
+    def colored_result
+      @colored_result ||= described_class.call(definition: {
+        "formatVersion" => 4,
+        "grid" => { "rows" => 9, "cols" => 9 },
+        "constraints" => {
+          "renbanLines" => [ { "cells" => %w[r9c6 r9c7], "color" => "#112233" } ],
+          "entropicLines" => [ { "cells" => %w[r7c1 r7c2], "color" => "#445566CC" } ],
+          "slowThermometers" => [ { "bulb" => "r5c1", "lines" => [ %w[r5c1 r5c2] ], "color" => "#0000FF", "bulbColor" => "#FF0000" } ],
+          "thermometers" => [ { "bulb" => "r6c1", "lines" => [ %w[r6c1 r6c2] ], "color" => "#123123" } ],
+          "killerCages" => [ { "cells" => %w[r1c8 r1c9], "sum" => 10, "cageColor" => "#00FF00" } ],
+          "inequalities" => [ { "cells" => %w[r2c6 r2c7], "value" => "<", "color" => "#AA00AA" } ],
+          "oddCells" => [ "r2c2", { "cell" => "r3c3", "color" => "#99999980" } ],
+          "countingCircles" => [ { "cell" => "r6c6", "color" => "#FFD700", "outlineColor" => "#004400" } ],
+          "rowIndexCells" => [ { "cell" => "r1c1", "color" => "#EE8800" }, "r2c1" ],
+          "xSums" => [ { "cell" => "r0c3", "value" => 20, "color" => "#775577" } ],
+          "rossini" => [ { "cell" => "r7c0", "direction" => "increasing", "color" => "#557755" } ]
+        },
+        "cosmetics" => {
+          "lines" => [ { "cells" => %w[r8c1 r8c2], "preset" => "line-1" } ],
+          "linePresets" => [ { "id" => "line-1", "style" => { "color" => "#ABCDEF", "strokeWidth" => 16, "opacity" => 0.25 } } ],
+          "cellColors" => { "r1c6" => "color-1" },
+          "cellColorPresets" => [ { "id" => "color-1", "color" => "#123456", "opacity" => 0.5 } ],
+          "shapes" => [ { "pos" => { "x" => 5.5, "y" => 5.5 }, "content" => "X", "preset" => "shape-1" } ],
+          "shapePresets" => [ {
+            "id" => "shape-1",
+            "style" => {
+              "shapeType" => "circle", "fillColor" => "#11223380", "strokeColor" => "#333333",
+              "width" => 0.5, "height" => 0.5, "textColor" => "#000000",
+              "fillOpacity" => 0.5, "strokeOpacity" => 1, "textOpacity" => 0
+            }
+          } ],
+          "texts" => [ { "pos" => { "x" => 1.5, "y" => 10.5 }, "content" => "hi", "preset" => "text-1" } ],
+          "textPresets" => [ { "id" => "text-1", "style" => { "color" => "#112233", "fontSize" => 25, "opacity" => 0.25 } } ],
+          "cages" => [ { "cells" => %w[r8c5 r8c6], "preset" => "cage-1" } ],
+          "cagePresets" => [ { "id" => "cage-1", "style" => { "cageColor" => "#445566", "textColor" => "#778899", "cageOpacity" => 0.5, "textOpacity" => 1 } } ]
+        }
+      })
+    end
+
+    def colored_data = colored_result.data
+
+    it "bakes preset opacities into 8-digit hex, collapsing full opacity", :aggregate_failures do
+      expect(colored_data["grid"][0][5]).to eq("c" => "#12345680")
+      expect(colored_data["line"]).to include(include("lines" => [ %w[R8C1 R8C2] ], "outlineC" => "#ABCDEF40"))
+      expect(colored_data["text"]).to include(include("value" => "hi", "fontC" => "#11223340"))
+      expect(colored_data["cage"].first).to include("outlineC" => "#44556680", "fontC" => "#778899")
+    end
+
+    it "multiplies a preset opacity into an already 8-digit color", :aggregate_failures do
+      shape = colored_data["circle"].find { |c| c["value"] == "X" }
+      expect(shape).to include("baseC" => "#11223340")   # 0x80 alpha * 0.5
+      expect(shape).to include("outlineC" => "#333333")  # opacity 1 stays 6-digit
+      expect(shape).to include("fontC" => "#00000000")   # opacity 0
+    end
+
+    it "applies instance colors to line cosmetics, passing 8-digit hex through", :aggregate_failures do
+      expect(colored_data["line"]).to include(include("lines" => [ %w[R9C6 R9C7] ], "outlineC" => "#112233", "width" => 0.4))
+      expect(colored_data["line"]).to include(include("lines" => [ %w[R7C1 R7C2] ], "outlineC" => "#445566CC"))
+    end
+
+    it "colors a slow thermometer's tube and bulb separately", :aggregate_failures do
+      expect(colored_data["line"]).to include(include("lines" => [ %w[R5C1 R5C2] ], "outlineC" => "#0000FF"))
+      expect(colored_data["circle"]).to include(include("cells" => [ "R5C1" ], "outlineC" => "#FF0000"))
+    end
+
+    it "colors counting-circle rings with fill from the generic color", :aggregate_failures do
+      ring = colored_data["circle"].find { |c| c["cells"] == [ "R6C6" ] }
+      expect(ring).to include("baseC" => "#FFD700", "outlineC" => "#004400")
+    end
+
+    it "reads object-form single-cell marks and colored index tints", :aggregate_failures do
+      expect(colored_data["odd"]).to contain_exactly({ "cell" => "R2C2" }, { "cell" => "R3C3" })
+      expect(colored_data["grid"][0][0]).to eq("c" => "#EE8800")   # setter color beats the tint
+      expect(colored_data["grid"][1][0]).to eq("c" => "#FFD9D9")   # plain mark keeps the tint
+      expect(colored_data["rowindexer"]).to eq([ { "cells" => %w[R1C1 R2C1] } ])
+    end
+
+    it "colors outer-clue text fallbacks", :aggregate_failures do
+      expect(colored_data["text"]).to include(include("value" => "20", "fontC" => "#775577"))
+      expect(colored_data["text"]).to include(include("value" => "→", "fontC" => "#557755"))
+      expect(colored_data["text"]).to include(include("value" => "<", "fontC" => "#AA00AA"))
+    end
+
+    it "aggregates one warning naming the unexportable colored constraints", :aggregate_failures do
+      warning = colored_result.warnings.find { |w| w.include?("no SudokuPad equivalent") }
+      expect(warning).to include("thermometers", "killerCages", "oddCells")
+      expect(warning).not_to include("renbanLines", "slowThermometers", "countingCircles", "rowIndexCells")
+      expect(colored_result.warnings.count { |w| w.include?("no SudokuPad equivalent") }).to eq(1)
+    end
+  end
 end

@@ -52,6 +52,15 @@ module Fpuzzles
     THERMO_COLOR = "#aaaaaa".freeze
     THERMO_STROKE_WIDTH = 12
     THERMO_BULB_RADIUS = 18
+    # Every per-instance setter color field a v4 document can carry
+    # (INSTANCE_COLOR_FIELDS in the frontend registry). Fields a build site
+    # cannot map onto an f-puzzles color feed one aggregated fidelity warning
+    # instead of vanishing silently.
+    INSTANCE_COLOR_FIELDS = %w[
+      color lineColor bulbFillColor bulbOutlineColor bulbColor arrowColor
+      cageColor textColor fillColor outlineColor backgroundColor chevronColor
+    ].freeze
+    HEX_COLOR = /\A#(\h{6})(\h{2})?\z/
 
     def self.call(definition:, solution: nil, include_solution: true, fallback_author: nil)
       new(definition, solution, include_solution, fallback_author).call
@@ -63,6 +72,7 @@ module Fpuzzles
       @include_solution = include_solution
       @fallback_author = fallback_author
       @warnings = []
+      @dropped_color_keys = []
       @fp = {}
     end
 
@@ -91,6 +101,9 @@ module Fpuzzles
       build_constraint_instances
       build_cosmetic_instances
 
+      unless @dropped_color_keys.empty?
+        @warnings << "Per-instance colors on #{@dropped_color_keys.uniq.join(', ')} have no SudokuPad equivalent and were dropped."
+      end
       Result.new(@fp, @warnings)
     end
 
@@ -108,8 +121,46 @@ module Fpuzzles
       constraints[PuzzleDefinition::JsonKeys::TYPE_TO_JSON_KEY.fetch(type)]
     end
 
+    # v4 single-cell entries are the plain cell string, or { cell, ...colors }
+    # when the mark carries per-instance setter colors. Normalized to
+    # [cell_key, colors_hash] pairs so every consumer reads one shape.
+    def single_cell_entries(type)
+      Array(single_cell_marks(type)).filter_map do |item|
+        if item.is_a?(Hash)
+          item["cell"] ? [ item["cell"], item ] : nil
+        else
+          [ item, {} ]
+        end
+      end
+    end
+
+    # Records instance color fields this build site could not map onto an
+    # f-puzzles color (everything outside `used`), for the aggregated warning.
+    def note_unexportable_colors(type, entry, used = [])
+      return unless entry.is_a?(Hash)
+      return unless (INSTANCE_COLOR_FIELDS - used).any? { |field| present?(entry[field]) }
+
+      @dropped_color_keys << PuzzleDefinition::JsonKeys::TYPE_TO_JSON_KEY.fetch(type, type)
+    end
+
+    # Bakes a 0-1 opacity into a hex color: 6-digit stays 6-digit at full
+    # opacity, otherwise the alpha byte is appended (SudokuPad renders 8-digit
+    # hex; TRANSPARENT relies on that already). An 8-digit input's own alpha
+    # multiplies with the opacity. Non-hex strings (documents are lenient)
+    # pass through untouched, dropping the opacity.
+    def blend_opacity(color, opacity)
+      return color unless opacity.is_a?(Numeric) && opacity < 1
+
+      m = HEX_COLOR.match(color.to_s)
+      return color unless m
+
+      alpha = (m[2] ? m[2].to_i(16) / 255.0 : 1.0) * opacity.clamp(0, 1)
+      byte = (alpha * 255).round
+      byte >= 255 ? "##{m[1]}" : format("#%s%02x", m[1], byte)
+    end
+
     def build_grid(grid)
-      color_by_id = (cosmetics["cellColorPresets"] || []).to_h { |p| [ p["id"], p["color"] ] }
+      color_by_id = (cosmetics["cellColorPresets"] || []).to_h { |p| [ p["id"], blend_opacity(p["color"], p["opacity"]) ] }
 
       # `grid.regions` is region-first (label -> complete 1-indexed cell list);
       # a cell listed nowhere is regionless. Region indices follow sorted
@@ -123,8 +174,11 @@ module Fpuzzles
         regions.each { |label, cells| Array(cells).each { |cell| label_by_cell[cell] = label } }
       end
 
-      row_index = single_cell_marks("row_index_cells") || []
-      col_index = single_cell_marks("col_index_cells") || []
+      row_index = single_cell_entries("row_index_cells").to_h
+      col_index = single_cell_entries("col_index_cells").to_h
+      { "row_index_cells" => row_index, "col_index_cells" => col_index }.each do |type, pairs|
+        pairs.each_value { |colors| note_unexportable_colors(type, colors, %w[color]) }
+      end
       cell_colors = cosmetics["cellColors"] || {}
       givens = @def["givenDigits"] || {}
 
@@ -150,11 +204,13 @@ module Fpuzzles
           if color_id && color_by_id.key?(color_id)
             cell["c"] = color_by_id[color_id]
           else
-            is_row = row_index.include?(key)
-            is_col = col_index.include?(key)
-            cell["c"] = INDEX_CELL_COLOR["both"] if is_row && is_col
-            cell["c"] = INDEX_CELL_COLOR["row"] if is_row && !is_col
-            cell["c"] = INDEX_CELL_COLOR["col"] if is_col && !is_row
+            is_row = row_index.key?(key)
+            is_col = col_index.key?(key)
+            # A per-instance setter color on either index mark beats the tint.
+            setter = (is_row && row_index[key]["color"]) || (is_col && col_index[key]["color"]) || nil
+            cell["c"] = setter || INDEX_CELL_COLOR["both"] if is_row && is_col
+            cell["c"] = setter || INDEX_CELL_COLOR["row"] if is_row && !is_col
+            cell["c"] = setter || INDEX_CELL_COLOR["col"] if is_col && !is_row
           end
           cell
         end
@@ -228,21 +284,27 @@ module Fpuzzles
 
     def build_single_cell_marks
       SINGLE_FIELD.each do |type, field|
-        cells = single_cell_marks(type)
-        next unless cells
-
-        cells.each { |key| push(field, { "cell" => fp_cell(key) }) }
+        single_cell_entries(type).each do |key, colors|
+          push(field, { "cell" => fp_cell(key) })
+          # The native odd/even/minimum/maximum fields carry no color.
+          note_unexportable_colors(type, colors)
+        end
       end
       INDEXER_FIELD.each do |type, field|
-        cells = single_cell_marks(type)
-        push(field, { "cells" => cells.map { |k| fp_cell(k) } }) if cells && !cells.empty?
+        pairs = single_cell_entries(type)
+        push(field, { "cells" => pairs.map { |key, _| fp_cell(key) } }) unless pairs.empty?
       end
-      # Counting circles have no f-puzzles field: cosmetic outline rings.
-      (single_cell_marks("counting_circles") || []).each do |key|
+      # Counting circles have no f-puzzles field: cosmetic outline rings. Setter
+      # colors apply per the frontend rule: generic `color` reaches the fill
+      # only, the outline changes via outlineColor.
+      single_cell_entries("counting_circles").each do |key, colors|
         push("circle", {
-          "cells" => [ fp_cell(key) ], "baseC" => fp_color("none"), "outlineC" => "#666666",
+          "cells" => [ fp_cell(key) ],
+          "baseC" => fp_color(colors["fillColor"] || colors["color"] || "none"),
+          "outlineC" => colors["outlineColor"] || "#666666",
           "width" => 0.8, "height" => 0.8
         })
+        note_unexportable_colors("counting_circles", colors, %w[color fillColor outlineColor])
       end
     end
 
@@ -260,22 +322,27 @@ module Fpuzzles
       case type
       when "quadruples"
         push("quadruple", { "cells" => pair, "values" => dot["values"].is_a?(Array) ? dot["values"] : [] })
+        note_unexportable_colors(type, dot)
       when "difference_dots"
         push("difference", { "cells" => pair, "value" => dot["value"].nil? ? "" : dot["value"].to_s })
+        note_unexportable_colors(type, dot)
       when "ratio_dots"
         push("ratio", { "cells" => pair, "value" => dot["value"].nil? ? "" : dot["value"].to_s })
+        note_unexportable_colors(type, dot)
       when "inequality"
         if %w[< >].include?(dot["value"])
           # No f-puzzles equivalent: a cosmetic glyph centred on the border.
           # Stacked cells rotate the sign to point up/down.
           stacked = parse_key(cells[0])[0] != parse_key(cells[1])[0]
           glyph = stacked ? (dot["value"] == "<" ? "∧" : "∨") : dot["value"]
-          push("text", { "cells" => pair, "value" => glyph, "fontC" => "#000000", "size" => 0.3 })
+          push("text", { "cells" => pair, "value" => glyph, "fontC" => dot["color"] || "#000000", "size" => 0.3 })
+          note_unexportable_colors(type, dot, %w[color])
         end
       when "xv"
         if %w[X V].include?(dot["value"]) then push("xv", { "cells" => pair, "value" => dot["value"] })
         else @warnings << "An XV marker with no X/V letter was dropped."
         end
+        note_unexportable_colors(type, dot)
       end
     end
 
@@ -296,17 +363,23 @@ module Fpuzzles
         if dir then push("littlekillersum", { "cell" => cell, "direction" => dir, "value" => value })
         else @warnings << "A little killer with no direction was dropped."
         end
+        note_unexportable_colors(type, clue)
       elsif OUTER_FIELD[type]
         push(OUTER_FIELD[type], { "cell" => cell, "value" => value })
         if OUTER_UNRENDERED.include?(type) && present?(value)
-          push("text", { "cells" => [ cell ], "value" => value, "fontC" => "#000000", "size" => 0.7 })
+          push("text", { "cells" => [ cell ], "value" => value, "fontC" => clue["color"] || "#000000", "size" => 0.7 })
+          note_unexportable_colors(type, clue, %w[color])
+        else
+          note_unexportable_colors(type, clue)
         end
       elsif OUTER_TEXT_ONLY.include?(type) && present?(value)
-        push("text", { "cells" => [ cell ], "value" => value, "fontC" => "#000000", "size" => 0.7 })
+        push("text", { "cells" => [ cell ], "value" => value, "fontC" => clue["color"] || "#000000", "size" => 0.7 })
+        note_unexportable_colors(type, clue, %w[color])
       elsif type == "rossini"
         if %w[increasing decreasing].include?(clue["direction"])
           glyph = rossini_glyph(pos, clue["direction"])
-          push("text", { "cells" => [ cell ], "value" => glyph, "fontC" => "#000000", "size" => 0.7 })
+          push("text", { "cells" => [ cell ], "value" => glyph, "fontC" => clue["color"] || "#000000", "size" => 0.7 })
+          note_unexportable_colors(type, clue, %w[color])
         else
           @warnings << "A rossini clue with no direction was dropped."
         end
@@ -338,27 +411,40 @@ module Fpuzzles
       case type
       when "thermometer"
         push("thermometer", { "lines" => thermo_lines(entry) })
+        note_unexportable_colors(type, entry)
       when "slow_thermometer"
+        # Rendered as cosmetics, so per-instance setter colors apply directly
+        # (specific bulbColor/lineColor beat the generic color).
+        line_color = entry["lineColor"] || entry["color"] || THERMO_COLOR
         thermo_lines(entry).each do |line|
-          push("line", { "lines" => [ line ], "outlineC" => THERMO_COLOR, "width" => THERMO_STROKE_WIDTH / 64.0, "isNewConstraint" => true })
+          push("line", { "lines" => [ line ], "outlineC" => line_color, "width" => THERMO_STROKE_WIDTH / 64.0, "isNewConstraint" => true })
         end
         push("circle", {
-          "cells" => [ fp_cell(entry["bulb"]) ], "baseC" => fp_color("none"), "outlineC" => THERMO_COLOR,
+          "cells" => [ fp_cell(entry["bulb"]) ], "baseC" => fp_color("none"),
+          "outlineC" => entry["bulbColor"] || entry["color"] || THERMO_COLOR,
           "width" => (THERMO_BULB_RADIUS * 2) / 64.0, "height" => (THERMO_BULB_RADIUS * 2) / 64.0
         })
+        note_unexportable_colors(type, entry, %w[color lineColor bulbColor])
       when "arrow"
         push("arrow", {
           "lines" => Array(entry["arrows"]).map { |cells| Array(cells).map { |k| fp_cell(k) } },
           "cells" => Array(entry["bulbCells"]).map { |k| fp_cell(k) }
         })
+        note_unexportable_colors(type, entry)
       when "killer_cage"
         push("killercage", { "cells" => Array(entry["cells"]).map { |k| fp_cell(k) }, "value" => entry["sum"].nil? ? "" : entry["sum"].to_s })
+        note_unexportable_colors(type, entry)
       when "extra_regions"
         push("extraregion", { "cells" => Array(entry["cells"]).map { |k| fp_cell(k) } })
+        note_unexportable_colors(type, entry)
       when "clone"
         build_clone(entry)
+        note_unexportable_colors(type, entry)
       when *COSMETIC_ONLY_LINE.keys
-        push("line", { "lines" => [ Array(entry["cells"]).map { |k| fp_cell(k) } ] }.merge(COSMETIC_ONLY_LINE[type]).merge("isNewConstraint" => true))
+        style = COSMETIC_ONLY_LINE[type]
+        style = style.merge("outlineC" => entry["color"]) if present?(entry["color"])
+        push("line", { "lines" => [ Array(entry["cells"]).map { |k| fp_cell(k) } ] }.merge(style).merge("isNewConstraint" => true))
+        note_unexportable_colors(type, entry, %w[color])
       else
         field = CONSTRAINT_LINE_FIELD[type]
         return unless field
@@ -366,7 +452,15 @@ module Fpuzzles
         line_cells = Array(entry["cells"]).map { |k| fp_cell(k) }
         push(field, { "lines" => [ line_cells ] })
         cosmetic = UNRENDERED_LINE_COSMETIC[type]
-        push("line", { "lines" => [ line_cells ] }.merge(cosmetic).merge("isNewConstraint" => true)) if cosmetic
+        if cosmetic
+          cosmetic = cosmetic.merge("outlineC" => entry["color"]) if present?(entry["color"])
+          push("line", { "lines" => [ line_cells ] }.merge(cosmetic).merge("isNewConstraint" => true))
+          note_unexportable_colors(type, entry, %w[color])
+        else
+          # Natively rendered lines (palindrome, between, lockout): SudokuPad
+          # draws them itself, so setter colors cannot apply.
+          note_unexportable_colors(type, entry)
+        end
       end
     end
 
@@ -384,20 +478,21 @@ module Fpuzzles
     # build_grid; presets are looked up by their document slug ids).
     def build_cosmetic_instances
       Array(cosmetics["lines"]).each do |line|
-        preset = find_preset("linePresets", line["preset"])
+        style = find_preset("linePresets", line["preset"])&.dig("style")
         push("line", {
           "lines" => [ Array(line["cells"]).map { |k| fp_cell(k) } ],
-          "outlineC" => preset&.dig("style", "color") || "#777777",
-          "width" => (preset&.dig("style", "strokeWidth") || 8) / 64.0
+          "outlineC" => blend_opacity(style&.dig("color") || "#777777", style&.dig("opacity")),
+          "width" => (style&.dig("strokeWidth") || 8) / 64.0
         })
       end
       Array(cosmetics["shapes"]).each { |shape| build_shape(shape) }
       Array(cosmetics["texts"]).each { |text| build_text(text) }
       Array(cosmetics["cages"]).each do |cage|
-        preset = find_preset("cagePresets", cage["preset"])
+        style = find_preset("cagePresets", cage["preset"])&.dig("style")
         push("cage", {
           "cells" => Array(cage["cells"]).map { |k| fp_cell(k) }, "value" => cage["sum"].nil? ? "" : cage["sum"].to_s,
-          "outlineC" => preset&.dig("style", "cageColor") || "#777777", "fontC" => preset&.dig("style", "textColor") || "#777777"
+          "outlineC" => blend_opacity(style&.dig("cageColor") || "#777777", style&.dig("cageOpacity")),
+          "fontC" => blend_opacity(style&.dig("textColor") || "#777777", style&.dig("textOpacity"))
         })
       end
     end
@@ -415,9 +510,9 @@ module Fpuzzles
       height = style&.dig("height") || style&.dig("size") || 0.5
       shape = {
         "cells" => [ fp_pos(entry["pos"]) ],
-        "baseC" => fp_color(style&.dig("fillColor") || "none"),
-        "outlineC" => style&.dig("strokeColor") || "#333333",
-        "fontC" => style&.dig("textColor") || "#000000",
+        "baseC" => fp_color(blend_opacity(style&.dig("fillColor") || "none", style&.dig("fillOpacity"))),
+        "outlineC" => blend_opacity(style&.dig("strokeColor") || "#333333", style&.dig("strokeOpacity")),
+        "fontC" => blend_opacity(style&.dig("textColor") || "#000000", style&.dig("textOpacity")),
         "width" => width, "height" => height,
         "value" => entry["content"] || ""
       }
@@ -431,7 +526,7 @@ module Fpuzzles
       text = {
         "cells" => [ fp_pos(entry["pos"]) ],
         "value" => entry["content"] || "",
-        "fontC" => style&.dig("color") || "#333333",
+        "fontC" => blend_opacity(style&.dig("color") || "#333333", style&.dig("opacity")),
         "size" => (style&.dig("fontSize") || 20) / 50.0
       }
       text["angle"] = ((entry["rotation"] % 360) + 360) % 360 if present?(entry["rotation"])
