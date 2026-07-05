@@ -383,4 +383,45 @@ RSpec.describe Fpuzzles::Encoder do
       expect(colored_result.warnings.count { |w| w.include?("no SudokuPad equivalent") }).to eq(1)
     end
   end
+
+  describe "fog of war" do
+    def fog_definition(enabled: true, lights: [ "r1c1", "r5c5" ])
+      {
+        "formatVersion" => 4,
+        "grid" => { "rows" => 9, "cols" => 9 },
+        "globals" => { "fog" => { "enabled" => enabled } },
+        "constraints" => { "fogLights" => lights }
+      }
+    end
+
+    it "emits foglight cells and an empty fogofwar", :aggregate_failures do
+      data = described_class.call(definition: fog_definition, solution: solution).data
+      expect(data["foglight"]).to eq(%w[R1C1 R5C5])
+      expect(data["fogofwar"]).to eq([])
+    end
+
+    it "forces the embedded solution even when include_solution is false" do
+      data = described_class.call(definition: fog_definition, solution: solution, include_solution: false).data
+      expect(data["solution"][0, 2]).to eq(%w[1 2])
+    end
+
+    it "warns when fog has no solution to embed" do
+      result = described_class.call(definition: fog_definition, solution: nil)
+      expect(result.warnings).to include(a_string_matching(/Fog needs an embedded solution/))
+    end
+
+    it "emits no fog keys when the toggle is off", :aggregate_failures do
+      data = described_class.call(definition: fog_definition(enabled: false), solution: solution, include_solution: false).data
+      expect(data).not_to have_key("foglight")
+      expect(data).not_to have_key("fogofwar")
+      expect(data).not_to have_key("solution")
+    end
+
+    it "reads object-form light entries and flags their unexportable colors", :aggregate_failures do
+      definition = fog_definition(lights: [ { "cell" => "r2c2", "color" => "#FF0000" } ])
+      result = described_class.call(definition: definition, solution: solution)
+      expect(result.data["foglight"]).to eq([ "R2C2" ])
+      expect(result.warnings).to include(a_string_matching(/fogLights/))
+    end
+  end
 end

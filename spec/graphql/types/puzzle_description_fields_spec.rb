@@ -51,6 +51,19 @@ RSpec.describe "Puzzle description-page GraphQL fields", type: :graphql do
     it "is null when no link was built (e.g. a non-square puzzle)" do
       expect(fetch(create(:puzzle, :published, author: author))["sudokupadUrl"]).to be_nil
     end
+
+    def publish_fog_version(puzzle)
+      version = create(:puzzle_version, puzzle: puzzle,
+        definition: { "formatVersion" => 4, "globals" => { "fog" => { "enabled" => true } } })
+      puzzle.update!(published_version: version)
+    end
+
+    it "serves the solution link for fog puzzles even when the author opted out", :aggregate_failures do
+      author.update!(include_solution_in_sudokupad_export: false)
+      publish_fog_version(puzzle)
+      expect(fetch(puzzle)["sudokupadUrl"]).to eq("https://sudokupad.app/sol")
+      expect(fetch(puzzle)["sudokupadIncludesSolution"]).to be(true)
+    end
   end
 
   describe "comment badges" do

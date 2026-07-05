@@ -52,6 +52,14 @@ RSpec.describe ConstraintTypeExtractor do
       )
     end
 
+    it "tags fog from the globals group and fog lights from their constraint key" do
+      expect(described_class.extract(
+        "formatVersion" => 4,
+        "globals" => { "fog" => { "enabled" => true } },
+        "constraints" => { "fogLights" => [ "r1c1" ] }
+      )).to eq(%w[fog fog_lights])
+    end
+
     it "ignores unknown keys, preset keys, disabled toggles, and empty custom lists", :aggregate_failures do
       expect(described_class.extract(definition)).not_to include("notARealKey")
       expect(described_class.extract(

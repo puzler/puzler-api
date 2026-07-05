@@ -138,8 +138,9 @@ class Puzzle < ApplicationRecord
 
   # (Re)build the cached SudokuPad short links from the published version, via the
   # backend converter. Stores the solution-less link always, and the
-  # solution-embedded link only when the author opts in. Best-effort: a
-  # non-square/unsupported puzzle or a createlink failure leaves the column blank
+  # solution-embedded link only when the author opts in — except fog puzzles,
+  # which always get one (SudokuPad needs the solution to clear fog). Best-effort:
+  # a non-square/unsupported puzzle or a createlink failure leaves the column blank
   # (LinkBuilder falls back to the long ?puzzleid= URL on a shortener failure).
   def refresh_sudokupad_links!
     version = published_version
@@ -152,7 +153,7 @@ class Puzzle < ApplicationRecord
       definition: version.definition, include_solution: false, fallback_author: author.display_name
     )
     solution_link =
-      if author.include_solution_in_sudokupad_export
+      if author.include_solution_in_sudokupad_export || version.fog_enabled?
         Sudokupad::LinkBuilder.build(
           definition: version.definition, solution: version.solution,
           include_solution: true, fallback_author: author.display_name

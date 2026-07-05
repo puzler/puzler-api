@@ -11,6 +11,8 @@ module Types
         description: "Full serialized puzzle definition (serializePuzzle output, minus solution)"
       field :display_name, String, null: false,
         description: "Author label, or the 'v{version_number}' fallback"
+      field :fog_cell_hashes, GraphQL::Types::JSON, null: true,
+        description: "Per-cell solution hashes for client-side fog clearing; present only when the puzzle uses Fog of War"
       field :id, ID, null: false, description: "Unique version ID"
       field :is_published, Boolean, null: false,
         description: "Whether this is the puzzle's currently published version"
@@ -27,6 +29,14 @@ module Types
 
       def is_published
         object.puzzle.published_version_id == object.id
+      end
+
+      # Play-safe by design: each hash only confirms a digit the solver already
+      # placed, which the fog mechanic reveals through play anyway.
+      def fog_cell_hashes
+        return nil unless object.fog_enabled?
+
+        FogCellHasher.hashes(object.solution, object.solution_hash)
       end
 
       def solution

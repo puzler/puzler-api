@@ -178,9 +178,13 @@ module Types
       end
 
       # The solution-embedded link is served only when the author opted in AND we
-      # actually built one; otherwise we serve the solution-less link.
+      # actually built one; otherwise we serve the solution-less link. Fog
+      # puzzles always serve the solution link — SudokuPad needs the solution
+      # to clear fog.
       def serving_solution_link?
-        object.author.include_solution_in_sudokupad_export && object.sudokupad_solution_url.present?
+        return false unless object.sudokupad_solution_url.present?
+
+        object.author.include_solution_in_sudokupad_export || object.published_version&.fog_enabled? == true
       end
     end
   end

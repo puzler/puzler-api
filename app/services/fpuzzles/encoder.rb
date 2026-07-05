@@ -92,9 +92,19 @@ module Fpuzzles
       @fp["author"] = author if present?(author)
       @fp["ruleset"] = meta["rules"] if present?(meta["rules"])
 
+      # Fog puzzles need the embedded solution to clear fog in SudokuPad, so
+      # it is always included regardless of the author's export preference.
+      if fog_enabled?
+        @include_solution = true
+        if @solution.blank?
+          @warnings << "Fog needs an embedded solution to work in SudokuPad; set a solution before exporting."
+        end
+      end
+
       build_grid(@def["grid"] || {})
       build_solution
       build_globals
+      build_fog
       build_single_cell_marks
       build_connectors
       build_outer_clues
@@ -269,6 +279,22 @@ module Fpuzzles
     def global_group(key)
       entry = globals[key]
       entry.is_a?(Hash) ? entry : {}
+    end
+
+    def fog_enabled?
+      global_group("fog")["enabled"] == true
+    end
+
+    # SudokuPad fog keys: `foglight` lights single cells (exactly Puzler's
+    # lights); `fogofwar` cells would clear a whole 3x3 "lamp" neighborhood,
+    # so it is emitted empty and only to help fog activation.
+    def build_fog
+      return unless fog_enabled?
+
+      lights = single_cell_entries("fog_lights")
+      @fp["foglight"] = lights.map { |key, _| fp_cell(key) }
+      @fp["fogofwar"] = []
+      lights.each { |_, colors| note_unexportable_colors("fog_lights", colors) }
     end
 
     # Custom global values in canonical group/field order (the migrator sorts

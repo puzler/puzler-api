@@ -26,6 +26,12 @@ class PuzzleVersion < ApplicationRecord
     puzzle.published_version_id == id
   end
 
+  # Whether this version's definition has the Fog of War global enabled. Fog
+  # gates per-cell hash exposure and forces the solution into SudokuPad links.
+  def fog_enabled?
+    definition.is_a?(Hash) && definition.dig("globals", "fog", "enabled") == true
+  end
+
   private
 
   def normalize_code(str)

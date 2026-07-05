@@ -3718,6 +3718,11 @@ type PuzzleVersion {
   displayName: String!
 
   """
+  Per-cell solution hashes for client-side fog clearing; present only when the puzzle uses Fog of War
+  """
+  fogCellHashes: JSON
+
+  """
   Unique version ID
   """
   id: ID!

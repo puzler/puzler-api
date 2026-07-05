@@ -55,6 +55,8 @@ module PuzzleDefinition
       "anti_kropki" => "antiKropki",
       "anti_xv" => "antiXv",
       "disjoint_sets" => "disjointSets",
+      "fog" => "fog",
+      "fog_lights" => "fogLights",
       "cosmetic_line" => "lines",
       "cell_color" => "cellColors",
       "shape" => "shapes",
@@ -121,6 +123,12 @@ module PuzzleDefinition
         key: "disjointSets",
         variants: [ { type: "disjoint_sets", key: "enabled" } ],
         custom_values: {}
+      },
+      {
+        type: "fog",
+        key: "fog",
+        variants: [ { type: "fog", key: "enabled" } ],
+        custom_values: {}
       }
     ].freeze
 
@@ -128,7 +136,7 @@ module PuzzleDefinition
     # serialization boundary needs): which document shape a type's entry uses.
     SINGLE_CELL_TYPES = %w[
       odd_cells even_cells minimums maximums counting_circles
-      row_index_cells col_index_cells
+      row_index_cells col_index_cells fog_lights
     ].freeze
     CONNECTOR_TYPES = %w[difference_dots ratio_dots xv inequality quadruples].freeze
     OUTER_CLUE_TYPES = %w[

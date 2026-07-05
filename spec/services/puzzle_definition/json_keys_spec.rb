@@ -48,6 +48,8 @@ RSpec.describe PuzzleDefinition::JsonKeys do
       "anti_kropki" => "antiKropki",
       "anti_xv" => "antiXv",
       "disjoint_sets" => "disjointSets",
+      "fog" => "fog",
+      "fog_lights" => "fogLights",
       "cosmetic_line" => "lines",
       "cell_color" => "cellColors",
       "shape" => "shapes",
@@ -101,6 +103,12 @@ RSpec.describe PuzzleDefinition::JsonKeys do
         type: "disjoint_sets",
         key: "disjointSets",
         variants: [ { type: "disjoint_sets", key: "enabled" } ],
+        custom_values: {}
+      },
+      {
+        type: "fog",
+        key: "fog",
+        variants: [ { type: "fog", key: "enabled" } ],
         custom_values: {}
       }
     ]
