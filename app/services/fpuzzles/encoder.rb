@@ -57,7 +57,7 @@ module Fpuzzles
     # cannot map onto an f-puzzles color feed one aggregated fidelity warning
     # instead of vanishing silently.
     INSTANCE_COLOR_FIELDS = %w[
-      color lineColor bulbFillColor bulbOutlineColor bulbColor arrowColor
+      color lineColor bulbFillColor bulbOutlineColor bulbStrokeColor bulbColor arrowColor
       cageColor textColor fillColor outlineColor backgroundColor chevronColor
     ].freeze
     HEX_COLOR = /\A#(\h{6})(\h{2})?\z/
