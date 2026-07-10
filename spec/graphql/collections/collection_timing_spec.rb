@@ -7,8 +7,8 @@ RSpec.describe "Collection timing", type: :graphql do
   let(:second) { create(:puzzle, :published, author:) }
 
   before do
-    create(:collection_puzzle, collection:, puzzle: first, position: 0)
-    create(:collection_puzzle, collection:, puzzle: second, position: 1)
+    create(:collection_entry, collection:, puzzle: first, position: 0)
+    create(:collection_entry, collection:, puzzle: second, position: 1)
   end
 
   def record_mutation

@@ -14,7 +14,7 @@ module Mutations
         require_auth!
         collection = Collection.find_by(id: collection_id)
         return deny unless collection&.viewable_by?(current_user)
-        return deny unless collection.collection_puzzles.exists?(puzzle_id:)
+        return deny unless collection.puzzle_entries.exists?(entryable_id: puzzle_id)
         return { recorded: false, errors: [ "Invalid time" ] } if seconds.to_i <= 0
 
         # find_by, not find: the membership check above doesn't survive a

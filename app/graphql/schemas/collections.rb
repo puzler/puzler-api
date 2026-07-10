@@ -56,7 +56,7 @@ module Schemas
         collection = Collection.find_by(id: collection_id)
         return [] unless collection&.viewable_by?(context[:current_user])
 
-        puzzle_count = collection.collection_puzzles.count
+        puzzle_count = collection.puzzle_entries.count
         return [] if puzzle_count.zero?
 
         # Only solvers who have a time for every puzzle in the collection rank.
@@ -122,6 +122,8 @@ module Schemas
         description: "File or unfile a puzzle"
       field :record_collection_solve_time, mutation: ::Mutations::Collections::RecordCollectionSolveTime,
         description: "Record a solve time for a timed collection"
+      field :remove_collection_cover_image, mutation: ::Mutations::Collections::RemoveCollectionCoverImage,
+        description: "Remove a collection's cover image"
       field :remove_puzzle_from_collection, mutation: ::Mutations::Collections::RemovePuzzleFromCollection,
         description: "Remove a puzzle from a collection"
       field :rename_folder, mutation: ::Mutations::Folders::RenameFolder,
@@ -130,6 +132,12 @@ module Schemas
         description: "Reorder the puzzles in a collection"
       field :update_collection, mutation: ::Mutations::Collections::UpdateCollection,
         description: "Update a collection's metadata"
+      field :update_collection_page_description, mutation: ::Mutations::Collections::UpdateCollectionPageDescription,
+        description: "Save the rich page body for a collection"
+      field :upload_collection_cover_image, mutation: ::Mutations::Collections::UploadCollectionCoverImage,
+        description: "Upload or replace a collection's cover image"
+      field :upload_collection_description_image, mutation: ::Mutations::Collections::UploadCollectionDescriptionImage,
+        description: "Upload an image for a collection's rich page body"
     end
   end
 end

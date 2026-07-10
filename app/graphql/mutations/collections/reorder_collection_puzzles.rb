@@ -14,7 +14,7 @@ module Mutations
         collection = require_owned!(:collections, "Collection", id: collection_id)
 
         ordered_puzzle_ids.each_with_index do |puzzle_id, index|
-          collection.collection_puzzles.where(puzzle_id:).update_all(position: index)
+          collection.puzzle_entries.where(entryable_id: puzzle_id).update_all(position: index)
         end
 
         { collection: collection.reload, errors: [] }

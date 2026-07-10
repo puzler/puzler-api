@@ -5,8 +5,8 @@ class Puzzle < ApplicationRecord
   has_many :versions, class_name: "PuzzleVersion", dependent: :destroy
   belongs_to :published_version, class_name: "PuzzleVersion", optional: true
 
-  has_many :collection_puzzles, dependent: :destroy
-  has_many :collections, through: :collection_puzzles
+  has_many :collection_entries, as: :entryable, dependent: :destroy
+  has_many :collections, through: :collection_entries
   has_many :collection_solve_times, dependent: :destroy
   has_many :series_entries, as: :entryable, dependent: :destroy
 
@@ -21,10 +21,9 @@ class Puzzle < ApplicationRecord
   has_many :access_grants, class_name: "PuzzleAccessGrant", dependent: :destroy
   has_many :granted_users, through: :access_grants, source: :user
 
-  # Images embedded in the rich page description. Owned here so they can be
-  # purged when removed from the HTML (see reconcile_description_images!) or when
-  # the puzzle is destroyed.
-  has_many_attached :description_images
+  # Rich page description HTML + embedded images (shared with Collection and
+  # StoryPage via the concern).
+  include RichDescription
 
   # Lifecycle (draft → published) and access mode (who can see it) are
   # independent axes. "private"/"public" collide with Ruby keywords, so the
@@ -128,16 +127,6 @@ class Puzzle < ApplicationRecord
     increment!(:solve_count)
     refresh_container_aggregates!
     :recorded
-  end
-
-  # Drop any attached description image whose blob no longer appears in the saved
-  # HTML (its signed_id is embedded in the rails blob URL). Keeps R2 tidy as the
-  # author edits the description. Purges async so saving stays fast.
-  def reconcile_description_images!(html = page_description_html)
-    html = html.to_s
-    description_images.attachments.each do |attachment|
-      attachment.purge_later unless html.include?(attachment.blob.signed_id)
-    end
   end
 
   # (Re)build the cached SudokuPad short links from the published version, via the

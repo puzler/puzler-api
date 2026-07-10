@@ -112,7 +112,7 @@ RSpec.describe "Collection queries", type: :graphql do
     before do
       hidden = create(:puzzle, :unlisted, author: user)
       [ public_puzzle, container_puzzle, hidden ].each_with_index do |p, i|
-        create(:collection_puzzle, collection:, puzzle: p, position: i)
+        create(:collection_entry, collection:, puzzle: p, position: i)
       end
     end
 

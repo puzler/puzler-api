@@ -48,7 +48,7 @@ RSpec.describe "Collection mutations", type: :graphql do
       collection = create(:collection, author: user)
       puzzle = create(:puzzle, author: user)
       2.times { gql(mutation, { c: collection.id, p: puzzle.id }) }
-      expect(collection.collection_puzzles.count).to eq(1)
+      expect(collection.puzzle_entries.count).to eq(1)
     end
 
     it "does not add another author's puzzle" do
@@ -64,8 +64,8 @@ RSpec.describe "Collection mutations", type: :graphql do
     let(:second) { create(:puzzle, author: user) }
 
     before do
-      create(:collection_puzzle, collection:, puzzle: first, position: 0)
-      create(:collection_puzzle, collection:, puzzle: second, position: 1)
+      create(:collection_entry, collection:, puzzle: first, position: 0)
+      create(:collection_entry, collection:, puzzle: second, position: 1)
     end
 
     it "reorders puzzles by the given id list" do

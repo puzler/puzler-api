@@ -2,8 +2,10 @@ class Collection < ApplicationRecord
   belongs_to :author, class_name: "User"
   belongs_to :folder, optional: true
 
-  has_many :collection_puzzles, dependent: :destroy
-  has_many :puzzles, through: :collection_puzzles
+  has_many :entries, class_name: "CollectionEntry", dependent: :destroy
+  has_many :puzzle_entries, -> { where(entryable_type: "Puzzle") },
+    class_name: "CollectionEntry"
+  has_many :puzzles, through: :puzzle_entries, source: :entryable, source_type: "Puzzle"
   has_many :collection_solve_times, dependent: :destroy
   has_many :series_entries, as: :entryable, dependent: :destroy
 
@@ -19,6 +21,27 @@ class Collection < ApplicationRecord
   enum :mode, { unordered: 0, sequence: 1 }
 
   include ShareTokenable
+
+  # Rich page body (TipTap HTML, sanitized) + embedded images, like a puzzle's
+  # description page.
+  include RichDescription
+
+  # Standardized cover crops: the page hero keeps the upload's aspect (bounded),
+  # archive/profile cards get a 16:9 fill.
+  COVER_HERO_VARIANT = { resize_to_limit: [ 1600, 900 ] }.freeze
+  COVER_CARD_VARIANT = { resize_to_fill: [ 640, 360 ] }.freeze
+
+  has_one_attached :cover_image do |attachable|
+    attachable.variant :hero, **COVER_HERO_VARIANT
+    attachable.variant :card, **COVER_CARD_VARIANT
+  end
+
+  # Curated page accents (closed sets; 0 = default Ink & Paper). The values map
+  # to CSS classes in the app (see app/src/style.css "Collection accents").
+  enum :accent_color, { default: 0, forest: 1, wine: 2, ocean: 3, ember: 4, violet: 5 },
+    prefix: :accent
+  enum :bg_treatment, { default: 0, parchment: 1, linen: 2, dusk: 3 }, prefix: :bg
+  enum :title_font, { default: 0, serif: 1, mono: 2 }, prefix: :font
 
   validates :title, presence: true, length: { maximum: 100 }
 
@@ -36,6 +59,15 @@ class Collection < ApplicationRecord
       solve_count: puzzles.sum(:solve_count)
     )
     containing_series.each(&:recompute_aggregates!)
+  end
+
+  # Hosted URLs for the normalized cover crops; nil when no cover is set.
+  def cover_image_url
+    cover_variant_url(:hero)
+  end
+
+  def cover_thumb_url
+    cover_variant_url(:card)
   end
 
   # Series that include this collection as an entry.
@@ -56,5 +88,15 @@ class Collection < ApplicationRecord
     when "unlisted", "containers_only" then share_token.present? && share_token == self.share_token
     else false
     end
+  end
+
+  private
+
+  def cover_variant_url(name)
+    return nil unless cover_image.attached?
+
+    Rails.application.routes.url_helpers.rails_representation_url(
+      cover_image.variant(name), host: ENV.fetch("API_URL", "http://localhost:3000")
+    )
   end
 end

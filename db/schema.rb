@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,16 +49,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
     t.index ["commit"], name: "index_app_versions_on_commit", unique: true
   end
 
-  create_table "collection_puzzles", force: :cascade do |t|
+  create_table "collection_entries", force: :cascade do |t|
     t.bigint "collection_id", null: false
     t.datetime "created_at", null: false
+    t.bigint "entryable_id", null: false
+    t.string "entryable_type", null: false
     t.integer "position", default: 0, null: false
-    t.bigint "puzzle_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["collection_id", "position"], name: "index_collection_puzzles_on_collection_id_and_position"
-    t.index ["collection_id", "puzzle_id"], name: "index_collection_puzzles_on_collection_id_and_puzzle_id", unique: true
-    t.index ["collection_id"], name: "index_collection_puzzles_on_collection_id"
-    t.index ["puzzle_id"], name: "index_collection_puzzles_on_puzzle_id"
+    t.index ["collection_id", "entryable_type", "entryable_id"], name: "index_collection_entries_unique", unique: true
+    t.index ["collection_id", "position"], name: "index_collection_entries_on_collection_id_and_position"
+    t.index ["collection_id"], name: "index_collection_entries_on_collection_id"
+    t.index ["entryable_type", "entryable_id"], name: "index_collection_entries_on_entryable_type_and_entryable_id"
   end
 
   create_table "collection_solve_times", force: :cascade do |t|
@@ -75,16 +76,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
   end
 
   create_table "collections", force: :cascade do |t|
+    t.integer "accent_color", default: 0, null: false
     t.bigint "author_id", null: false
     t.float "avg_rating"
+    t.integer "bg_treatment", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "description"
     t.bigint "folder_id"
     t.integer "mode", default: 0, null: false
+    t.text "page_description_html"
     t.string "share_token"
     t.integer "solve_count", default: 0, null: false
     t.boolean "timed", default: false, null: false
     t.string "title", null: false
+    t.integer "title_font", default: 0, null: false
     t.datetime "updated_at", null: false
     t.integer "visibility", default: 0, null: false
     t.index ["author_id"], name: "index_collections_on_author_id"
@@ -355,6 +360,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
     t.index ["user_id"], name: "index_series_subscriptions_on_user_id"
   end
 
+  create_table "story_pages", force: :cascade do |t|
+    t.bigint "author_id", null: false
+    t.text "body_html"
+    t.datetime "created_at", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["author_id"], name: "index_story_pages_on_author_id"
+  end
+
   create_table "tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -429,8 +443,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "collection_puzzles", "collections"
-  add_foreign_key "collection_puzzles", "puzzles"
+  add_foreign_key "collection_entries", "collections"
   add_foreign_key "collection_solve_times", "collections"
   add_foreign_key "collection_solve_times", "puzzles"
   add_foreign_key "collection_solve_times", "users"
@@ -470,6 +483,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_234921) do
   add_foreign_key "series_entries", "series"
   add_foreign_key "series_subscriptions", "series"
   add_foreign_key "series_subscriptions", "users"
+  add_foreign_key "story_pages", "users", column: "author_id"
   add_foreign_key "user_oauth_identities", "users"
   add_foreign_key "user_themes", "users"
 end

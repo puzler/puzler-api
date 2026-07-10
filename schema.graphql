@@ -193,6 +193,11 @@ An ordered, shareable grouping of puzzles (a series)
 """
 type Collection {
   """
+  Curated accent color for the collection page
+  """
+  accentColor: CollectionAccentColorEnum!
+
+  """
   The setter who owns the collection
   """
   author: User!
@@ -203,7 +208,22 @@ type Collection {
   avgRating: Float
 
   """
-  Optional description
+  Curated background treatment for the collection page
+  """
+  bgTreatment: CollectionBgTreatmentEnum!
+
+  """
+  Hosted URL of the cover image, page-hero size; null when unset
+  """
+  coverImageUrl: String
+
+  """
+  Hosted URL of the cover image, 16:9 card crop; null when unset
+  """
+  coverThumbUrl: String
+
+  """
+  Optional short description (plain text, shown on cards)
   """
   description: String
 
@@ -221,6 +241,11 @@ type Collection {
   Ordering mode: unordered or sequence
   """
   mode: CollectionModeEnum!
+
+  """
+  Sanitized rich HTML body for the collection page
+  """
+  pageDescriptionHtml: String
 
   """
   Number of puzzles the viewer can see in this collection
@@ -253,15 +278,42 @@ type Collection {
   title: String!
 
   """
+  Curated display font for the collection page title
+  """
+  titleFont: CollectionTitleFontEnum!
+
+  """
   Access mode: private, unlisted, public, patrons_only, subscribers_only, or containers_only
   """
   visibility: CollectionVisibilityEnum!
 }
 
 """
+Curated accent color for a collection page
+"""
+enum CollectionAccentColorEnum {
+  DEFAULT
+  EMBER
+  FOREST
+  OCEAN
+  VIOLET
+  WINE
+}
+
+"""
 Fields that can be updated on a collection
 """
 input CollectionAttrsInput {
+  """
+  Curated accent color for the collection page
+  """
+  accentColor: CollectionAccentColorEnum
+
+  """
+  Curated background treatment for the collection page
+  """
+  bgTreatment: CollectionBgTreatmentEnum
+
   """
   Optional description
   """
@@ -283,9 +335,24 @@ input CollectionAttrsInput {
   title: String
 
   """
+  Curated display font for the collection page title
+  """
+  titleFont: CollectionTitleFontEnum
+
+  """
   private, unlisted, public, or containers_only
   """
   visibility: CollectionVisibilityEnum
+}
+
+"""
+Curated background treatment for a collection page
+"""
+enum CollectionBgTreatmentEnum {
+  DEFAULT
+  DUSK
+  LINEN
+  PARCHMENT
 }
 
 """
@@ -431,6 +498,16 @@ interface CollectionMutations {
   ): RecordCollectionSolveTimePayload
 
   """
+  Remove a collection's cover image
+  """
+  removeCollectionCoverImage(
+    """
+    Parameters for RemoveCollectionCoverImage
+    """
+    input: RemoveCollectionCoverImageInput!
+  ): RemoveCollectionCoverImagePayload
+
+  """
   Remove a puzzle from a collection
   """
   removePuzzleFromCollection(
@@ -469,6 +546,36 @@ interface CollectionMutations {
     """
     input: UpdateCollectionInput!
   ): UpdateCollectionPayload
+
+  """
+  Save the rich page body for a collection
+  """
+  updateCollectionPageDescription(
+    """
+    Parameters for UpdateCollectionPageDescription
+    """
+    input: UpdateCollectionPageDescriptionInput!
+  ): UpdateCollectionPageDescriptionPayload
+
+  """
+  Upload or replace a collection's cover image
+  """
+  uploadCollectionCoverImage(
+    """
+    Parameters for UploadCollectionCoverImage
+    """
+    input: UploadCollectionCoverImageInput!
+  ): UploadCollectionCoverImagePayload
+
+  """
+  Upload an image for a collection's rich page body
+  """
+  uploadCollectionDescriptionImage(
+    """
+    Parameters for UploadCollectionDescriptionImage
+    """
+    input: UploadCollectionDescriptionImageInput!
+  ): UploadCollectionDescriptionImagePayload
 }
 
 """
@@ -534,6 +641,15 @@ interface CollectionQueries {
   The current user's folders, flat, in sort order (for move-target lists)
   """
   myFolders: [Folder!]!
+}
+
+"""
+Curated display font for a collection page title
+"""
+enum CollectionTitleFontEnum {
+  DEFAULT
+  MONO
+  SERIF
 }
 
 """
@@ -2383,6 +2499,16 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
   ): RemoveAvatarPayload
 
   """
+  Remove a collection's cover image
+  """
+  removeCollectionCoverImage(
+    """
+    Parameters for RemoveCollectionCoverImage
+    """
+    input: RemoveCollectionCoverImageInput!
+  ): RemoveCollectionCoverImagePayload
+
+  """
   Remove a puzzle from a collection
   """
   removePuzzleFromCollection(
@@ -2573,6 +2699,16 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
   ): UpdateCollectionPayload
 
   """
+  Save the rich page body for a collection
+  """
+  updateCollectionPageDescription(
+    """
+    Parameters for UpdateCollectionPageDescription
+    """
+    input: UpdateCollectionPageDescriptionInput!
+  ): UpdateCollectionPageDescriptionPayload
+
+  """
   Save the sanitized rich description for a puzzle's public page
   """
   updatePageDescription(
@@ -2681,6 +2817,26 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
     """
     input: UploadAvatarInput!
   ): UploadAvatarPayload
+
+  """
+  Upload or replace a collection's cover image
+  """
+  uploadCollectionCoverImage(
+    """
+    Parameters for UploadCollectionCoverImage
+    """
+    input: UploadCollectionCoverImageInput!
+  ): UploadCollectionCoverImagePayload
+
+  """
+  Upload an image for a collection's rich page body
+  """
+  uploadCollectionDescriptionImage(
+    """
+    Parameters for UploadCollectionDescriptionImage
+    """
+    input: UploadCollectionDescriptionImageInput!
+  ): UploadCollectionDescriptionImagePayload
 
   """
   Upload an image for a puzzle's rich description
@@ -4151,6 +4307,41 @@ type RemoveAvatarPayload {
 }
 
 """
+Autogenerated input type of RemoveCollectionCoverImage
+"""
+input RemoveCollectionCoverImageInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Collection to update
+  """
+  collectionId: ID!
+}
+
+"""
+Autogenerated return type of RemoveCollectionCoverImage.
+"""
+type RemoveCollectionCoverImagePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated collection
+  """
+  collection: Collection
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
 Autogenerated input type of RemovePuzzleFromCollection
 """
 input RemovePuzzleFromCollectionInput {
@@ -5387,6 +5578,46 @@ input UpdateCollectionInput {
 }
 
 """
+Autogenerated input type of UpdateCollectionPageDescription
+"""
+input UpdateCollectionPageDescriptionInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Collection to update
+  """
+  collectionId: ID!
+
+  """
+  Raw TipTap HTML; sanitized server-side before it is stored
+  """
+  html: String!
+}
+
+"""
+Autogenerated return type of UpdateCollectionPageDescription.
+"""
+type UpdateCollectionPageDescriptionPayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated collection
+  """
+  collection: Collection
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
 Autogenerated return type of UpdateCollection.
 """
 type UpdateCollectionPayload {
@@ -5891,6 +6122,86 @@ type UploadAvatarPayload {
   The updated user
   """
   user: User
+}
+
+"""
+Autogenerated input type of UploadCollectionCoverImage
+"""
+input UploadCollectionCoverImageInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Collection to update
+  """
+  collectionId: ID!
+
+  """
+  The image file (PNG, JPEG, or WebP, max 8MB)
+  """
+  file: Upload!
+}
+
+"""
+Autogenerated return type of UploadCollectionCoverImage.
+"""
+type UploadCollectionCoverImagePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated collection
+  """
+  collection: Collection
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
+Autogenerated input type of UploadCollectionDescriptionImage
+"""
+input UploadCollectionDescriptionImageInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Collection to attach the image to
+  """
+  collectionId: ID!
+
+  """
+  The image file (PNG, JPEG, or WebP, max 8MB)
+  """
+  file: Upload!
+}
+
+"""
+Autogenerated return type of UploadCollectionDescriptionImage.
+"""
+type UploadCollectionDescriptionImagePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  Hosted URL of the stored image
+  """
+  url: String
 }
 
 """

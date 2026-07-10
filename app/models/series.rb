@@ -40,7 +40,8 @@ class Series < ApplicationRecord
   def member_puzzles
     direct = series_entries.where(entryable_type: "Puzzle").select(:entryable_id)
     entered_collections = series_entries.where(entryable_type: "Collection").select(:entryable_id)
-    via_collections = CollectionPuzzle.where(collection_id: entered_collections).select(:puzzle_id)
+    via_collections = CollectionEntry.puzzles.reorder(nil)
+                                     .where(collection_id: entered_collections).select(:entryable_id)
     Puzzle.where(id: direct).or(Puzzle.where(id: via_collections))
   end
 

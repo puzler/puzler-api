@@ -13,9 +13,10 @@ module Mutations
         collection = require_owned!(:collections, "Collection", id: collection_id)
         puzzle = require_owned!(:puzzles, "Puzzle", id: puzzle_id)
 
-        unless collection.collection_puzzles.exists?(puzzle_id: puzzle.id)
-          next_position = (collection.collection_puzzles.maximum(:position) || -1) + 1
-          collection.collection_puzzles.create!(puzzle:, position: next_position)
+        unless collection.puzzle_entries.exists?(entryable_id: puzzle.id)
+          # Position over ALL entries: puzzles and story pages share one sequence.
+          next_position = (collection.entries.maximum(:position) || -1) + 1
+          collection.entries.create!(entryable: puzzle, position: next_position)
           collection.recompute_aggregates!
         end
 

@@ -8,6 +8,10 @@ RSpec.describe Collection, type: :model do
     expect(create(:collection).share_token).to be_present
   end
 
+  it_behaves_like "a model with a rich description" do
+    let(:record) { create(:collection) }
+  end
+
   describe ".publicly_visible" do
     it "returns only public collections", :aggregate_failures do
       pub = create(:collection, visibility: :public)
@@ -44,14 +48,14 @@ RSpec.describe Collection, type: :model do
     let(:second) { create(:puzzle) }
 
     it "returns puzzles by position" do
-      create(:collection_puzzle, collection:, puzzle: second, position: 1)
-      create(:collection_puzzle, collection:, puzzle: first, position: 0)
+      create(:collection_entry, collection:, puzzle: second, position: 1)
+      create(:collection_entry, collection:, puzzle: first, position: 0)
       expect(collection.reload.puzzles.pluck(:id)).to eq([ first.id, second.id ])
     end
 
     it "lets a puzzle live in several collections at once" do
-      create(:collection_puzzle, collection:, puzzle: first)
-      create(:collection_puzzle, puzzle: first)
+      create(:collection_entry, collection:, puzzle: first)
+      create(:collection_entry, puzzle: first)
       expect(first.collections.count).to eq(2)
     end
   end
@@ -60,8 +64,8 @@ RSpec.describe Collection, type: :model do
     let(:collection) { create(:collection) }
 
     it "averages member ratings and sums member solves" do
-      create(:collection_puzzle, collection:, puzzle: create(:puzzle, avg_rating: 4.0, solve_count: 10))
-      create(:collection_puzzle, collection:, puzzle: create(:puzzle, avg_rating: 2.0, solve_count: 5))
+      create(:collection_entry, collection:, puzzle: create(:puzzle, avg_rating: 4.0, solve_count: 10))
+      create(:collection_entry, collection:, puzzle: create(:puzzle, avg_rating: 2.0, solve_count: 5))
       collection.recompute_aggregates!
       expect([ collection.avg_rating, collection.solve_count ]).to eq([ 3.0, 15 ])
     end
@@ -69,7 +73,7 @@ RSpec.describe Collection, type: :model do
     it "cascades to any series containing the collection" do
       series = create(:series)
       create(:series_entry, series:, entryable: collection)
-      create(:collection_puzzle, collection:, puzzle: create(:puzzle, solve_count: 7))
+      create(:collection_entry, collection:, puzzle: create(:puzzle, solve_count: 7))
       collection.recompute_aggregates!
       expect(series.reload.solve_count).to eq(7)
     end

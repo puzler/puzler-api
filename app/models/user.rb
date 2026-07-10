@@ -31,6 +31,7 @@ class User < ApplicationRecord
   has_many :puzzles, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :folders, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :collections, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
+  has_many :story_pages, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :collection_solve_times, dependent: :destroy
   has_many :series, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :series_subscriptions, dependent: :destroy

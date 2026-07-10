@@ -12,7 +12,7 @@ module Mutations
       def resolve(collection_id:, puzzle_id:)
         collection = require_owned!(:collections, "Collection", id: collection_id)
 
-        removed = collection.collection_puzzles.where(puzzle_id:).destroy_all
+        removed = collection.puzzle_entries.where(entryable_id: puzzle_id).destroy_all
         collection.recompute_aggregates! if removed.any?
         { collection: collection.reload, errors: [] }
       end

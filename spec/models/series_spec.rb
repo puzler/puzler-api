@@ -92,7 +92,7 @@ RSpec.describe Series, type: :model do
 
     it "rolls up puzzles nested inside entered collections" do
       collection = create(:collection)
-      create(:collection_puzzle, collection:, puzzle: create(:puzzle, solve_count: 8))
+      create(:collection_entry, collection:, puzzle: create(:puzzle, solve_count: 8))
       create(:series_entry, series:, entryable: collection)
       series.recompute_aggregates!
       expect(series.solve_count).to eq(8)
@@ -103,7 +103,7 @@ RSpec.describe Series, type: :model do
       let(:collection) { create(:collection) }
 
       before do
-        create(:collection_puzzle, collection:, puzzle:)
+        create(:collection_entry, collection:, puzzle:)
         create(:series_entry, series:, entryable: collection)
         create(:series_entry, series:, entryable: puzzle)
       end
