@@ -75,4 +75,36 @@ namespace :puzzle_format do
 
     puts "puzzle_format:add_sudoku_rules — #{backfilled} backfilled, #{skipped} already carried the key, #{resynced} puzzles re-synced."
   end
+
+  desc "Stamp grid.digits onto oversized definitions that relied on the old grid-size default (idempotent)"
+  task default_digits: :environment do
+    # Default-digit-range change (2026-07-10, gattai epic): an absent
+    # grid.digits used to mean "the grid's long side"; it now means "the long
+    # side capped at 9" so oversized boards can't overflow the solver's 16-cap
+    # candidate masks. Pre-change puzzles between 10 and 16 relied on the old
+    # meaning — stamp it explicitly so their digit range doesn't silently
+    # shrink to 9. (Nothing above 16 exists yet: 16 was the frontend cap.)
+    backfilled = 0
+    skipped = 0
+    PuzzleVersion.unscoped.find_each do |version|
+      definition = version.definition
+      next if definition.blank?
+
+      grid = definition["grid"]
+      next if grid.blank?
+
+      long_side = [ grid["rows"].to_i, grid["cols"].to_i ].max
+      unless grid["digits"].nil? && long_side.between?(10, 16)
+        skipped += 1
+        next
+      end
+
+      definition = definition.deep_dup
+      definition["grid"]["digits"] = long_side
+      version.update_columns(definition: definition)
+      backfilled += 1
+    end
+
+    puts "puzzle_format:default_digits — #{backfilled} backfilled, #{skipped} unaffected."
+  end
 end

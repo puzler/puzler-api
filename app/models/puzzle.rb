@@ -46,8 +46,12 @@ class Puzzle < ApplicationRecord
 
   validates :title, presence: true, length: { maximum: 100 }
   validates :author_difficulty, numericality: { only_integer: true, greater_than_or_equal_to: 1, less_than_or_equal_to: 5 }, allow_nil: true
-  validates :grid_rows, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 25 }
-  validates :grid_cols, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: 25 }
+  # Matches the frontend's GRID_MAX (app: utils/puzzleJson.ts) — 48 covers the
+  # known gattai shapes (Samurai 21, Sumo 33, Shogun 21×45) with headroom.
+  GRID_MAX = 48
+
+  validates :grid_rows, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: GRID_MAX }
+  validates :grid_cols, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: GRID_MAX }
 
   # The public archive lists only finished, public puzzles. Unlisted/private and
   # the future patron/subscriber tiers are reachable by link/grant, not listing.

@@ -10,6 +10,15 @@ RSpec.describe Puzzle, type: :model do
     end
   end
 
+  describe "grid dimension validation" do
+    it "accepts gattai-scale grids up to GRID_MAX and rejects beyond", :aggregate_failures do
+      expect(build(:puzzle, grid_rows: 48, grid_cols: 48)).to be_valid
+      expect(build(:puzzle, grid_rows: 21, grid_cols: 45)).to be_valid
+      expect(build(:puzzle, grid_rows: 49, grid_cols: 9)).not_to be_valid
+      expect(build(:puzzle, grid_rows: 9, grid_cols: 49)).not_to be_valid
+    end
+  end
+
   describe "scopes" do
     let!(:public_puzzle) { create(:puzzle, :published) }
     let!(:container_puzzle) { create(:puzzle, :containers_only) }
