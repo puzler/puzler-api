@@ -98,6 +98,48 @@ RSpec.describe Fpuzzles::Encoder do
     expect(described_class.call(definition: { "grid" => { "rows" => 9, "cols" => 9 } }).data).to include("size" => 9)
   end
 
+  # Standalone v4 definitions for grid-shape edge cases, kept out of the
+  # examples (ExampleLength) and out of the memoized lets (the shared fixture
+  # group is at the cap).
+  def overlapping_regions_definition
+    {
+      "formatVersion" => 4,
+      "grid" => { "rows" => 9, "cols" => 9, "regions" => { "1" => [ "r1c1", "r1c2" ], "2" => [ "r1c2", "r1c3" ] } },
+      "globals" => { "sudokuRules" => {} }
+    }
+  end
+
+  def houses_definition
+    {
+      "formatVersion" => 4,
+      "grid" => { "rows" => 9, "cols" => 9 },
+      "globals" => { "sudokuRules" => {} },
+      "constraints" => { "houses" => [ { "cells" => %w[r1c1 r1c2] }, { "cells" => %w[r1c2 r2c2] } ] }
+    }
+  end
+
+  it "raises when a cell belongs to several regions (no f-puzzles representation)" do
+    expect { described_class.call(definition: overlapping_regions_definition) }
+      .to raise_error(Fpuzzles::UnsupportedGrid, /one region per cell/)
+  end
+
+  it "raises when the digit range differs from the grid size" do
+    definition = { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 9, "digits" => 6 }, "globals" => { "sudokuRules" => {} } }
+    expect { described_class.call(definition: definition) }
+      .to raise_error(Fpuzzles::UnsupportedGrid, /digits 1-9/)
+  end
+
+  it "accepts an explicit digit range that matches the grid size" do
+    definition = { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 9, "digits" => 9 }, "globals" => { "sudokuRules" => {} } }
+    expect(described_class.call(definition: definition).data).to include("size" => 9)
+  end
+
+  it "exports hidden houses as visible extra regions with one fidelity warning", :aggregate_failures do
+    house_result = described_class.call(definition: houses_definition)
+    expect(house_result.data["extraregion"]).to eq([ { "cells" => %w[R1C1 R1C2] }, { "cells" => %w[R1C2 R2C2] } ])
+    expect(house_result.warnings.grep(/hidden house/i).length).to eq(1)
+  end
+
   describe "cosmetic borders" do
     # Plain helpers, not lets: the outer group already sits at the memoized cap.
     def border_rects
@@ -325,7 +367,10 @@ RSpec.describe Fpuzzles::Encoder do
         "globals" => { "sudokuRules" => {} },
         "grid" => {
           "rows" => 4, "cols" => 4,
-          "regions" => { "1" => %w[r1c1 r1c2 r2c1 r2c2], "2" => %w[r1c3 r1c4 r2c3] }
+          "regions" => {
+            "1" => %w[r1c1 r1c2 r2c1 r2c2], "2" => %w[r1c3 r1c4 r2c3 r2c4],
+            "3" => %w[r3c1 r3c2 r4c1 r4c2], "4" => %w[r3c3 r3c4 r4c3 r4c4]
+          }
         }
       })
     end
@@ -334,8 +379,33 @@ RSpec.describe Fpuzzles::Encoder do
       grid = regioned_result.data["grid"]
       expect(grid[0][0]["region"]).to eq(0)
       expect(grid[0][2]["region"]).to eq(1)
-      expect(grid[1][3]).not_to have_key("region")
-      expect(regioned_result.warnings).to include(a_string_matching(/belong to no region/))
+      expect(grid[3][3]["region"]).to eq(3)
+    end
+
+    def voided_definition
+      {
+        "formatVersion" => 4,
+        "globals" => { "sudokuRules" => {} },
+        "grid" => { "rows" => 4, "cols" => 4, "regions" => { "1" => %w[r1c1 r1c2 r2c1 r2c2] } }
+      }
+    end
+
+    def custom_houses_definition
+      {
+        "formatVersion" => 4,
+        "globals" => { "sudokuRules" => { "custom" => true } },
+        "grid" => { "rows" => 9, "cols" => 9 }
+      }
+    end
+
+    it "raises when regions leave cells uncovered (void cells)" do
+      expect { described_class.call(definition: voided_definition) }
+        .to raise_error(Fpuzzles::UnsupportedGrid, /void cells/)
+    end
+
+    it "raises when sudoku rules run in custom-houses mode" do
+      expect { described_class.call(definition: custom_houses_definition) }
+        .to raise_error(Fpuzzles::UnsupportedGrid, /custom houses/)
     end
   end
 

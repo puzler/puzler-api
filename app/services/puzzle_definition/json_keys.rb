@@ -41,6 +41,7 @@ module PuzzleDefinition
       "col_index_cells" => "colIndexCells",
       "killer_cage" => "killerCages",
       "extra_regions" => "extraRegions",
+      "house" => "houses",
       "clone" => "clones",
       "x_sums" => "xSums",
       "sandwich_sums" => "sandwichSums",
@@ -84,11 +85,15 @@ module PuzzleDefinition
     # type). Mirrors GLOBAL_GROUPS_JSON in registry.ts.
     GLOBAL_GROUPS = [
       {
-        # The one default-ON global: an absent key or absent field means the
-        # rules apply; only `enabled: false` disables them.
+        # Key presence carries the rule; `enabled: false` soft-disables and
+        # `custom: true` swaps the automatic row/column houses for
+        # author-defined ones.
         type: "sudoku_rules",
         key: "sudokuRules",
-        variants: [ { type: "sudoku_rules", key: "enabled" } ],
+        variants: [
+          { type: "sudoku_rules", key: "enabled" },
+          { type: "sudoku_custom_houses", key: "custom" }
+        ],
         custom_values: {}
       },
       {

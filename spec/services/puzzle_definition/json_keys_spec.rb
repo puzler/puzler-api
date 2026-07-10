@@ -34,6 +34,7 @@ RSpec.describe PuzzleDefinition::JsonKeys do
       "col_index_cells" => "colIndexCells",
       "killer_cage" => "killerCages",
       "extra_regions" => "extraRegions",
+      "house" => "houses",
       "clone" => "clones",
       "x_sums" => "xSums",
       "sandwich_sums" => "sandwichSums",
@@ -76,7 +77,10 @@ RSpec.describe PuzzleDefinition::JsonKeys do
       {
         type: "sudoku_rules",
         key: "sudokuRules",
-        variants: [ { type: "sudoku_rules", key: "enabled" } ],
+        variants: [
+          { type: "sudoku_rules", key: "enabled" },
+          { type: "sudoku_custom_houses", key: "custom" }
+        ],
         custom_values: {}
       },
       {

@@ -94,6 +94,17 @@ module Fpuzzles
       if sudoku_rules.nil? || sudoku_rules["enabled"] == false
         raise UnsupportedGrid, "SudokuPad always enforces sudoku rules; this puzzle has them disabled."
       end
+      # Custom-houses mode drops the automatic row/column houses — f-puzzles
+      # can't switch those off, so the exported puzzle would over-constrain.
+      if sudoku_rules["custom"] == true
+        raise UnsupportedGrid, "SudokuPad always enforces full rows and columns; this puzzle uses custom houses instead."
+      end
+
+      # Nor can f-puzzles express a digit range narrower or wider than the grid.
+      digits = @def["grid"]["digits"]
+      if digits.is_a?(Numeric) && digits != @size
+        raise UnsupportedGrid, "SudokuPad expects digits 1-#{@size} on this grid; this puzzle uses 1-#{digits}."
+      end
 
       meta = @def["meta"] || {}
       @fp["size"] = @size
@@ -191,7 +202,16 @@ module Fpuzzles
       if regions.is_a?(Hash) && !regions.empty?
         label_to_region = regions.keys.sort.each_with_index.to_h
         label_by_cell = {}
-        regions.each { |label, cells| Array(cells).each { |cell| label_by_cell[cell] = label } }
+        regions.each do |label, cells|
+          Array(cells).each do |cell|
+            # f-puzzles assigns each cell exactly one region; overlapping
+            # regions (conjoined grids) have no representation.
+            if label_by_cell.key?(cell) && label_by_cell[cell] != label
+              raise UnsupportedGrid, "SudokuPad supports one region per cell; #{cell} belongs to several."
+            end
+            label_by_cell[cell] = label
+          end
+        end
       end
 
       row_index = single_cell_entries("row_index_cells").to_h
@@ -236,7 +256,11 @@ module Fpuzzles
         end
       end
       @fp["grid"] = cells
-      @warnings << "Some cells belong to no region; SudokuPad may assign them a default box." if has_null_region
+      # With regions painted, a regionless cell is VOID (dead space) — nothing
+      # in f-puzzles removes a cell from the grid, so the export would revive it.
+      if has_null_region
+        raise UnsupportedGrid, "SudokuPad has no void cells; this puzzle leaves cells outside every region."
+      end
     end
 
     # The solution argument comes from the version's own column (internal
@@ -473,6 +497,14 @@ module Fpuzzles
       when "extra_regions"
         push("extraregion", { "cells" => Array(entry["cells"]).map { |k| fp_cell(k) } })
         note_unexportable_colors(type, entry)
+      when "house"
+        # Hidden houses have no f-puzzles equivalent; a visible extra region is
+        # the closest constraint-preserving stand-in.
+        push("extraregion", { "cells" => Array(entry["cells"]).map { |k| fp_cell(k) } })
+        unless @noted_house_fidelity
+          @noted_house_fidelity = true
+          @warnings << "Hidden houses export as visible extra regions; SudokuPad has no hidden-house equivalent."
+        end
       when "clone"
         build_clone(entry)
         note_unexportable_colors(type, entry)
