@@ -9,6 +9,8 @@ module Types
         description: "Unlock only after every other puzzle in the collection is solved"
       argument :hidden, Boolean, required: false,
         description: "Hide the entry until its codeword is entered (requires a codeword)"
+      argument :released_at, GraphQL::Types::ISO8601DateTime, required: false,
+        description: "Scheduled release time; explicit null releases the entry now"
     end
   end
 end

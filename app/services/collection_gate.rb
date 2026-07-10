@@ -11,7 +11,8 @@ class CollectionGate
   class GatedEntry
     attr_reader :entry, :locked, :solved
 
-    delegate :id, :position, :entryable_type, :entryable, :gated?, :hidden?, :finale?, to: :entry
+    delegate :id, :position, :entryable_type, :entryable, :gated?, :hidden?, :finale?, :released_at,
+      to: :entry
 
     def initialize(entry:, locked:, solved:)
       @entry = entry
@@ -27,12 +28,16 @@ class CollectionGate
   end
 
   # `entries` should already be filtered to what this viewer may know exists
-  # (puzzle visibility); hidden-entry and lock resolution happens here.
+  # (puzzle visibility); release, hidden-entry, and lock resolution happens
+  # here. Unreleased entries are simply absent for non-authors, so they never
+  # block a sequence or count toward a finale until their moment arrives.
   def call(entries)
     unlocked_ids = unlocked_entry_ids(entries)
     solved_ids = solved_puzzle_ids(entries)
 
-    visible = entries.select { |e| @author_view || !e.hidden? || unlocked_ids.include?(e.id) }
+    visible = entries.select do |e|
+      @author_view || (e.released? && (!e.hidden? || unlocked_ids.include?(e.id)))
+    end
 
     required = visible.select { |e| !e.finale? && e.entryable_type == "Puzzle" }
     finale_ready = required.any? && required.all? { |e| solved_ids.include?(e.entryable_id) }

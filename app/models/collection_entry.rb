@@ -36,6 +36,11 @@ class CollectionEntry < ApplicationRecord
     unlocks.for_actor(actor).exists?
   end
 
+  # Nil means released on creation; a future timestamp is a scheduled entry.
+  def released?
+    released_at.nil? || released_at <= Time.current
+  end
+
   def self.digest_codeword(word)
     Digest::SHA256.hexdigest(word.to_s.strip.downcase)
   end

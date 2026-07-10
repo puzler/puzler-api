@@ -43,6 +43,14 @@ RSpec.describe "Collection gate mutations", type: :graphql do
       result = update({ codeword: "x" }, context: auth_context(create(:user)))
       expect(gql_errors(result).first["message"]).to eq("Collection not found")
     end
+
+    it "schedules and clears a release time", :aggregate_failures do
+      moment = 2.days.from_now.change(usec: 0)
+      gql_data(update({ releasedAt: moment.iso8601 }), "updateCollectionEntry")
+      expect(entry.reload).to have_attributes(released_at: moment, released?: false)
+      gql_data(update({ releasedAt: nil }), "updateCollectionEntry")
+      expect(entry.reload.released?).to be(true)
+    end
   end
 
   describe "submitCollectionCodeword" do

@@ -107,6 +107,26 @@ RSpec.describe CollectionGate do
     end
   end
 
+  describe "scheduled release" do
+    before do
+      collection.update!(mode: :sequence)
+      interlude.update!(released_at: 1.day.from_now)
+    end
+
+    it "omits unreleased entries without blocking the sequence", :aggregate_failures do
+      solve!(opening)
+      expect(resolve.map(&:id)).to eq([ opening.id, closing.id ])
+      expect(resolve.last.locked).to be(false)
+    end
+
+    it "shows released and author views in full", :aggregate_failures do
+      interlude.update!(released_at: 1.hour.ago)
+      expect(resolve.map(&:id)).to include(interlude.id)
+      interlude.update!(released_at: 1.day.from_now)
+      expect(resolve(author_view: true).map(&:id)).to include(interlude.id)
+    end
+  end
+
   it "resolves solve state for guest actors via their token", :aggregate_failures do
     guest = Actor.new(guest_token: "guest-abc")
     expect(resolve(for_actor: guest).map(&:locked)).to eq([ false, true, true ])

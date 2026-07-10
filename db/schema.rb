@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_10_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -58,11 +58,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000004) do
     t.boolean "finale", default: false, null: false
     t.boolean "hidden", default: false, null: false
     t.integer "position", default: 0, null: false
+    t.datetime "released_at"
     t.datetime "updated_at", null: false
     t.index ["collection_id", "entryable_type", "entryable_id"], name: "index_collection_entries_unique", unique: true
     t.index ["collection_id", "position"], name: "index_collection_entries_on_collection_id_and_position"
     t.index ["collection_id"], name: "index_collection_entries_on_collection_id"
     t.index ["entryable_type", "entryable_id"], name: "index_collection_entries_on_entryable_type_and_entryable_id"
+    t.index ["released_at"], name: "index_collection_entries_on_released_at", where: "(released_at IS NOT NULL)"
   end
 
   create_table "collection_entry_unlocks", force: :cascade do |t|

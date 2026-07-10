@@ -300,6 +300,11 @@ type Collection {
   mode: CollectionModeEnum!
 
   """
+  When the next scheduled entry arrives; null when nothing is pending
+  """
+  nextReleaseAt: ISO8601DateTime
+
+  """
   Sanitized rich HTML body for the collection page
   """
   pageDescriptionHtml: String
@@ -472,6 +477,11 @@ type CollectionEntry {
   puzzle: Puzzle
 
   """
+  Scheduled release time; null means released on creation
+  """
+  releasedAt: ISO8601DateTime
+
+  """
   Whether the viewer has solved this entry's puzzle (always false for story pages)
   """
   solved: Boolean!
@@ -505,6 +515,11 @@ input CollectionEntryGatesInput {
   Hide the entry until its codeword is entered (requires a codeword)
   """
   hidden: Boolean
+
+  """
+  Scheduled release time; explicit null releases the entry now
+  """
+  releasedAt: ISO8601DateTime
 }
 
 """

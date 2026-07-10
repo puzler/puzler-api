@@ -20,6 +20,8 @@ module Types
       field :position, Integer, null: false, description: "Order within the collection"
       field :puzzle, PuzzleType, null: true,
         description: "The puzzle, when this entry is a puzzle"
+      field :released_at, GraphQL::Types::ISO8601DateTime, null: true,
+        description: "Scheduled release time; null means released on creation"
       field :solved, Boolean, null: false,
         description: "Whether the viewer has solved this entry's puzzle (always false for story pages)"
       field :story_page, StoryPageType, null: true,

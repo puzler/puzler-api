@@ -23,6 +23,8 @@ module Types
         description: "Whether any entry is gated by a codeword (drives the codeword input)"
       field :id, ID, null: false, description: "Unique collection ID"
       field :mode, Types::Enums::CollectionModeEnum, null: false, description: "Ordering mode: unordered or sequence"
+      field :next_release_at, GraphQL::Types::ISO8601DateTime, null: true,
+        description: "When the next scheduled entry arrives; null when nothing is pending"
       field :page_description_html, String, null: true,
         description: "Sanitized rich HTML body for the collection page"
       field :puzzle_count, Integer, null: false, description: "Number of puzzles the viewer can see in this collection"
@@ -60,6 +62,12 @@ module Types
 
       def has_codewords
         object.entries.where.not(codeword_digest: nil).exists?
+      end
+
+      # The next scheduled arrival worth teasing. Hidden entries stay secret
+      # even in schedule form.
+      def next_release_at
+        object.entries.where(hidden: false).where("released_at > ?", Time.current).minimum(:released_at)
       end
 
       def puzzle_count

@@ -24,6 +24,7 @@ module Mutations
         entry.codeword = settings[:codeword] if settings.key?(:codeword)
         entry.hidden = settings[:hidden] if settings.key?(:hidden)
         entry.finale = settings[:finale] if settings.key?(:finale)
+        entry.released_at = settings[:released_at] if settings.key?(:released_at)
 
         if entry.save
           { collection: collection.reload, errors: [] }
