@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_10_000003) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_10_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,16 +50,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000003) do
   end
 
   create_table "collection_entries", force: :cascade do |t|
+    t.string "codeword_digest"
     t.bigint "collection_id", null: false
     t.datetime "created_at", null: false
     t.bigint "entryable_id", null: false
     t.string "entryable_type", null: false
+    t.boolean "finale", default: false, null: false
+    t.boolean "hidden", default: false, null: false
     t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
     t.index ["collection_id", "entryable_type", "entryable_id"], name: "index_collection_entries_unique", unique: true
     t.index ["collection_id", "position"], name: "index_collection_entries_on_collection_id_and_position"
     t.index ["collection_id"], name: "index_collection_entries_on_collection_id"
     t.index ["entryable_type", "entryable_id"], name: "index_collection_entries_on_entryable_type_and_entryable_id"
+  end
+
+  create_table "collection_entry_unlocks", force: :cascade do |t|
+    t.bigint "collection_entry_id", null: false
+    t.datetime "created_at", null: false
+    t.string "guest_token"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["collection_entry_id", "guest_token"], name: "index_entry_unlocks_on_entry_and_guest", unique: true, where: "(guest_token IS NOT NULL)"
+    t.index ["collection_entry_id", "user_id"], name: "index_entry_unlocks_on_entry_and_user", unique: true, where: "(user_id IS NOT NULL)"
+    t.index ["collection_entry_id"], name: "index_collection_entry_unlocks_on_collection_entry_id"
+    t.index ["user_id"], name: "index_collection_entry_unlocks_on_user_id"
   end
 
   create_table "collection_solve_times", force: :cascade do |t|
@@ -444,6 +459,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000003) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "collection_entries", "collections"
+  add_foreign_key "collection_entry_unlocks", "collection_entries"
+  add_foreign_key "collection_entry_unlocks", "users"
   add_foreign_key "collection_solve_times", "collections"
   add_foreign_key "collection_solve_times", "puzzles"
   add_foreign_key "collection_solve_times", "users"

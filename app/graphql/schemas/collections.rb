@@ -136,8 +136,12 @@ module Schemas
         description: "Reorder all entries in a collection"
       field :reorder_collection_puzzles, mutation: ::Mutations::Collections::ReorderCollectionPuzzles,
         description: "Reorder the puzzles in a collection"
+      field :submit_collection_codeword, mutation: ::Mutations::Collections::SubmitCollectionCodeword,
+        description: "Try a codeword against a collection's gated entries"
       field :update_collection, mutation: ::Mutations::Collections::UpdateCollection,
         description: "Update a collection's metadata"
+      field :update_collection_entry, mutation: ::Mutations::Collections::UpdateCollectionEntry,
+        description: "Update an entry's hunt gates (codeword, hidden, finale)"
       field :update_collection_page_description, mutation: ::Mutations::Collections::UpdateCollectionPageDescription,
         description: "Save the rich page body for a collection"
       field :update_story_page, mutation: ::Mutations::Collections::UpdateStoryPage,

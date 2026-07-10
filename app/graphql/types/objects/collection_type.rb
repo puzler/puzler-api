@@ -15,9 +15,12 @@ module Types
         description: "Hosted URL of the cover image, 16:9 card crop; null when unset"
       field :description, String, null: true, description: "Optional short description (plain text, shown on cards)"
       field :entries, [ CollectionEntryType ], null: false,
-        description: "Ordered entries (puzzles and story pages); non-authors see only publicly-visible puzzles"
+        description: "Ordered entries (puzzles and story pages) with the viewer's lock state resolved; " \
+                     "non-authors see only publicly-visible puzzles, and hidden entries only once unlocked"
       field :folder, FolderType, null: true,
         description: "Folder this collection is filed in; only visible to the author"
+      field :has_codewords, Boolean, null: false,
+        description: "Whether any entry is gated by a codeword (drives the codeword input)"
       field :id, ID, null: false, description: "Unique collection ID"
       field :mode, Types::Enums::CollectionModeEnum, null: false, description: "Ordering mode: unordered or sequence"
       field :page_description_html, String, null: true,
@@ -40,15 +43,23 @@ module Types
       end
 
       # Story pages always show inside their collection; puzzle entries follow
-      # the same visibility rule as `puzzles`.
+      # the same visibility rule as `puzzles`. CollectionGate then resolves the
+      # viewer's per-entry lock state (sequence, codewords, hidden, finale).
       def entries
         loaded = object.entries.includes(:entryable)
-        return loaded if author_or_admin?
-
-        visible_ids = visible_puzzles.pluck(:id).to_set
-        loaded.select do |entry|
-          entry.entryable_type == "StoryPage" || visible_ids.include?(entry.entryable_id)
+        unless author_or_admin?
+          visible_ids = visible_puzzles.pluck(:id).to_set
+          loaded = loaded.select do |entry|
+            entry.entryable_type == "StoryPage" || visible_ids.include?(entry.entryable_id)
+          end
         end
+
+        actor = Actor.from_context(current_user: context[:current_user], guest_token: context[:guest_token])
+        CollectionGate.new(object, actor:, author_view: author_or_admin?).call(loaded.to_a)
+      end
+
+      def has_codewords
+        object.entries.where.not(codeword_digest: nil).exists?
       end
 
       def puzzle_count
