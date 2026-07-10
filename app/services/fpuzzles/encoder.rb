@@ -85,6 +85,16 @@ module Fpuzzles
 
       @def = PuzzleDefinition::Migrator.v3_to_v4(@raw)
 
+      # f-puzzles has no way to express a grid without sudoku rules, and
+      # SudokuPad always enforces them. Key presence carries the rule: a
+      # missing sudokuRules group means the puzzle has no sudoku rules (the
+      # migrator stamps the group onto every pre-v4 document, so old puzzles
+      # pass).
+      sudoku_rules = @def.dig("globals", "sudokuRules")
+      if sudoku_rules.nil? || sudoku_rules["enabled"] == false
+        raise UnsupportedGrid, "SudokuPad always enforces sudoku rules; this puzzle has them disabled."
+      end
+
       meta = @def["meta"] || {}
       @fp["size"] = @size
       @fp["title"] = meta["name"] if present?(meta["name"])
@@ -510,6 +520,31 @@ module Fpuzzles
           "outlineC" => blend_opacity(style&.dig("color") || "#777777", style&.dig("opacity")),
           "width" => (style&.dig("strokeWidth") || 8) / 64.0
         })
+      end
+      # Cosmetic borders have no f-puzzles primitive; a thin rectangle spanning
+      # the two cells renders along their shared edge (a two-cell "cells" list
+      # centres the shape between them). Vertical neighbours share a horizontal
+      # edge (full cell width, stroke-thin height) and vice versa.
+      Array(cosmetics["borders"]).each do |border|
+        style = find_preset("borderPresets", border["preset"])&.dig("style")
+        color = blend_opacity(style&.dig("color") || "#232B3D", style&.dig("opacity"))
+        thickness = (style&.dig("strokeWidth") || 2.5) / 64.0
+        Array(border["edges"]).each do |edge|
+          a, b = Array(edge)
+          next if a.nil? || b.nil?
+          row_a, = parse_key(a)
+          row_b, = parse_key(b)
+          horizontal_edge = row_a != row_b
+          push("rectangle", {
+            "cells" => [ fp_cell(a), fp_cell(b) ],
+            "baseC" => fp_color(color),
+            "outlineC" => color,
+            "fontC" => "#000000",
+            "width" => horizontal_edge ? 1 : thickness,
+            "height" => horizontal_edge ? thickness : 1,
+            "value" => ""
+          })
+        end
       end
       Array(cosmetics["shapes"]).each { |shape| build_shape(shape) }
       Array(cosmetics["texts"]).each { |text| build_text(text) }

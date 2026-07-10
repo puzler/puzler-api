@@ -20,6 +20,7 @@ module PuzzleDefinition
     # Preset ids canonicalize to positional slugs on every serialize.
     PRESET_SLUG_PREFIX = {
       "cosmetic_line" => "line",
+      "cosmetic_border" => "border",
       "shape" => "shape",
       "text" => "text",
       "cell_color" => "color",
@@ -106,7 +107,9 @@ module PuzzleDefinition
         },
         solution: @doc["solution"],
         given_digits: @doc["givenDigits"] || {},
-        active_types: Array(@doc["activeConstraints"]).filter_map { |c| c["type"] if c.is_a?(Hash) }.to_set,
+        # Pre-v4 puzzles are always sudoku: give them the Sudoku Rules chip,
+        # whose document presence is what now means "sudoku rules apply".
+        active_types: Array(@doc["activeConstraints"]).filter_map { |c| c["type"] if c.is_a?(Hash) }.to_set << "sudoku_rules",
         variants: Array(globals["variants"]).to_set,
         custom_globals: Array(globals["custom"]).map { |c| { type: c["type"], value: c["value"] } },
         single_cell_marks: (constraints["singleCellMarks"] || {}).transform_values(&:sort),
@@ -123,6 +126,8 @@ module PuzzleDefinition
         cell_colors: cosmetics["cellColors"] || {},
         presets: {
           "cosmetic_line" => cosmetics["linePresets"] || [],
+          # Cosmetic borders did not exist before v4.
+          "cosmetic_border" => [],
           "shape" => migrated_shape_presets(cosmetics),
           "text" => text_presets,
           "cell_color" => cosmetics["cellColorPresets"] || [],

@@ -71,7 +71,7 @@ RSpec.describe PuzzleDefinition::Migrator do
       expect(migrated["formatVersion"]).to eq(4)
       expect(migrated["meta"]).to eq("name" => "Old Puzzle", "rules" => "Rules.")
       expect(migrated["givenDigits"]).to eq("r1c1" => 5)
-      expect(migrated["globals"]).to eq("antiXv" => { "x" => true, "sums" => [ 12 ] })
+      expect(migrated["globals"]).to eq("sudokuRules" => {}, "antiXv" => { "x" => true, "sums" => [ 12 ] })
     end
 
     it "converts the constraint buckets to one 1-indexed array per type" do
@@ -126,7 +126,7 @@ RSpec.describe PuzzleDefinition::Migrator do
     it "keeps active-but-empty chips as empty entries", :aggregate_failures do
       doc = migrate("formatVersion" => 3, "grid" => { "rows" => 9, "cols" => 9 }, "activeConstraints" => [ { "id" => "a", "type" => "renban" }, { "id" => "b", "type" => "diagonals" } ])
       expect(doc["constraints"]).to eq("renbanLines" => [])
-      expect(doc["globals"]).to eq("diagonals" => {})
+      expect(doc["globals"]).to eq("sudokuRules" => {}, "diagonals" => {})
     end
 
     it "shifts sorted single-cell marks without re-sorting the document keys" do

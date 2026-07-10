@@ -43,6 +43,7 @@ RSpec.describe PuzzleDefinition::JsonKeys do
       "battlefield" => "battlefield",
       "next_to_nine" => "nextToNine",
       "rossini" => "rossini",
+      "sudoku_rules" => "sudokuRules",
       "diagonals" => "diagonals",
       "chess" => "chess",
       "anti_kropki" => "antiKropki",
@@ -51,6 +52,7 @@ RSpec.describe PuzzleDefinition::JsonKeys do
       "fog" => "fog",
       "fog_lights" => "fogLights",
       "cosmetic_line" => "lines",
+      "cosmetic_border" => "borders",
       "cell_color" => "cellColors",
       "shape" => "shapes",
       "text" => "texts",
@@ -61,6 +63,7 @@ RSpec.describe PuzzleDefinition::JsonKeys do
   let(:pinned_presets_keys) do
     {
       "cosmetic_line" => "linePresets",
+      "cosmetic_border" => "borderPresets",
       "cell_color" => "cellColorPresets",
       "shape" => "shapePresets",
       "text" => "textPresets",
@@ -70,6 +73,12 @@ RSpec.describe PuzzleDefinition::JsonKeys do
 
   let(:pinned_global_groups) do
     [
+      {
+        type: "sudoku_rules",
+        key: "sudokuRules",
+        variants: [ { type: "sudoku_rules", key: "enabled" } ],
+        custom_values: {}
+      },
       {
         type: "diagonals",
         key: "diagonals",

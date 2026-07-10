@@ -50,6 +50,7 @@ module PuzzleDefinition
       "battlefield" => "battlefield",
       "next_to_nine" => "nextToNine",
       "rossini" => "rossini",
+      "sudoku_rules" => "sudokuRules",
       "diagonals" => "diagonals",
       "chess" => "chess",
       "anti_kropki" => "antiKropki",
@@ -58,6 +59,7 @@ module PuzzleDefinition
       "fog" => "fog",
       "fog_lights" => "fogLights",
       "cosmetic_line" => "lines",
+      "cosmetic_border" => "borders",
       "cell_color" => "cellColors",
       "shape" => "shapes",
       "text" => "texts",
@@ -69,6 +71,7 @@ module PuzzleDefinition
     # Cosmetic kind -> the sibling presets array key in the `cosmetics` section.
     PRESETS_KEY_BY_TYPE = {
       "cosmetic_line" => "linePresets",
+      "cosmetic_border" => "borderPresets",
       "cell_color" => "cellColorPresets",
       "shape" => "shapePresets",
       "text" => "textPresets",
@@ -80,6 +83,14 @@ module PuzzleDefinition
     # and its custom-value fields (document field -> CustomGlobalConstraint
     # type). Mirrors GLOBAL_GROUPS_JSON in registry.ts.
     GLOBAL_GROUPS = [
+      {
+        # The one default-ON global: an absent key or absent field means the
+        # rules apply; only `enabled: false` disables them.
+        type: "sudoku_rules",
+        key: "sudokuRules",
+        variants: [ { type: "sudoku_rules", key: "enabled" } ],
+        custom_values: {}
+      },
       {
         type: "diagonals",
         key: "diagonals",

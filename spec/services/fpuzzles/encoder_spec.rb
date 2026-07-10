@@ -77,6 +77,55 @@ RSpec.describe Fpuzzles::Encoder do
       .to raise_error(Fpuzzles::UnsupportedGrid)
   end
 
+  it "raises when sudoku rules are soft-disabled (SudokuPad always enforces them)" do
+    definition = { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 9 }, "globals" => { "sudokuRules" => { "enabled" => false } } }
+    expect { described_class.call(definition: definition) }
+      .to raise_error(Fpuzzles::UnsupportedGrid, /sudoku rules/)
+  end
+
+  it "raises when the sudokuRules key is absent from a v4 document (rules-off puzzle)" do
+    definition = { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 9 } }
+    expect { described_class.call(definition: definition) }
+      .to raise_error(Fpuzzles::UnsupportedGrid, /sudoku rules/)
+  end
+
+  it "accepts a bare sudokuRules presence marker (chip on, rules on)" do
+    definition = { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 9 }, "globals" => { "sudokuRules" => {} } }
+    expect(described_class.call(definition: definition).data).to include("size" => 9)
+  end
+
+  it "accepts pre-v4 documents (the migrator stamps the rules group on)" do
+    expect(described_class.call(definition: { "grid" => { "rows" => 9, "cols" => 9 } }).data).to include("size" => 9)
+  end
+
+  describe "cosmetic borders" do
+    # Plain helpers, not lets: the outer group already sits at the memoized cap.
+    def border_rects
+      definition = {
+        "formatVersion" => 4,
+        "globals" => { "sudokuRules" => {} },
+        "grid" => { "rows" => 9, "cols" => 9 },
+        "cosmetics" => {
+          "borders" => [ { "edges" => [ [ "r1c1", "r1c2" ], [ "r2c2", "r3c2" ] ], "preset" => "border-1" } ],
+          "borderPresets" => [ { "id" => "border-1", "label" => "Border", "style" => { "color" => "#232B3D", "strokeWidth" => 2.5, "opacity" => 1 } } ]
+        }
+      }
+      described_class.call(definition: definition).data["rectangle"]
+    end
+
+    it "spans a vertical edge with a thin full-height rectangle", :aggregate_failures do
+      # Horizontal neighbours (r1c1|r1c2) share a vertical edge.
+      rects = border_rects
+      expect(rects.length).to eq(2)
+      expect(rects[0]).to include("cells" => %w[R1C1 R1C2], "width" => 2.5 / 64.0, "height" => 1, "baseC" => "#232B3D")
+    end
+
+    it "spans a horizontal edge with a thin full-width rectangle" do
+      # Vertical neighbours (r2c2|r3c2) share a horizontal edge.
+      expect(border_rects[1]).to include("cells" => %w[R2C2 R3C2], "width" => 1, "height" => 2.5 / 64.0)
+    end
+  end
+
   it "maps global variants and negative constraints", :aggregate_failures do
     expect(data).to include("diagonal+" => true, "antiking" => true, "antiknight" => true, "nonconsecutive" => true, "disjointgroups" => true)
     expect(data["negative"]).to contain_exactly("ratio", "xv", "difference")
@@ -184,6 +233,7 @@ RSpec.describe Fpuzzles::Encoder do
         "meta" => { "name" => "Native", "author" => "Ada" },
         "givenDigits" => { "r1c1" => 6 },
         "globals" => {
+          "sudokuRules" => {},
           "diagonals" => { "positive" => true, "antiNegative" => true },
           "chess" => { "knight" => true },
           "antiKropki" => { "black" => true, "differences" => [ 1 ] },
@@ -272,6 +322,7 @@ RSpec.describe Fpuzzles::Encoder do
     def regioned_result
       @regioned_result ||= described_class.call(definition: {
         "formatVersion" => 4,
+        "globals" => { "sudokuRules" => {} },
         "grid" => {
           "rows" => 4, "cols" => 4,
           "regions" => { "1" => %w[r1c1 r1c2 r2c1 r2c2], "2" => %w[r1c3 r1c4 r2c3] }
@@ -296,6 +347,7 @@ RSpec.describe Fpuzzles::Encoder do
     def colored_result
       @colored_result ||= described_class.call(definition: {
         "formatVersion" => 4,
+        "globals" => { "sudokuRules" => {} },
         "grid" => { "rows" => 9, "cols" => 9 },
         "constraints" => {
           "renbanLines" => [ { "cells" => %w[r9c6 r9c7], "color" => "#112233" } ],
@@ -389,7 +441,7 @@ RSpec.describe Fpuzzles::Encoder do
       {
         "formatVersion" => 4,
         "grid" => { "rows" => 9, "cols" => 9 },
-        "globals" => { "fog" => { "enabled" => enabled } },
+        "globals" => { "sudokuRules" => {}, "fog" => { "enabled" => enabled } },
         "constraints" => { "fogLights" => lights }
       }
     end

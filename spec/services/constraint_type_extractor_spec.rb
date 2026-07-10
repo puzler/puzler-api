@@ -16,11 +16,11 @@ RSpec.describe ConstraintTypeExtractor do
 
     it "collects types through the v4 migrator, adding variant group chips, sorted and deduped" do
       expect(described_class.extract(definition))
-        .to eq(%w[anti_kropki anti_ratio arrow chess diagonals knights_move positive_diagonal thermometer])
+        .to eq(%w[anti_kropki anti_ratio arrow chess diagonals knights_move positive_diagonal sudoku_rules thermometer])
     end
 
     it "tolerates symbol keys and missing sections" do
-      expect(described_class.extract({ activeConstraints: [ { type: "renban" } ] })).to eq([ "renban" ])
+      expect(described_class.extract({ activeConstraints: [ { type: "renban" } ] })).to eq(%w[renban sudoku_rules])
     end
   end
 

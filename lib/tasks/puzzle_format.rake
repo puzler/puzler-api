@@ -36,4 +36,43 @@ namespace :puzzle_format do
 
     puts "puzzle_format:migrate — #{migrated} migrated, #{skipped} already v4, #{resynced} puzzles re-synced."
   end
+
+  desc "Backfill globals.sudokuRules onto stored definitions (idempotent; skips rows that carry the key)"
+  task add_sudoku_rules: :environment do
+    # Document semantics change (2026-07-09): the sudokuRules group's PRESENCE
+    # is what means "sudoku rules apply" — an absent key now means a rules-off
+    # puzzle. Every pre-change puzzle is a sudoku, so stamp the bare presence
+    # marker ({} = chip active, rules enabled) onto any definition lacking it.
+    backfilled = 0
+    skipped = 0
+    PuzzleVersion.unscoped.find_each do |version|
+      definition = version.definition
+      next if definition.blank?
+
+      if definition.dig("globals", "sudokuRules")
+        skipped += 1
+        next
+      end
+
+      definition = definition.deep_dup
+      (definition["globals"] ||= {})["sudokuRules"] = {}
+      version.update_columns(
+        definition: definition,
+        constraint_types: ConstraintTypeExtractor.extract(definition),
+      )
+      backfilled += 1
+    end
+
+    # Re-sync the denormalized copy only where it actually drifted.
+    resynced = 0
+    Puzzle.unscoped.where.not(published_version_id: nil)
+          .includes(:published_version).find_each do |puzzle|
+      next if puzzle.constraint_types == puzzle.published_version.constraint_types
+
+      puzzle.update_columns(constraint_types: puzzle.published_version.constraint_types)
+      resynced += 1
+    end
+
+    puts "puzzle_format:add_sudoku_rules — #{backfilled} backfilled, #{skipped} already carried the key, #{resynced} puzzles re-synced."
+  end
 end

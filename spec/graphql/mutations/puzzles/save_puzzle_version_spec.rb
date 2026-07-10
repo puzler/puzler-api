@@ -28,8 +28,9 @@ RSpec.describe "Mutation: savePuzzleVersion", type: :graphql do
       data = save_version(auth_context(user), solution: { "r0c0" => 5 })
       expect(data["errors"]).to be_empty
       expect(data["version"]).to include("versionNumber" => 1, "displayName" => "v1", "isPublished" => false)
-      # v3 input normalizes through the migrator: the variant keeps its group chip.
-      expect(data["version"]["constraintTypes"]).to contain_exactly("diagonals", "positive_diagonal", "thermometer")
+      # v3 input normalizes through the migrator: the variant keeps its group
+      # chip, and every pre-v4 puzzle gains the Sudoku Rules chip.
+      expect(data["version"]["constraintTypes"]).to contain_exactly("diagonals", "positive_diagonal", "sudoku_rules", "thermometer")
       expect(data["version"]["solutionHash"]).to eq(SolutionHasher.hash("r0c0" => 5))
     end
 

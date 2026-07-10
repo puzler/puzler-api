@@ -31,7 +31,7 @@ module Mutations
           definition: definition, solution: solution, include_solution: include_solution,
           fallback_author: current_user&.display_name
         )
-        return { url: nil, warnings: [], errors: [ "This puzzle can't be exported to SudokuPad (it needs a square grid)." ] } unless result
+        return { url: nil, warnings: [], errors: [ "This puzzle can't be exported to SudokuPad (it needs a square grid with sudoku rules)." ] } unless result
 
         { url: result[:short_url], warnings: result[:warnings], errors: [] }
       end
