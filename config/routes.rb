@@ -14,6 +14,10 @@ Rails.application.routes.draw do
 
   get "/me/export", to: "users/data_exports#show"
 
+  # Crawler-readable share pages with Open Graph tags (the SPA can't serve
+  # per-page meta); humans get bounced to the app.
+  get "/share/collections/:id", to: "shares#collection"
+
   # Action Cable WebSocket mount
   mount ActionCable.server => "/cable"
 

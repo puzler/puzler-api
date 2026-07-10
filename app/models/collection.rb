@@ -27,13 +27,16 @@ class Collection < ApplicationRecord
   include RichDescription
 
   # Standardized cover crops: the page hero keeps the upload's aspect (bounded),
-  # archive/profile cards get a 16:9 fill.
+  # archive/profile cards get a 16:9 fill, and the og crop matches the size
+  # social cards expect.
   COVER_HERO_VARIANT = { resize_to_limit: [ 1600, 900 ] }.freeze
   COVER_CARD_VARIANT = { resize_to_fill: [ 640, 360 ] }.freeze
+  COVER_OG_VARIANT = { resize_to_fill: [ 1200, 630 ] }.freeze
 
   has_one_attached :cover_image do |attachable|
     attachable.variant :hero, **COVER_HERO_VARIANT
     attachable.variant :card, **COVER_CARD_VARIANT
+    attachable.variant :og, **COVER_OG_VARIANT
   end
 
   # Curated page accents (closed sets; 0 = default Ink & Paper). The values map
@@ -68,6 +71,10 @@ class Collection < ApplicationRecord
 
   def cover_thumb_url
     cover_variant_url(:card)
+  end
+
+  def og_image_url
+    cover_variant_url(:og)
   end
 
   # Series that include this collection as an entry.
