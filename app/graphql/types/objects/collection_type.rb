@@ -14,6 +14,8 @@ module Types
       field :cover_thumb_url, String, null: true,
         description: "Hosted URL of the cover image, 16:9 card crop; null when unset"
       field :description, String, null: true, description: "Optional short description (plain text, shown on cards)"
+      field :entries, [ CollectionEntryType ], null: false,
+        description: "Ordered entries (puzzles and story pages); non-authors see only publicly-visible puzzles"
       field :folder, FolderType, null: true,
         description: "Folder this collection is filed in; only visible to the author"
       field :id, ID, null: false, description: "Unique collection ID"
@@ -35,6 +37,18 @@ module Types
 
       def puzzles
         visible_puzzles
+      end
+
+      # Story pages always show inside their collection; puzzle entries follow
+      # the same visibility rule as `puzzles`.
+      def entries
+        loaded = object.entries.includes(:entryable)
+        return loaded if author_or_admin?
+
+        visible_ids = visible_puzzles.pluck(:id).to_set
+        loaded.select do |entry|
+          entry.entryable_type == "StoryPage" || visible_ids.include?(entry.entryable_id)
+        end
       end
 
       def puzzle_count

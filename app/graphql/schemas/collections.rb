@@ -106,6 +106,8 @@ module Schemas
 
       field :add_puzzle_to_collection, mutation: ::Mutations::Collections::AddPuzzleToCollection,
         description: "Add a puzzle to a collection"
+      field :add_story_page_to_collection, mutation: ::Mutations::Collections::AddStoryPageToCollection,
+        description: "Create a story page at the end of a collection"
       field :create_collection, mutation: ::Mutations::Collections::CreateCollection,
         description: "Create a collection"
       field :create_folder, mutation: ::Mutations::Folders::CreateFolder,
@@ -124,20 +126,28 @@ module Schemas
         description: "Record a solve time for a timed collection"
       field :remove_collection_cover_image, mutation: ::Mutations::Collections::RemoveCollectionCoverImage,
         description: "Remove a collection's cover image"
+      field :remove_collection_entry, mutation: ::Mutations::Collections::RemoveCollectionEntry,
+        description: "Remove an entry from a collection"
       field :remove_puzzle_from_collection, mutation: ::Mutations::Collections::RemovePuzzleFromCollection,
         description: "Remove a puzzle from a collection"
       field :rename_folder, mutation: ::Mutations::Folders::RenameFolder,
         description: "Rename a folder"
+      field :reorder_collection_entries, mutation: ::Mutations::Collections::ReorderCollectionEntries,
+        description: "Reorder all entries in a collection"
       field :reorder_collection_puzzles, mutation: ::Mutations::Collections::ReorderCollectionPuzzles,
         description: "Reorder the puzzles in a collection"
       field :update_collection, mutation: ::Mutations::Collections::UpdateCollection,
         description: "Update a collection's metadata"
       field :update_collection_page_description, mutation: ::Mutations::Collections::UpdateCollectionPageDescription,
         description: "Save the rich page body for a collection"
+      field :update_story_page, mutation: ::Mutations::Collections::UpdateStoryPage,
+        description: "Update a story page's title or body"
       field :upload_collection_cover_image, mutation: ::Mutations::Collections::UploadCollectionCoverImage,
         description: "Upload or replace a collection's cover image"
       field :upload_collection_description_image, mutation: ::Mutations::Collections::UploadCollectionDescriptionImage,
         description: "Upload an image for a collection's rich page body"
+      field :upload_story_page_image, mutation: ::Mutations::Collections::UploadStoryPageImage,
+        description: "Upload an image for a story page's rich body"
     end
   end
 end
