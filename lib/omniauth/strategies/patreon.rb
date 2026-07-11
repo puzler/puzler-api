@@ -25,6 +25,18 @@ module OmniAuth
 
       extra { { raw_info: raw_info } }
 
+      # OmniAuth's default callback_url appends the request-phase query string
+      # (e.g. ?connect_token=...) to the redirect_uri. Patreon validates
+      # redirect_uri by exact match against the registered callback and rejects
+      # any extra params ("Redirect URI ... is not supported by client"). Return
+      # a clean URL instead — the same thing omniauth-google-oauth2 does, which
+      # is why Google connects fine. The connect_token still survives the
+      # round-trip because OmniAuth stores request params in the session, not the
+      # redirect_uri.
+      def callback_url
+        options[:redirect_uri] || (full_host + script_name + callback_path)
+      end
+
       def raw_info
         @raw_info ||= access_token
           .get("/api/oauth2/v2/identity?fields[user]=email,full_name,image_url")

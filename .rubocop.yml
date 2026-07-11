@@ -15,6 +15,12 @@ RSpec/DescribeClass:
     type:
       - graphql
 
+# The OmniAuth constant lives under lib/omniauth/ (the gem's own directory name),
+# not lib/omni_auth/, so specs mirror that path.
+RSpec/SpecFilePathFormat:
+  CustomTransform:
+    OmniAuth: omniauth
+
 # Dataloader sources (app/graphql/sources) are batch-loaders, not GraphQL
 # types, so the type-description cop doesn't apply to them.
 GraphQL/ObjectDescription:
