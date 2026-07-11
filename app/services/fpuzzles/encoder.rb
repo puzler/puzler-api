@@ -20,6 +20,8 @@ module Fpuzzles
   # EXPORT IS THEME-AGNOSTIC: styling comes only from the f-puzzles colour maps
   # below and the author's cosmetic presets — never a user theme.
   class Encoder
+    include PuzzleDefinition::DocHelpers
+
     Result = Struct.new(:data, :warnings)
 
     TRANSPARENT = "#00000000".freeze
@@ -60,7 +62,6 @@ module Fpuzzles
       color lineColor bulbFillColor bulbOutlineColor bulbStrokeColor bulbColor arrowColor
       cageColor textColor fillColor outlineColor backgroundColor chevronColor
     ].freeze
-    HEX_COLOR = /\A#(\h{6})(\h{2})?\z/
 
     def self.call(definition:, solution: nil, include_solution: true, fallback_author: nil)
       new(definition, solution, include_solution, fallback_author).call
@@ -140,31 +141,6 @@ module Fpuzzles
 
     private
 
-    def constraints = @def["constraints"] || {}
-    def cosmetics = @def["cosmetics"] || {}
-    def globals = @def["globals"] || {}
-
-    def entries_for(type)
-      Array(constraints[PuzzleDefinition::JsonKeys::TYPE_TO_JSON_KEY.fetch(type)])
-    end
-
-    def single_cell_marks(type)
-      constraints[PuzzleDefinition::JsonKeys::TYPE_TO_JSON_KEY.fetch(type)]
-    end
-
-    # v4 single-cell entries are the plain cell string, or { cell, ...colors }
-    # when the mark carries per-instance setter colors. Normalized to
-    # [cell_key, colors_hash] pairs so every consumer reads one shape.
-    def single_cell_entries(type)
-      Array(single_cell_marks(type)).filter_map do |item|
-        if item.is_a?(Hash)
-          item["cell"] ? [ item["cell"], item ] : nil
-        else
-          [ item, {} ]
-        end
-      end
-    end
-
     # Records instance color fields this build site could not map onto an
     # f-puzzles color (everything outside `used`), for the aggregated warning.
     def note_unexportable_colors(type, entry, used = [])
@@ -172,22 +148,6 @@ module Fpuzzles
       return unless (INSTANCE_COLOR_FIELDS - used).any? { |field| present?(entry[field]) }
 
       @dropped_color_keys << PuzzleDefinition::JsonKeys::TYPE_TO_JSON_KEY.fetch(type, type)
-    end
-
-    # Bakes a 0-1 opacity into a hex color: 6-digit stays 6-digit at full
-    # opacity, otherwise the alpha byte is appended (SudokuPad renders 8-digit
-    # hex; TRANSPARENT relies on that already). An 8-digit input's own alpha
-    # multiplies with the opacity. Non-hex strings (documents are lenient)
-    # pass through untouched, dropping the opacity.
-    def blend_opacity(color, opacity)
-      return color unless opacity.is_a?(Numeric) && opacity < 1
-
-      m = HEX_COLOR.match(color.to_s)
-      return color unless m
-
-      alpha = (m[2] ? m[2].to_i(16) / 255.0 : 1.0) * opacity.clamp(0, 1)
-      byte = (alpha * 255).round
-      byte >= 255 ? "##{m[1]}" : format("#%s%02x", m[1], byte)
     end
 
     def build_grid(grid)
@@ -310,15 +270,6 @@ module Fpuzzles
       @fp["negative"] = negative.uniq unless negative.empty?
     end
 
-    def global_group(key)
-      entry = globals[key]
-      entry.is_a?(Hash) ? entry : {}
-    end
-
-    def fog_enabled?
-      global_group("fog")["enabled"] == true
-    end
-
     # SudokuPad fog keys: `foglight` lights single cells (exactly Puzler's
     # lights); `fogofwar` cells would clear a whole 3x3 "lamp" neighborhood,
     # so it is emitted empty and only to help fog activation.
@@ -329,17 +280,6 @@ module Fpuzzles
       @fp["foglight"] = lights.map { |key, _| fp_cell(key) }
       @fp["fogofwar"] = []
       lights.each { |_, colors| note_unexportable_colors("fog_lights", colors) }
-    end
-
-    # Custom global values in canonical group/field order (the migrator sorts
-    # each field's values ascending).
-    def custom_globals
-      PuzzleDefinition::JsonKeys::GLOBAL_GROUPS.flat_map do |group|
-        entry = global_group(group[:key])
-        group[:custom_values].flat_map do |field, custom_type|
-          Array(entry[field]).map { |value| { type: custom_type, value: value } }
-        end
-      end
     end
 
     def build_single_cell_marks
@@ -631,24 +571,8 @@ module Fpuzzles
       (@fp[field] ||= []) << entry
     end
 
-    def find_preset(kind, id)
-      (cosmetics[kind] || []).find { |p| p["id"] == id }
-    end
-
-    def present?(value)
-      !value.nil? && value != ""
-    end
-
-    # Document cell keys are 1-indexed; the outer clue ring is r0 / r{size+1}.
-    def parse_key(key, strict: true)
-      m = key.to_s.match(/\Ar(\d+)c(\d+)\z/)
-      unless m
-        raise Error, "Invalid cell key: #{key}" if strict
-
-        return nil
-      end
-
-      [ m[1].to_i, m[2].to_i ]
+    def invalid_key_error
+      Error
     end
 
     def fp_cell(key)
@@ -667,11 +591,6 @@ module Fpuzzles
       "R#{fmt(pos['y'] - 0.5)}C#{fmt(pos['x'] - 0.5)}"
     end
 
-    # Match JS Number→string: whole numbers without a trailing ".0".
-    def fmt(num)
-      num == num.to_i ? num.to_i.to_s : num.to_s
-    end
-
     def diagonal_cells(kind)
       (1..@size).map do |i|
         row = kind == "positive" ? @size + 1 - i : i
@@ -679,24 +598,10 @@ module Fpuzzles
       end
     end
 
-    # Document { bulb, lines } -> f-puzzles root-to-leaf lines (the document's
-    # lines restart at branch points; f-puzzles repeats the shared prefix).
+    # Document { bulb, lines } -> f-puzzles root-to-leaf lines (the shared
+    # DocHelpers walk returns doc keys; f-puzzles cells map to R{r}C{c}).
     def thermo_lines(entry)
-      adj = Hash.new { |h, k| h[k] = [] }
-      Array(entry["lines"]).each do |line|
-        Array(line).each_cons(2) { |from, to| adj[from] << to }
-      end
-      paths = []
-      walk = lambda do |cell, path|
-        nexts = adj[cell]
-        if nexts.empty?
-          paths << path
-        else
-          nexts.each { |n| walk.call(n, path + [ n ]) }
-        end
-      end
-      walk.call(entry["bulb"], [ entry["bulb"] ])
-      paths.map { |p| p.map { |k| fp_cell(k) } }
+      thermo_paths(entry).map { |p| p.map { |k| fp_cell(k) } }
     end
   end
 end
