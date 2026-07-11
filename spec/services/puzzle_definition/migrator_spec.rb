@@ -183,4 +183,13 @@ RSpec.describe PuzzleDefinition::Migrator do
       expect(doc.dig("cosmetics", "shapePresets")).to eq([ { "id" => "shape-1", "label" => "Diamond", "style" => { "shapeType" => "diamond", "fillColor" => "none", "strokeColor" => "#333333", "textColor" => "#000000", "width" => 0.4, "height" => 0.4 } } ])
     end
   end
+
+  describe ".box_index_to_label" do
+    # Parity with the frontend boxIndexToLabel (app/src/stores/grid.ts):
+    # 1-9, A-Z, then a-z for 61 standard boxes before the '?' fallback.
+    it "runs 1-9, A-Z, then a-z before the fallback" do
+      boundaries = { 0 => "1", 8 => "9", 9 => "A", 34 => "Z", 35 => "a", 60 => "z", 61 => "?" }
+      expect(boundaries.keys.index_with { |i| described_class.box_index_to_label(i) }).to eq(boundaries)
+    end
+  end
 end

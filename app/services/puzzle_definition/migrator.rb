@@ -70,9 +70,10 @@ module PuzzleDefinition
 
     def self.box_index_to_label(index)
       return (index + 1).to_s if index < 9
+      return ("A".ord + (index - 9)).chr if index < 35
+      return ("a".ord + (index - 35)).chr if index < 61
 
-      code = "A".ord + (index - 9)
-      code <= "Z".ord ? code.chr : "?"
+      "?"
     end
 
     def initialize(data)
