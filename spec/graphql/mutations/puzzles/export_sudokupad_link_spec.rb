@@ -32,10 +32,17 @@ RSpec.describe "Mutation: exportSudokupadLink", type: :graphql do
     expect(run({ definition: definition })["url"]).to start_with("https://sudokupad.app/?puzzleid=")
   end
 
-  it "errors on a non-square grid (no network call)", :aggregate_failures do
-    data = run({ definition: { "grid" => { "rows" => 9, "cols" => 6 } } })
+  it "exports non-square grids (SCL has no square requirement)", :aggregate_failures do
+    stub_request(:post, endpoint).to_return(status: 200, body: { result: "success", shortid: "wide1" }.to_json)
+    data = run({ definition: { "formatVersion" => 4, "grid" => { "rows" => 9, "cols" => 6 }, "globals" => { "sudokuRules" => {} } } })
+    expect(data["url"]).to eq("https://sudokupad.app/wide1")
+    expect(data["errors"]).to be_empty
+  end
+
+  it "errors on malformed grid dimensions (no network call)", :aggregate_failures do
+    data = run({ definition: { "grid" => { "rows" => 0, "cols" => 6 } } })
     expect(data["url"]).to be_nil
-    expect(data["errors"].first).to include("square grid")
+    expect(data["errors"].first).to include("grid dimensions")
     expect(a_request(:post, endpoint)).not_to have_been_made
   end
 

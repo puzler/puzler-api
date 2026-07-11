@@ -2,7 +2,8 @@ module Mutations
   module Puzzles
     # Build a short SudokuPad link from the editor's live puzzle definition. The
     # client sends its serialized Puzler definition (+ solution); the server
-    # converts → compresses → shortens — no f-puzzles logic lives on the client.
+    # converts to native SCL → compresses → shortens — no conversion logic
+    # lives on the client.
     class ExportSudokupadLink < Mutations::BaseMutation
       description "Build a short SudokuPad link from a Puzler definition"
 
@@ -31,7 +32,7 @@ module Mutations
           definition: definition, solution: solution, include_solution: include_solution,
           fallback_author: current_user&.display_name
         )
-        return { url: nil, warnings: [], errors: [ "This puzzle can't be exported to SudokuPad (it needs a square grid with standard sudoku rules, one region per cell, no custom digit range, and no void cells)." ] } unless result
+        return { url: nil, warnings: [], errors: [ "This puzzle can't be exported to SudokuPad (its grid dimensions are invalid)." ] } unless result
 
         { url: result[:short_url], warnings: result[:warnings], errors: [] }
       end
