@@ -254,6 +254,24 @@ RSpec.describe Scl::Encoder do
       expect { described_class.call(definition: { "grid" => { "rows" => 0, "cols" => 9 } }) }
         .to raise_error(Scl::UnsupportedGrid)
     end
+
+    def average_arrow_data
+      described_class.call(definition: v4({}, "constraints" => {
+        "averageArrows" => [ { "bulbCells" => [ "r7c1" ], "arrows" => [ [ "r7c1", "r7c2", "r8c3" ] ] } ]
+      })).data
+    end
+
+    it "exports average arrows as native SCL arrows" do
+      arrow = average_arrow_data["arrows"].find { |a| a["thickness"] == 2.5 }
+      expect(arrow["wayPoints"][1]).to eq([ 6.5, 1.5 ])
+    end
+
+    it "gives average-arrow bulbs a double ring (outer rim + solid inner ring)", :aggregate_failures do
+      rings = average_arrow_data["overlays"].select { |o| o["center"] == [ 6.5, 0.5 ] && o["rounded"] }
+      expect(rings.map { |o| o["width"] }).to contain_exactly(0.8438, 0.6875)
+      expect(rings.map { |o| o["backgroundColor"] }.uniq).to eq([ "none" ])
+      expect(rings.map { |o| o["borderColor"] }.uniq).to eq([ "#aaaaaa" ])
+    end
   end
 
   describe "fog" do

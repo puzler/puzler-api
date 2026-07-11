@@ -27,6 +27,7 @@ module PuzzleDefinition
       "thermometer" => "thermometers",
       "slow_thermometer" => "slowThermometers",
       "arrow" => "arrows",
+      "average_arrow" => "averageArrows",
       "difference_dots" => "differenceDots",
       "ratio_dots" => "ratioDots",
       "xv" => "xv",

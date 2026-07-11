@@ -70,6 +70,9 @@ module Scl
     ARROW_STROKE_WIDTH = 2.5
     ARROW_BULB_RADIUS = 27
     ARROW_HEAD_LENGTH = 11
+    # Puzler draws the average-arrow inner ring dashed; SCL overlays have no
+    # dash support, so it exports as a solid inner ring at the same inset.
+    AVERAGE_ARROW_BULB_INSET = 5
 
     BETWEEN_LINE_COLOR = "#bbbbbb".freeze
     BETWEEN_LINE_WIDTH = 2
@@ -564,6 +567,7 @@ module Scl
       when "thermometer" then build_thermo(entry, hollow: false)
       when "slow_thermometer" then build_thermo(entry, hollow: true)
       when "arrow" then build_arrow(entry)
+      when "average_arrow" then build_arrow(entry, average: true)
       when "killer_cage"
         push("cages", {
           "cells" => sorted_cells(entry["cells"]),
@@ -618,8 +622,9 @@ module Scl
     end
 
     # Arrows: a native SCL arrow per path (head at the last waypoint), started
-    # at the bulb's rim, plus a pill overlay spanning the bulb cells.
-    def build_arrow(entry)
+    # at the bulb's rim, plus a pill overlay spanning the bulb cells. Average
+    # arrows add an inner ring overlay inset inside the (single-cell) bulb.
+    def build_arrow(entry, average: false)
       color = entry["arrowColor"] || entry["color"] || ARROW_COLOR
       bulb_cells = Array(entry["bulbCells"])
       Array(entry["arrows"]).each do |path|
@@ -638,13 +643,27 @@ module Scl
       row_range = centers.map(&:first).minmax
       col_range = centers.map(&:last).minmax
       diameter = ARROW_BULB_RADIUS * 2 / CELL_PX.to_f
+      bulb_center = [ coord((row_range[0] + row_range[1]) / 2.0), coord((col_range[0] + col_range[1]) / 2.0) ]
+      border_color = entry["bulbStrokeColor"] || entry["color"] || ARROW_COLOR
       push("overlays", {
-        "center" => [ coord((row_range[0] + row_range[1]) / 2.0), coord((col_range[0] + col_range[1]) / 2.0) ],
+        "center" => bulb_center,
         "width" => coord(col_range[1] - col_range[0] + diameter),
         "height" => coord(row_range[1] - row_range[0] + diameter),
         "rounded" => true,
         "backgroundColor" => entry["bulbFillColor"] || "none",
-        "borderColor" => entry["bulbStrokeColor"] || entry["color"] || ARROW_COLOR,
+        "borderColor" => border_color,
+        "borderSize" => ARROW_STROKE_WIDTH
+      })
+      return unless average
+
+      inner = (ARROW_BULB_RADIUS - AVERAGE_ARROW_BULB_INSET) * 2 / CELL_PX.to_f
+      push("overlays", {
+        "center" => bulb_center,
+        "width" => coord(col_range[1] - col_range[0] + inner),
+        "height" => coord(row_range[1] - row_range[0] + inner),
+        "rounded" => true,
+        "backgroundColor" => "none",
+        "borderColor" => border_color,
         "borderSize" => ARROW_STROKE_WIDTH
       })
     end
