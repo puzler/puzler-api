@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe "Collection gate mutations", type: :graphql do
   let(:author) { create(:user) }
-  let(:collection) { create(:collection, author:, visibility: :public, mode: :unordered) }
+  let(:collection) { create(:collection, author:, visibility: :public, mode: :unordered, kind: :hunt) }
 
   describe "updateCollectionEntry" do
     let(:mutation) do

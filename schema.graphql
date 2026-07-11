@@ -258,6 +258,11 @@ type Collection {
   bgTreatment: CollectionBgTreatmentEnum!
 
   """
+  Contest terms; present only for competition collections
+  """
+  competitionConfig: CompetitionConfig
+
+  """
   Hosted URL of the cover image, page-hero size; null when unset
   """
   coverImageUrl: String
@@ -295,9 +300,19 @@ type Collection {
   id: ID!
 
   """
+  What this collection is: basic list, hunt, or competition
+  """
+  kind: CollectionKindEnum!
+
+  """
   Ordering mode: unordered or sequence
   """
   mode: CollectionModeEnum!
+
+  """
+  The viewer's run on this competition, finalized if it has ended; null before they start
+  """
+  myCompetitionRun: CompetitionRun
 
   """
   When the next scheduled entry arrives; null when nothing is pending
@@ -380,6 +395,11 @@ input CollectionAttrsInput {
   Optional description
   """
   description: String
+
+  """
+  basic, hunt, or competition
+  """
+  kind: CollectionKindEnum
 
   """
   Ordering mode: unordered or sequence
@@ -467,6 +487,11 @@ type CollectionEntry {
   locked: Boolean!
 
   """
+  Competition scoring weight for this entry's puzzle
+  """
+  points: Int!
+
+  """
   Order within the collection
   """
   position: Int!
@@ -517,9 +542,23 @@ input CollectionEntryGatesInput {
   hidden: Boolean
 
   """
+  Competition scoring weight for this entry's puzzle
+  """
+  points: Int
+
+  """
   Scheduled release time; explicit null releases the entry now
   """
   releasedAt: ISO8601DateTime
+}
+
+"""
+What a collection is: a plain list, a rich hunt, or a timed competition
+"""
+enum CollectionKindEnum {
+  BASIC
+  COMPETITION
+  HUNT
 }
 
 """
@@ -949,6 +988,285 @@ type CommentConnection {
   Pagination metadata
   """
   pageInfo: PageInfo!
+}
+
+"""
+The contest terms of a competition collection
+"""
+type CompetitionConfig {
+  """
+  Bonus per whole minute remaining when every puzzle is solved
+  """
+  bonusPointsPerMinute: Int!
+
+  """
+  Whether the total score is floored at zero
+  """
+  clampScoreAtZero: Boolean!
+
+  """
+  Player settings the author enforces (key => bool); absent keys are the solver's choice
+  """
+  enforcedSettings: JSON!
+
+  """
+  Whether the terms are frozen because someone has already competed
+  """
+  locked: Boolean!
+
+  """
+  Points lost per incorrect submission (per the submission policy)
+  """
+  penaltyPoints: Int!
+
+  """
+  How submissions behave: blind, instant, or single
+  """
+  submissionPolicy: CompetitionSubmissionPolicyEnum!
+
+  """
+  The run length; null while the author hasn't set one (competition can't start)
+  """
+  timeLimitSeconds: Int
+}
+
+"""
+Competition contest terms; omitted fields are left untouched
+"""
+input CompetitionConfigInput {
+  """
+  Bonus per whole minute remaining when every puzzle is solved
+  """
+  bonusPointsPerMinute: Int
+
+  """
+  Floor the total score at zero (off allows negative scores)
+  """
+  clampScoreAtZero: Boolean
+
+  """
+  Player settings to enforce (key => bool); absent keys stay the solver's choice
+  """
+  enforcedSettings: JSON
+
+  """
+  Points lost per incorrect submission
+  """
+  penaltyPoints: Int
+
+  """
+  blind, instant, or single
+  """
+  submissionPolicy: CompetitionSubmissionPolicyEnum
+
+  """
+  Run length in seconds
+  """
+  timeLimitSeconds: Int
+}
+
+"""
+One solver's standing in a competition
+"""
+type CompetitionLeaderboardEntry {
+  """
+  Puzzles solved correctly
+  """
+  correctCount: Int!
+
+  """
+  The solver's display name (shown in the UI)
+  """
+  displayName: String!
+
+  """
+  1-based position (highest score first, faster time breaks ties)
+  """
+  rank: Int!
+
+  """
+  How long their run lasted
+  """
+  timeUsedSeconds: Int!
+
+  """
+  Final score
+  """
+  totalPoints: Int!
+
+  """
+  The solver's unique handle (for linking to their profile)
+  """
+  username: String!
+}
+
+"""
+Competition mutations
+"""
+interface CompetitionMutations {
+  """
+  End your run and get your score
+  """
+  finishCompetitionRun(
+    """
+    Parameters for FinishCompetitionRun
+    """
+    input: FinishCompetitionRunInput!
+  ): FinishCompetitionRunPayload
+
+  """
+  Start your single timed attempt
+  """
+  startCompetitionRun(
+    """
+    Parameters for StartCompetitionRun
+    """
+    input: StartCompetitionRunInput!
+  ): StartCompetitionRunPayload
+
+  """
+  Submit a board within your run
+  """
+  submitCompetitionEntry(
+    """
+    Parameters for SubmitCompetitionEntry
+    """
+    input: SubmitCompetitionEntryInput!
+  ): SubmitCompetitionEntryPayload
+}
+
+"""
+Competition queries
+"""
+interface CompetitionQueries {
+  """
+  Final standings for a competition (finalized runs only)
+  """
+  competitionLeaderboard(
+    """
+    The competition collection
+    """
+    collectionId: ID!
+
+    """
+    Share token for unlisted collections
+    """
+    shareToken: String
+  ): [CompetitionLeaderboardEntry!]!
+
+  """
+  The viewer's currently active competition run, if any (powers the global bar)
+  """
+  myActiveCompetitionRun: CompetitionRun
+}
+
+"""
+The viewer's timed attempt at a competition collection
+"""
+type CompetitionRun {
+  """
+  Points from correct puzzles; nil until finalized
+  """
+  basePoints: Int
+
+  """
+  Time bonus; nil until finalized
+  """
+  bonusPoints: Int
+
+  """
+  The competition this run belongs to
+  """
+  collection: Collection!
+
+  """
+  Correct puzzles; nil until finalized
+  """
+  correctCount: Int
+
+  """
+  When the run ends
+  """
+  deadline: ISO8601DateTime!
+
+  """
+  Whether the score is computed and frozen
+  """
+  finalized: Boolean!
+
+  """
+  When the solver finished early; null if they ran the clock
+  """
+  finishedAt: ISO8601DateTime
+
+  """
+  Unique run ID
+  """
+  id: ID!
+
+  """
+  Points lost to penalties; nil until finalized
+  """
+  penaltyPoints: Int
+
+  """
+  Server-computed seconds left on the clock (0 when over) — anchor countdowns to this
+  """
+  secondsRemaining: Int!
+
+  """
+  When the run started
+  """
+  startedAt: ISO8601DateTime!
+
+  """
+  The viewer's per-puzzle submission states
+  """
+  submissions: [CompetitionSubmission!]!
+
+  """
+  Scored run length; nil until finalized
+  """
+  timeUsedSeconds: Int
+
+  """
+  Final score; nil until finalized
+  """
+  totalPoints: Int
+}
+
+"""
+The viewer's submission state for one puzzle in a competition run
+"""
+type CompetitionSubmission {
+  """
+  The verdict; nil under the blind policy until the run is finalized
+  """
+  correct: Boolean
+
+  """
+  The submitted puzzle
+  """
+  puzzleId: ID!
+
+  """
+  When the latest submission landed
+  """
+  submittedAt: ISO8601DateTime!
+
+  """
+  Incorrect submissions so far; nil under the blind policy until finalized
+  """
+  wrongAttempts: Int
+}
+
+"""
+blind (no verdict, resubmit freely, last counts), instant (verdict + per-wrong penalty), or single (one shot per puzzle)
+"""
+enum CompetitionSubmissionPolicyEnum {
+  BLIND
+  INSTANT
+  SINGLE
 }
 
 """
@@ -1857,6 +2175,41 @@ type ExportSudokupadLinkPayload {
 }
 
 """
+Autogenerated input type of FinishCompetitionRun
+"""
+input FinishCompetitionRunInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The competition collection
+  """
+  collectionId: ID!
+}
+
+"""
+Autogenerated return type of FinishCompetitionRun.
+"""
+type FinishCompetitionRunPayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  The finalized run
+  """
+  run: CompetitionRun
+}
+
+"""
 A private folder for organizing a setter's own puzzles and collections
 """
 type Folder {
@@ -2369,7 +2722,7 @@ type MovePuzzleToFolderPayload {
 """
 Root mutation type — all mutations are composed from domain-specific schema modules
 """
-type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
+type Mutation implements CollectionMutations & CompetitionMutations & ConstraintMutations & CosmeticMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
   """
   Add a puzzle to a collection
   """
@@ -2609,6 +2962,16 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
     """
     input: ExportSudokupadLinkInput!
   ): ExportSudokupadLinkPayload
+
+  """
+  End your run and get your score
+  """
+  finishCompetitionRun(
+    """
+    Parameters for FinishCompetitionRun
+    """
+    input: FinishCompetitionRunInput!
+  ): FinishCompetitionRunPayload
 
   """
   Create or fetch the active share token for a play session (owner only)
@@ -2881,6 +3244,16 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
   ): SetPuzzleVisibilityPayload
 
   """
+  Start your single timed attempt
+  """
+  startCompetitionRun(
+    """
+    Parameters for StartCompetitionRun
+    """
+    input: StartCompetitionRunInput!
+  ): StartCompetitionRunPayload
+
+  """
   Start or resume a play session for a published puzzle
   """
   startPlay(
@@ -2899,6 +3272,16 @@ type Mutation implements CollectionMutations & ConstraintMutations & CosmeticMut
     """
     input: SubmitCollectionCodewordInput!
   ): SubmitCollectionCodewordPayload
+
+  """
+  Submit a board within your run
+  """
+  submitCompetitionEntry(
+    """
+    Parameters for SubmitCompetitionEntry
+    """
+    input: SubmitCompetitionEntryInput!
+  ): SubmitCompetitionEntryPayload
 
   """
   Submit a completed solution for server-side validation
@@ -4256,7 +4639,7 @@ enum PuzzleVisibilityEnum {
 """
 Root query type — all queries are composed from domain-specific schema modules
 """
-type Query implements CollectionQueries & PuzzleQueries & SeriesQueries & TagQueries & UserQueries {
+type Query implements CollectionQueries & CompetitionQueries & PuzzleQueries & SeriesQueries & TagQueries & UserQueries {
   """
   Find a collection by ID, if the current user is allowed to see it
   """
@@ -4298,9 +4681,29 @@ type Query implements CollectionQueries & PuzzleQueries & SeriesQueries & TagQue
   ): CollectionConnection!
 
   """
+  Final standings for a competition (finalized runs only)
+  """
+  competitionLeaderboard(
+    """
+    The competition collection
+    """
+    collectionId: ID!
+
+    """
+    Share token for unlisted collections
+    """
+    shareToken: String
+  ): [CompetitionLeaderboardEntry!]!
+
+  """
   The currently authenticated user, or null if unauthenticated
   """
   me: User
+
+  """
+  The viewer's currently active competition run, if any (powers the global bar)
+  """
+  myActiveCompetitionRun: CompetitionRun
 
   """
   A page of the current user's collections, with search/filter/sort
@@ -5600,6 +6003,46 @@ type SolvedPuzzleConnection {
 }
 
 """
+Autogenerated input type of StartCompetitionRun
+"""
+input StartCompetitionRunInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The competition collection
+  """
+  collectionId: ID!
+
+  """
+  Share token, when the collection was reached by link
+  """
+  shareToken: String
+}
+
+"""
+Autogenerated return type of StartCompetitionRun.
+"""
+type StartCompetitionRunPayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  The viewer's run
+  """
+  run: CompetitionRun
+}
+
+"""
 Autogenerated input type of StartPlay
 """
 input StartPlayInput {
@@ -5702,6 +6145,56 @@ type SubmitCollectionCodewordPayload {
   Whether the guess opened anything
   """
   matched: Boolean!
+}
+
+"""
+Autogenerated input type of SubmitCompetitionEntry
+"""
+input SubmitCompetitionEntryInput {
+  """
+  Final cell state keyed by cell coordinate
+  """
+  cellState: JSON!
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The competition collection
+  """
+  collectionId: ID!
+
+  """
+  The puzzle being submitted
+  """
+  puzzleId: ID!
+}
+
+"""
+Autogenerated return type of SubmitCompetitionEntry.
+"""
+type SubmitCompetitionEntryPayload {
+  """
+  Whether the submission was recorded
+  """
+  accepted: Boolean!
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The verdict; always nil under the blind policy
+  """
+  correct: Boolean
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
 }
 
 """
@@ -6057,6 +6550,11 @@ input UpdateCollectionInput {
   A unique identifier for the client performing the mutation.
   """
   clientMutationId: String
+
+  """
+  Competition contest terms to update
+  """
+  competitionConfig: CompetitionConfigInput
 
   """
   ID of the collection

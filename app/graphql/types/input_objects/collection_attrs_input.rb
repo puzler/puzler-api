@@ -8,6 +8,8 @@ module Types
       argument :bg_treatment, Types::Enums::CollectionBgTreatmentEnum, required: false,
         description: "Curated background treatment for the collection page"
       argument :description, String, required: false, description: "Optional description"
+      argument :kind, Types::Enums::CollectionKindEnum, required: false,
+        description: "basic, hunt, or competition"
       argument :mode, Types::Enums::CollectionModeEnum, required: false, description: "Ordering mode: unordered or sequence"
       argument :timed, Boolean, required: false, description: "Competition timing on/off"
       argument :title, String, required: false, description: "Collection title"

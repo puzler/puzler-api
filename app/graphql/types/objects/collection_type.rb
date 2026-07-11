@@ -9,6 +9,8 @@ module Types
       field :avg_rating, Float, null: true, description: "Average star rating across member puzzles (1-5 scale)"
       field :bg_treatment, Types::Enums::CollectionBgTreatmentEnum, null: false,
         description: "Curated background treatment for the collection page"
+      field :competition_config, CompetitionConfigType, null: true,
+        description: "Contest terms; present only for competition collections"
       field :cover_image_url, String, null: true,
         description: "Hosted URL of the cover image, page-hero size; null when unset"
       field :cover_thumb_url, String, null: true,
@@ -22,7 +24,11 @@ module Types
       field :has_codewords, Boolean, null: false,
         description: "Whether any entry is gated by a codeword (drives the codeword input)"
       field :id, ID, null: false, description: "Unique collection ID"
+      field :kind, Types::Enums::CollectionKindEnum, null: false,
+        description: "What this collection is: basic list, hunt, or competition"
       field :mode, Types::Enums::CollectionModeEnum, null: false, description: "Ordering mode: unordered or sequence"
+      field :my_competition_run, CompetitionRunType, null: true,
+        description: "The viewer's run on this competition, finalized if it has ended; null before they start"
       field :next_release_at, GraphQL::Types::ISO8601DateTime, null: true,
         description: "When the next scheduled entry arrives; null when nothing is pending"
       field :page_description_html, String, null: true,
@@ -46,7 +52,8 @@ module Types
 
       # Story pages always show inside their collection; puzzle entries follow
       # the same visibility rule as `puzzles`. CollectionGate then resolves the
-      # viewer's per-entry lock state (sequence, codewords, hidden, finale).
+      # viewer's per-entry lock state (sequence, codewords, hidden, finale, or
+      # competition run state, per the collection's kind).
       def entries
         loaded = object.entries.includes(:entryable)
         unless author_or_admin?
@@ -57,7 +64,16 @@ module Types
         end
 
         actor = Actor.from_context(current_user: context[:current_user], guest_token: context[:guest_token])
-        CollectionGate.new(object, actor:, author_view: author_or_admin?).call(loaded.to_a)
+        CollectionGate.new(object, actor:, author_view: author_or_admin?, competition_run: viewer_run)
+                      .call(loaded.to_a)
+      end
+
+      def competition_config
+        object if object.kind_competition?
+      end
+
+      def my_competition_run
+        viewer_run&.ensure_finalized!
       end
 
       def has_codewords
@@ -96,6 +112,14 @@ module Types
 
       def author_or_admin?
         context[:current_user]&.id == object.author_id || context[:current_user]&.admin?
+      end
+
+      def viewer_run
+        return nil unless object.kind_competition? && context[:current_user]
+
+        return @viewer_run if defined?(@viewer_run)
+
+        @viewer_run = object.competition_runs.find_by(user: context[:current_user])
       end
     end
   end

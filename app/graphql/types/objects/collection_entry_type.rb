@@ -17,6 +17,8 @@ module Types
       field :id, ID, null: false, description: "Unique entry ID"
       field :locked, Boolean, null: false,
         description: "Whether this entry is currently locked for the viewer"
+      field :points, Integer, null: false,
+        description: "Competition scoring weight for this entry's puzzle"
       field :position, Integer, null: false, description: "Order within the collection"
       field :puzzle, PuzzleType, null: true,
         description: "The puzzle, when this entry is a puzzle"
@@ -29,8 +31,14 @@ module Types
       field :story_title, String, null: true,
         description: "The story page's title, present even while the body is locked"
 
+      # Competition entries withhold the puzzle itself while locked (pre-run):
+      # even the title/id would leak what's coming. Hunt/basic locked rows keep
+      # the puzzle for their teaser rows.
       def puzzle
-        object.entryable if object.entryable_type == "Puzzle"
+        return nil unless object.entryable_type == "Puzzle"
+        return nil if object.locked && object.entry.collection.kind_competition?
+
+        object.entryable
       end
 
       def story_page

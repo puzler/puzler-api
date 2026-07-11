@@ -137,7 +137,7 @@ RSpec.describe "Collection story entries", type: :graphql do
     end
 
     before do
-      collection.update!(visibility: :public)
+      collection.update!(visibility: :public, kind: :hunt)
       create(:collection_entry, collection:, puzzle:, position: 0)
       create(:collection_entry, collection:, entryable: create(:story_page, author: user, title: "Interlude"),
         position: 1)

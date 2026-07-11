@@ -17,6 +17,8 @@ module Mutations
         puzzle = Puzzle.find_by(id: puzzle_id)
         return { correct: false, solve_message: nil } unless puzzle&.viewable_by?(current_user, share_token:)
 
+        reject_during_competition!(puzzle.id)
+
         version = puzzle.published_version
         stored = version&.solution_hash
         correct = stored.present? && ActiveSupport::SecurityUtils.secure_compare(stored, solution_hash)

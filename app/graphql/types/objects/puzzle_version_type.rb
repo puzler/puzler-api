@@ -32,11 +32,21 @@ module Types
       end
 
       # Play-safe by design: each hash only confirms a digit the solver already
-      # placed, which the fog mechanic reveals through play anyway.
+      # placed, which the fog mechanic reveals through play anyway. Served even
+      # mid-competition (the author's informed choice — see the competition
+      # settings fog warning); only the full-solution hash is withheld there.
       def fog_cell_hashes
         return nil unless object.fog_enabled?
 
         FogCellHasher.hashes(object.solution, object.solution_hash)
+      end
+
+      # Withheld while the viewer is mid-competition on this puzzle: with the
+      # hash a client could self-check the board and dodge blind/penalty rules.
+      def solution_hash
+        return nil if competing_on?(object.puzzle_id)
+
+        object.solution_hash
       end
 
       def solution

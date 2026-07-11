@@ -28,10 +28,9 @@ module Mutations
         puzzle = Puzzle.find_by(id: puzzle_id)
         raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle&.viewable_by?(current_user, share_token:)
 
-        submitted = cell_state.transform_values { |v| v.is_a?(Hash) ? v["value"] : v }
-                              .reject { |_, v| v.nil? }
-        solution = puzzle.solution
-        solved = solution.present? && submitted == solution.transform_keys(&:to_s)
+        reject_during_competition!(puzzle.id)
+
+        solved = SolutionGrader.correct?(puzzle, cell_state)
 
         outcome = solved ? puzzle.record_solve!(actor, cell_state:, time_elapsed_seconds:) : :unsolved
         message = solved && outcome != :author ? puzzle.published_version&.solve_message.presence : nil

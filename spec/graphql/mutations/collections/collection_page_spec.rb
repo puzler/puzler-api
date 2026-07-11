@@ -136,6 +136,27 @@ RSpec.describe "Collection page mutations", type: :graphql do
   end
 
 
+  describe "updateCollection kind" do
+    let(:kind_mutation) do
+      <<~GQL
+        mutation($id: ID!, $attrs: CollectionAttrsInput!) {
+          updateCollection(input: { id: $id, attrs: $attrs }) { collection { id kind } errors }
+        }
+      GQL
+    end
+
+    def set_kind(kind)
+      result = execute_query(kind_mutation, variables: { id: collection.id, attrs: { kind: } },
+        context: auth_context(user))
+      gql_data(result, "updateCollection", "collection")
+    end
+
+    it "switches kind", :aggregate_failures do
+      expect(set_kind("HUNT")["kind"]).to eq("HUNT")
+      expect(collection.reload.kind_hunt?).to be(true)
+    end
+  end
+
   describe "updateCollection accent attrs" do
     let(:mutation) do
       <<~GQL

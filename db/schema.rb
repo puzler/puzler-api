@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,6 +57,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
     t.string "entryable_type", null: false
     t.boolean "finale", default: false, null: false
     t.boolean "hidden", default: false, null: false
+    t.integer "points", default: 10, null: false
     t.integer "position", default: 0, null: false
     t.datetime "released_at"
     t.datetime "updated_at", null: false
@@ -97,13 +98,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
     t.bigint "author_id", null: false
     t.float "avg_rating"
     t.integer "bg_treatment", default: 0, null: false
+    t.integer "bonus_points_per_minute", default: 0, null: false
+    t.boolean "clamp_score_at_zero", default: true, null: false
     t.datetime "created_at", null: false
     t.text "description"
+    t.jsonb "enforced_settings", default: {}, null: false
     t.bigint "folder_id"
+    t.integer "kind", default: 0, null: false
     t.integer "mode", default: 0, null: false
     t.text "page_description_html"
+    t.integer "penalty_points", default: 0, null: false
     t.string "share_token"
     t.integer "solve_count", default: 0, null: false
+    t.integer "submission_policy", default: 0, null: false
+    t.integer "time_limit_seconds"
     t.boolean "timed", default: false, null: false
     t.string "title", null: false
     t.integer "title_font", default: 0, null: false
@@ -111,6 +119,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
     t.integer "visibility", default: 0, null: false
     t.index ["author_id"], name: "index_collections_on_author_id"
     t.index ["folder_id"], name: "index_collections_on_folder_id"
+    t.index ["kind"], name: "index_collections_on_kind"
     t.index ["mode"], name: "index_collections_on_mode"
     t.index ["share_token"], name: "index_collections_on_share_token", unique: true
     t.index ["visibility"], name: "index_collections_on_visibility"
@@ -126,6 +135,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
     t.index ["parent_id"], name: "index_comments_on_parent_id"
     t.index ["puzzle_id"], name: "index_comments_on_puzzle_id"
     t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "competition_runs", force: :cascade do |t|
+    t.integer "base_points"
+    t.integer "bonus_points"
+    t.bigint "collection_id", null: false
+    t.integer "correct_count"
+    t.datetime "created_at", null: false
+    t.datetime "deadline", null: false
+    t.datetime "finalized_at"
+    t.datetime "finished_at"
+    t.integer "penalty_points"
+    t.datetime "started_at", null: false
+    t.integer "time_used_seconds"
+    t.integer "total_points"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["collection_id", "user_id"], name: "index_competition_runs_on_collection_id_and_user_id", unique: true
+    t.index ["collection_id"], name: "index_competition_runs_on_collection_id"
+    t.index ["user_id"], name: "index_competition_runs_on_user_id"
+  end
+
+  create_table "competition_submissions", force: :cascade do |t|
+    t.jsonb "cell_state"
+    t.bigint "competition_run_id", null: false
+    t.boolean "correct", null: false
+    t.datetime "created_at", null: false
+    t.bigint "puzzle_id", null: false
+    t.datetime "submitted_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "wrong_attempts", default: 0, null: false
+    t.index ["competition_run_id", "puzzle_id"], name: "index_competition_submissions_unique", unique: true
+    t.index ["competition_run_id"], name: "index_competition_submissions_on_competition_run_id"
+    t.index ["puzzle_id"], name: "index_competition_submissions_on_puzzle_id"
   end
 
   create_table "constraints", force: :cascade do |t|
@@ -471,6 +514,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_10_000005) do
   add_foreign_key "comments", "comments", column: "parent_id"
   add_foreign_key "comments", "puzzles"
   add_foreign_key "comments", "users"
+  add_foreign_key "competition_runs", "collections"
+  add_foreign_key "competition_runs", "users"
+  add_foreign_key "competition_submissions", "competition_runs"
+  add_foreign_key "competition_submissions", "puzzles"
   add_foreign_key "constraints", "puzzles"
   add_foreign_key "cosmetics", "puzzles"
   add_foreign_key "favorites", "puzzles"

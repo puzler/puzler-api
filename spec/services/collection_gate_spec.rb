@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe CollectionGate do
-  let(:collection) { create(:collection, mode: :sequence) }
+  let(:collection) { create(:collection, mode: :sequence, kind: :hunt) }
   let(:actor) { Actor.new(user: create(:user)) }
 
   # Opening puzzle, story interlude, closing puzzle.
@@ -21,9 +21,10 @@ RSpec.describe CollectionGate do
   def interlude = layout[1]
   def closing = layout[2]
 
-  def resolve(for_actor: actor, author_view: false)
+  def resolve(for_actor: actor, author_view: false, competition_run: nil)
     layout
-    described_class.new(collection.reload, actor: for_actor, author_view:).call(collection.entries.to_a)
+    described_class.new(collection.reload, actor: for_actor, author_view:, competition_run:)
+                   .call(collection.entries.to_a)
   end
 
   def solve!(entry, by: actor)
@@ -132,5 +133,51 @@ RSpec.describe CollectionGate do
     expect(resolve(for_actor: guest).map(&:locked)).to eq([ false, true, true ])
     solve!(opening, by: guest)
     expect(resolve(for_actor: guest).map(&:locked)).to eq([ false, false, false ])
+  end
+
+  describe "basic kind" do
+    before { collection.update!(kind: :basic) }
+
+    def arm_dormant_gates
+      interlude.update!(codeword: "secret", hidden: true)
+      closing.update!(finale: true)
+      solve!(opening)
+    end
+
+    it "honors sequence, ignores dormant gates, and hides story pages", :aggregate_failures do
+      arm_dormant_gates
+      expect(resolve.map(&:id)).to eq([ opening.id, closing.id ])
+      expect(resolve.map(&:locked)).to eq([ false, false ])
+      expect(resolve(author_view: true).map(&:id)).to include(interlude.id)
+    end
+
+    it "still honors scheduled release" do
+      interlude.update!(released_at: 1.day.from_now)
+      expect(resolve.map(&:id)).to eq([ opening.id, closing.id ])
+    end
+  end
+
+  describe "competition kind" do
+    before { collection.update!(kind: :competition, mode: :sequence) }
+
+    it "locks all puzzles for viewers without a run, hiding story pages", :aggregate_failures do
+      solve!(opening)
+      expect(resolve.map(&:id)).to eq([ opening.id, closing.id ])
+      expect(resolve.map(&:locked)).to eq([ true, true ])
+      expect(resolve.map(&:solved)).to eq([ false, false ])
+    end
+
+    it "opens the puzzles once the viewer has a run, but never surfaces solves", :aggregate_failures do
+      solve!(opening)
+      states = resolve(competition_run: Object.new)
+      expect(states.map(&:locked)).to eq([ false, false ])
+      expect(states.map(&:solved)).to eq([ false, false ])
+    end
+
+    it "hides unreleased entries and shows authors everything", :aggregate_failures do
+      interlude.update!(released_at: 1.day.from_now)
+      expect(resolve.map(&:id)).to eq([ opening.id, closing.id ])
+      expect(resolve(author_view: true).map(&:locked)).to eq([ false, false, false ])
+    end
   end
 end

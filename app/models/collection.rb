@@ -2,6 +2,7 @@ class Collection < ApplicationRecord
   belongs_to :author, class_name: "User"
   belongs_to :folder, optional: true
 
+  has_many :competition_runs, dependent: :destroy
   has_many :entries, class_name: "CollectionEntry", dependent: :destroy
   has_many :puzzle_entries, -> { where(entryable_type: "Puzzle") },
     class_name: "CollectionEntry"
@@ -19,6 +20,16 @@ class Collection < ApplicationRecord
       containers_only: 5 },
     prefix: :visible
   enum :mode, { unordered: 0, sequence: 1 }
+
+  # What this collection IS: a plain list, a rich hunt (covers/story/gates), or
+  # a server-refereed competition. Kind gates which features render; flipping
+  # kind never destroys dormant data (a hunt's story pages survive a switch to
+  # basic and return when switched back).
+  enum :kind, { basic: 0, hunt: 1, competition: 2 }, prefix: :kind
+  # How competition submissions behave for solvers: blind (no verdict, resubmit
+  # freely, last one counts), instant (verdict shown, each wrong costs the
+  # penalty), single (one submission per puzzle).
+  enum :submission_policy, { blind: 0, instant: 1, single: 2 }, prefix: :policy
 
   include ShareTokenable
 
@@ -47,6 +58,15 @@ class Collection < ApplicationRecord
   enum :title_font, { default: 0, serif: 1, mono: 2 }, prefix: :font
 
   validates :title, presence: true, length: { maximum: 100 }
+  validates :time_limit_seconds, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :penalty_points, :bonus_points_per_minute,
+    numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+
+  # Once anyone has started a run the contest terms are frozen: kind and
+  # competition config edits are rejected (late entrants face the same rules).
+  def competition_locked?
+    kind_competition? && competition_runs.exists?
+  end
 
   scope :publicly_visible, -> { visible_public }
   scope :by_rating, -> { order(avg_rating: :desc) }

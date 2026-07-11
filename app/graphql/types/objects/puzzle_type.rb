@@ -97,6 +97,14 @@ module Types
         nil
       end
 
+      # Withheld while the viewer is mid-competition on this puzzle: with the
+      # hash a client could self-check the board and dodge blind/penalty rules.
+      def solution_hash
+        return nil if competing_on?(object.id)
+
+        object.solution_hash
+      end
+
       # Container-only puzzles surface their token to any viewer who reached them
       # through a container they can see, so the client can build a working play
       # link. (Plain unlisted puzzles keep the token author-only — it's the secret

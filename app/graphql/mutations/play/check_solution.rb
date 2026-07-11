@@ -17,6 +17,8 @@ module Mutations
         puzzle = Puzzle.find_by(id: puzzle_id)
         return { result: "INCORRECT" } unless puzzle&.viewable_by?(current_user, share_token:)
 
+        reject_during_competition!(puzzle.id)
+
         solution = puzzle.published_version&.solution
         return { result: "INCORRECT" } if solution.blank?
 
