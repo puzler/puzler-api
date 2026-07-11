@@ -15,10 +15,18 @@ module Types
         description: "Whether the terms are frozen because someone has already competed"
       field :penalty_points, Integer, null: false,
         description: "Points lost per incorrect submission (per the submission policy)"
+      field :show_entry_points, Boolean, null: false,
+        description: "Whether solvers see each puzzle's point value"
       field :submission_policy, Types::Enums::CompetitionSubmissionPolicyEnum, null: false,
         description: "How submissions behave: blind, instant, or single"
       field :time_limit_seconds, Integer, null: true,
         description: "The run length; null while the author hasn't set one (competition can't start)"
+      field :total_points, Integer, null: false,
+        description: "Sum of all entry points — shown even when per-puzzle values are hidden"
+
+      def total_points
+        object.puzzle_entries.sum(:points)
+      end
     end
   end
 end

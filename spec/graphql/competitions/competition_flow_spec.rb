@@ -105,6 +105,34 @@ RSpec.describe "Competition flow", type: :graphql do
     end
   end
 
+  describe "entry point visibility" do
+    let(:points_query) do
+      "query($c: ID!) { collection(id: $c) { competitionConfig { totalPoints showEntryPoints } entries { points } } }"
+    end
+
+    def points_view(context:)
+      gql_data(execute_query(points_query, variables: { c: collection.id }, context:), "collection")
+    end
+
+    def hide_points!
+      puzzle
+      collection.update!(show_entry_points: false)
+    end
+
+    it "hides per-puzzle points from solvers when the author opts out, keeping the total", :aggregate_failures do
+      hide_points!
+      solver_view = points_view(context: auth_context(solver))
+      expect(solver_view["entries"].map { |e| e["points"] }).to eq([ nil ])
+      expect(solver_view["competitionConfig"]).to include("totalPoints" => 10, "showEntryPoints" => false)
+      expect(points_view(context: auth_context(author))["entries"].first["points"]).to eq(10)
+    end
+
+    it "shows per-puzzle points by default" do
+      puzzle
+      expect(points_view(context: auth_context(solver))["entries"].first["points"]).to eq(10)
+    end
+  end
+
   describe "finishCompetitionRun + leaderboard" do
     it "finalizes with a score breakdown", :aggregate_failures do
       start

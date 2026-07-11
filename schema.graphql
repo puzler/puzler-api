@@ -487,9 +487,9 @@ type CollectionEntry {
   locked: Boolean!
 
   """
-  Competition scoring weight for this entry's puzzle
+  Competition scoring weight; nil for solvers when the author hides point values
   """
-  points: Int!
+  points: Int
 
   """
   Order within the collection
@@ -1020,6 +1020,11 @@ type CompetitionConfig {
   penaltyPoints: Int!
 
   """
+  Whether solvers see each puzzle's point value
+  """
+  showEntryPoints: Boolean!
+
+  """
   How submissions behave: blind, instant, or single
   """
   submissionPolicy: CompetitionSubmissionPolicyEnum!
@@ -1028,6 +1033,11 @@ type CompetitionConfig {
   The run length; null while the author hasn't set one (competition can't start)
   """
   timeLimitSeconds: Int
+
+  """
+  Sum of all entry points — shown even when per-puzzle values are hidden
+  """
+  totalPoints: Int!
 }
 
 """
@@ -1053,6 +1063,11 @@ input CompetitionConfigInput {
   Points lost per incorrect submission
   """
   penaltyPoints: Int
+
+  """
+  Whether solvers see each puzzle's point value
+  """
+  showEntryPoints: Boolean
 
   """
   blind, instant, or single

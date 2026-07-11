@@ -11,6 +11,8 @@ module Types
         description: "Player settings to enforce (key => bool); absent keys stay the solver's choice"
       argument :penalty_points, Integer, required: false,
         description: "Points lost per incorrect submission"
+      argument :show_entry_points, Boolean, required: false,
+        description: "Whether solvers see each puzzle's point value"
       argument :submission_policy, Types::Enums::CompetitionSubmissionPolicyEnum, required: false,
         description: "blind, instant, or single"
       argument :time_limit_seconds, Integer, required: false,

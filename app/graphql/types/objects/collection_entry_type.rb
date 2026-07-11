@@ -17,8 +17,8 @@ module Types
       field :id, ID, null: false, description: "Unique entry ID"
       field :locked, Boolean, null: false,
         description: "Whether this entry is currently locked for the viewer"
-      field :points, Integer, null: false,
-        description: "Competition scoring weight for this entry's puzzle"
+      field :points, Integer, null: true,
+        description: "Competition scoring weight; nil for solvers when the author hides point values"
       field :position, Integer, null: false, description: "Order within the collection"
       field :puzzle, PuzzleType, null: true,
         description: "The puzzle, when this entry is a puzzle"
@@ -30,6 +30,17 @@ module Types
         description: "The story page with its body, when this entry is an unlocked story page"
       field :story_title, String, null: true,
         description: "The story page's title, present even while the body is locked"
+
+      # Per-puzzle point values can be an author secret; the total stays on the
+      # competition config either way.
+      def points
+        collection = object.entry.collection
+        if collection.kind_competition? && !collection.show_entry_points? && !author_or_admin?(collection)
+          return nil
+        end
+
+        object.points
+      end
 
       # Competition entries withhold the puzzle itself while locked (pre-run):
       # even the title/id would leak what's coming. Hunt/basic locked rows keep
@@ -47,6 +58,13 @@ module Types
 
       def story_title
         object.entryable.title if object.entryable_type == "StoryPage"
+      end
+
+      private
+
+      def author_or_admin?(collection)
+        user = context[:current_user]
+        user&.id == collection.author_id || user&.admin?
       end
     end
   end

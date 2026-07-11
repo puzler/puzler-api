@@ -8,7 +8,8 @@ module Mutations
       ALLOWED_KINDS = %w[basic hunt competition].freeze
       # The contest terms; frozen once anyone has competed (kind included).
       COMPETITION_TERMS = %i[kind time_limit_seconds submission_policy penalty_points
-                             bonus_points_per_minute clamp_score_at_zero enforced_settings].freeze
+                             bonus_points_per_minute clamp_score_at_zero enforced_settings
+                             show_entry_points].freeze
 
       argument :attrs, Types::InputObjects::CollectionAttrsInput, required: true,
         description: "Fields to update"

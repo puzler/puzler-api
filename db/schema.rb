@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_11_000004) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_11_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -109,6 +109,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_000004) do
     t.text "page_description_html"
     t.integer "penalty_points", default: 0, null: false
     t.string "share_token"
+    t.boolean "show_entry_points", default: true, null: false
     t.integer "solve_count", default: 0, null: false
     t.integer "submission_policy", default: 0, null: false
     t.integer "time_limit_seconds"
