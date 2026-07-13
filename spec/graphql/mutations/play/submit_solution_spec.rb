@@ -18,11 +18,12 @@ RSpec.describe "Mutation: submitSolution", type: :graphql do
     GQL
   end
 
-  let(:puzzle) { create(:puzzle, :published) }
-  let(:user)   { create(:user) }
-
-  # A cell_state that exactly matches the puzzle's solution.
-  let(:correct_cell_state) { puzzle.solution.transform_values { |v| { "value" => v } } }
+  let(:puzzle) do
+    create(:puzzle, :published).tap { |p| p.update!(published_version: create(:puzzle_version, puzzle: p)) }
+  end
+  let(:user) { create(:user) }
+  # A cell_state that exactly matches the published version's solution.
+  let(:correct_cell_state) { puzzle.published_version.solution.transform_values { |v| { "value" => v } } }
 
   def submit(context, cell_state: correct_cell_state, seconds: 300)
     execute_query(mutation, context: context,

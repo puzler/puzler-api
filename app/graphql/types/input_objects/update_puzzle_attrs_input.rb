@@ -17,8 +17,6 @@ module Types
         description: "Number of rows in the grid"
       argument :ruleset, GraphQL::Types::JSON, required: false,
         description: "Boolean variant flags (diagonals, knights_move, etc.)"
-      argument :solution, GraphQL::Types::JSON, required: false,
-        description: "Full solution grid used for server-side validation"
       argument :title, String, required: false,
         description: "Puzzle title"
     end

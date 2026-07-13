@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_11_000005) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_12_200440) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -345,8 +345,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_000005) do
     t.bigint "published_version_id"
     t.jsonb "ruleset", default: {}, null: false
     t.string "share_token"
-    t.jsonb "solution", default: {}, null: false
-    t.string "solution_hash"
     t.integer "solve_count", default: 0, null: false
     t.integer "status", default: 0, null: false
     t.text "sudokupad_solution_url"
@@ -364,7 +362,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_11_000005) do
     t.index ["published_at"], name: "index_puzzles_publicly_visible", order: :desc, where: "((status = 1) AND (visibility = 2))"
     t.index ["published_version_id"], name: "index_puzzles_on_published_version_id"
     t.index ["share_token"], name: "index_puzzles_on_share_token", unique: true
-    t.index ["solution_hash"], name: "index_puzzles_on_solution_hash"
     t.index ["status"], name: "index_puzzles_on_status"
     t.index ["visibility"], name: "index_puzzles_on_visibility"
   end

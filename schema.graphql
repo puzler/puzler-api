@@ -4141,16 +4141,6 @@ type Puzzle {
   shareToken: String
 
   """
-  Full solution grid; only visible to the puzzle author
-  """
-  solution: JSON
-
-  """
-  SHA-256 of the canonical solution, used for client-side completion detection
-  """
-  solutionHash: String
-
-  """
   Number of times this puzzle has been solved
   """
   solveCount: Int!
@@ -6070,6 +6060,11 @@ input StartPlayInput {
   ID of the puzzle to play
   """
   puzzleId: ID!
+
+  """
+  Share token, required to reach an unlisted puzzle
+  """
+  shareToken: String
 }
 
 """
@@ -6840,11 +6835,6 @@ input UpdatePuzzleAttrsInput {
   Boolean variant flags (diagonals, knights_move, etc.)
   """
   ruleset: JSON
-
-  """
-  Full solution grid used for server-side validation
-  """
-  solution: JSON
 
   """
   Puzzle title

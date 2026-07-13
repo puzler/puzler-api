@@ -3,8 +3,8 @@ require "rails_helper"
 RSpec.describe "Mutation: startPlay", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($puzzleId: ID!) {
-        startPlay(input: { puzzleId: $puzzleId }) {
+      mutation($puzzleId: ID!, $shareToken: String) {
+        startPlay(input: { puzzleId: $puzzleId, shareToken: $shareToken }) {
           puzzlePlay { id isSolved }
           errors
         }
@@ -52,6 +52,31 @@ RSpec.describe "Mutation: startPlay", type: :graphql do
       promoted = create(:puzzle_play, puzzle: puzzle, user: nil, guest_token: "g_host")
       result = execute_query(mutation, variables: { puzzleId: puzzle.id }, context: guest_context("g_host"))
       expect(gql_data(result, "startPlay", "puzzlePlay", "id")).to eq(promoted.id.to_s)
+    end
+  end
+
+  context "when the puzzle is not publicly visible" do
+    let(:user) { create(:user) }
+    let(:gated) { create(:puzzle, :containers_only, share_token: "tok123") }
+
+    it "creates a play when the share token matches", :aggregate_failures do
+      result = execute_query(mutation, variables: { puzzleId: gated.id, shareToken: "tok123" }, context: auth_context(user))
+      data = gql_data(result, "startPlay")
+      expect(data["errors"]).to be_empty
+      expect(data["puzzlePlay"]).to be_present
+    end
+
+    it "rejects a missing or wrong token", :aggregate_failures do
+      [ nil, "wrong" ].each do |token|
+        result = execute_query(mutation, variables: { puzzleId: gated.id, shareToken: token }, context: auth_context(user))
+        expect(gql_errors(result).first["message"]).to eq("Puzzle not found")
+      end
+    end
+
+    it "rejects a draft even with its token" do
+      draft = create(:puzzle, share_token: "tok456")
+      result = execute_query(mutation, variables: { puzzleId: draft.id, shareToken: "tok456" }, context: auth_context(user))
+      expect(gql_errors(result).first["message"]).to eq("Puzzle not found")
     end
   end
 

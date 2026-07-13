@@ -1,7 +1,7 @@
 module Mutations
   module Puzzles
     class UpdatePuzzle < Mutations::BaseMutation
-      description "Update metadata, grid content, or solution for a draft puzzle"
+      description "Update metadata or grid content for a draft puzzle"
 
       argument :attrs, Types::InputObjects::UpdatePuzzleAttrsInput, required: true,
         description: "Fields to update on the puzzle"
@@ -17,10 +17,6 @@ module Mutations
         puzzle = require_owned!(:puzzles, "Puzzle", id:)
 
         update_attrs = attrs.to_h.compact
-        if update_attrs[:solution].present?
-          update_attrs[:solution_hash] = SolutionHasher.hash(update_attrs[:solution])
-        end
-
         if puzzle.update(update_attrs)
           # Author difficulty feeds the effective difficulty until community votes
           # take over, so re-resolve it whenever it might have changed.

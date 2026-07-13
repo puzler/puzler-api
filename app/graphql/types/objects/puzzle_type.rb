@@ -56,10 +56,6 @@ module Types
         description: "Boolean variant flags (diagonals, knights_move, etc.)"
       field :share_token, String, null: true,
         description: "Unguessable share/solve URL key; only visible to the author"
-      field :solution, GraphQL::Types::JSON, null: true,
-        description: "Full solution grid; only visible to the puzzle author"
-      field :solution_hash, String, null: true,
-        description: "SHA-256 of the canonical solution, used for client-side completion detection"
       field :solve_count, Integer, null: false, description: "Number of times this puzzle has been solved"
       field :status, Types::Enums::PuzzleStatusEnum, null: false, description: "Lifecycle status: draft or published"
       field :sudokupad_includes_solution, Boolean, null: false,
@@ -89,20 +85,6 @@ module Types
       def author_name
         name = object.published_version&.definition&.dig("meta", "author")
         name.strip.presence if name.is_a?(String)
-      end
-
-      def solution
-        return object.solution if author_or_admin?
-
-        nil
-      end
-
-      # Withheld while the viewer is mid-competition on this puzzle: with the
-      # hash a client could self-check the board and dodge blind/penalty rules.
-      def solution_hash
-        return nil if competing_on?(object.id)
-
-        object.solution_hash
       end
 
       # Container-only puzzles surface their token to any viewer who reached them

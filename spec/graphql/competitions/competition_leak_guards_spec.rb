@@ -25,7 +25,7 @@ RSpec.describe "Competition leak guards", type: :graphql do
   end
 
   def hash_query
-    "query($id: ID!) { puzzle(id: $id) { solutionHash publishedVersion { solutionHash } } }"
+    "query($id: ID!) { puzzle(id: $id) { publishedVersion { solutionHash } } }"
   end
 
   it "rejects the normal play mutations while the run is active", :aggregate_failures do
@@ -34,18 +34,18 @@ RSpec.describe "Competition leak guards", type: :graphql do
     end
   end
 
-  it "withholds solution hashes while the run is active, for the solver only", :aggregate_failures do
+  it "withholds the solution hash while the run is active, for the solver only", :aggregate_failures do
     puzzle.update!(published_version: create(:puzzle_version, puzzle:, solution_hash: "abc123"))
     mine = gql_data(as_solver(hash_query, { id: puzzle.id }), "puzzle")
-    expect(mine).to include("solutionHash" => nil, "publishedVersion" => include("solutionHash" => nil))
+    expect(mine).to include("publishedVersion" => include("solutionHash" => nil))
     other = execute_query(hash_query, variables: { id: puzzle.id }, context: auth_context(create(:user)))
-    expect(gql_data(other, "puzzle")["solutionHash"]).to be_present
+    expect(gql_data(other, "puzzle").dig("publishedVersion", "solutionHash")).to be_present
   end
 
   it "restores everything once the run ends", :aggregate_failures do
+    puzzle.update!(published_version: create(:puzzle_version, puzzle:, solution_hash: "abc123"))
     run.update!(finished_at: Time.current)
-    q = "query($id: ID!) { puzzle(id: $id) { solutionHash } }"
-    expect(gql_data(as_solver(q, { id: puzzle.id }), "puzzle")["solutionHash"]).to be_present
+    expect(gql_data(as_solver(hash_query, { id: puzzle.id }), "puzzle").dig("publishedVersion", "solutionHash")).to be_present
     check = "mutation($p: ID!) { checkSolution(input: { puzzleId: $p, board: {} }) { result } }"
     expect(gql_errors(as_solver(check, { p: puzzle.id }))).to be_empty
   end

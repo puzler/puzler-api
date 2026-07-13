@@ -12,17 +12,6 @@ FactoryBot.define do
     solve_count { 0 }
     favorite_count { 0 }
 
-    # Simple deterministic 9x9 fill — not a valid Sudoku, but consistent for hashing.
-    solution do
-      (0..8).each_with_object({}) do |r, h|
-        (0..8).each { |c| h["r#{r}c#{c}"] = (r * 3 + r / 3 + c) % 9 + 1 }
-      end
-    end
-
-    after(:build) do |puzzle|
-      puzzle.solution_hash = SolutionHasher.hash(puzzle.solution) if puzzle.solution.present?
-    end
-
     trait :published do
       status { :published }
       visibility { :public }
@@ -52,11 +41,6 @@ FactoryBot.define do
       status { :published }
       visibility { :containers_only }
       published_at { 1.day.ago }
-    end
-
-    trait :without_solution do
-      solution { {} }
-      solution_hash { nil }
     end
   end
 end

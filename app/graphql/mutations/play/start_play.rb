@@ -5,15 +5,17 @@ module Mutations
 
       argument :puzzle_id, ID, required: true,
         description: "ID of the puzzle to play"
+      argument :share_token, String, required: false,
+        description: "Share token, required to reach an unlisted puzzle"
 
       field :errors, [ String ], null: false,
         description: "Validation errors, if any"
       field :puzzle_play, Types::Objects::PuzzlePlayType, null: true,
         description: "The new or existing unsolved play session"
 
-      def resolve(puzzle_id:)
-        puzzle = Puzzle.publicly_visible.find_by(id: puzzle_id)
-        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle
+      def resolve(puzzle_id:, share_token: nil)
+        puzzle = Puzzle.find_by(id: puzzle_id)
+        raise GraphQL::ExecutionError, "Puzzle not found" unless puzzle&.viewable_by?(current_user, share_token:)
 
         actor = current_actor
         return { puzzle_play: nil, errors: [] } unless actor

@@ -8,8 +8,15 @@ RSpec.describe "Competition flow", type: :graphql do
   end
   let(:puzzle) do
     create(:puzzle, :published, author:, visibility: :public).tap do |p|
+      p.update!(published_version: create(:puzzle_version, puzzle: p))
       create(:collection_entry, collection:, puzzle: p, points: 10)
     end
+  end
+
+  # The published version's factory solution (a method, not a let, to stay
+  # under the memoized-helper lint cap).
+  def solution
+    puzzle.published_version.solution
   end
 
   def start(context: auth_context(solver))
@@ -76,7 +83,7 @@ RSpec.describe "Competition flow", type: :graphql do
     before { start }
 
     it "grades blind submissions without revealing the verdict, last write wins", :aggregate_failures do
-      expect(submit(puzzle.solution)).to include("accepted" => true, "correct" => nil)
+      expect(submit(solution)).to include("accepted" => true, "correct" => nil)
       expect(submit({ "r0c0" => 9 })).to include("accepted" => true, "correct" => nil)
       submission = CompetitionSubmission.find_by(puzzle:)
       expect(submission.correct).to be(false)
@@ -85,23 +92,23 @@ RSpec.describe "Competition flow", type: :graphql do
 
     it "reveals the verdict under the instant policy" do
       collection.update!(submission_policy: :instant)
-      expect(submit(puzzle.solution)["correct"]).to be(true)
+      expect(submit(solution)["correct"]).to be(true)
     end
 
     it "rejects a second submission under the single policy", :aggregate_failures do
       collection.update!(submission_policy: :single)
-      expect(submit(puzzle.solution)["accepted"]).to be(true)
-      expect(submit(puzzle.solution)["errors"].first).to include('one submission')
+      expect(submit(solution)["accepted"]).to be(true)
+      expect(submit(solution)["errors"].first).to include('one submission')
     end
 
     it "rejects submissions after the deadline" do
       CompetitionRun.find_by(collection:, user: solver)
                     .update!(deadline: (CompetitionRun::GRACE_SECONDS + 2).seconds.ago)
-      expect(submit(puzzle.solution)["errors"].first).to include('Time is up')
+      expect(submit(solution)["errors"].first).to include('Time is up')
     end
 
     it "never creates a puzzle play (no solved-checkmark leak)" do
-      expect { submit(puzzle.solution) }.not_to change(PuzzlePlay, :count)
+      expect { submit(solution) }.not_to change(PuzzlePlay, :count)
     end
   end
 
@@ -136,7 +143,7 @@ RSpec.describe "Competition flow", type: :graphql do
   describe "finishCompetitionRun + leaderboard" do
     it "finalizes with a score breakdown", :aggregate_failures do
       start
-      submit(puzzle.solution)
+      submit(solution)
       run = finish["run"]
       expect(run).to include("finalized" => true, "totalPoints" => 10, "correctCount" => 1)
     end
@@ -148,7 +155,7 @@ RSpec.describe "Competition flow", type: :graphql do
 
     def complete_run
       start
-      submit(puzzle.solution)
+      submit(solution)
       finish
     end
 

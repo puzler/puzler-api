@@ -3,9 +3,9 @@ require "rails_helper"
 RSpec.describe "Mutation: updatePuzzle", type: :graphql do
   let(:mutation) do
     <<~GQL
-      mutation($id: ID!, $title: String, $solution: JSON) {
-        updatePuzzle(input: { id: $id, attrs: { title: $title, solution: $solution } }) {
-          puzzle { id title solutionHash }
+      mutation($id: ID!, $title: String) {
+        updatePuzzle(input: { id: $id, attrs: { title: $title } }) {
+          puzzle { id title }
           errors
         }
       }
@@ -21,12 +21,6 @@ RSpec.describe "Mutation: updatePuzzle", type: :graphql do
       data = gql_data(result, "updatePuzzle")
       expect(data["errors"]).to be_empty
       expect(data["puzzle"]["title"]).to eq("Updated Title")
-    end
-
-    it "updates the solution and recomputes the solution hash" do
-      solution = { "r0c0" => 1, "r0c1" => 2 }
-      result = execute_query(mutation, variables: { id: puzzle.id, solution: solution }, context: auth_context(user))
-      expect(gql_data(result, "updatePuzzle", "puzzle", "solutionHash")).to eq(SolutionHasher.hash(solution))
     end
   end
 
