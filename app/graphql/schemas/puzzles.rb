@@ -2,6 +2,7 @@ module Schemas
   module Puzzles
     module Queries
       include Types::Interfaces::BaseInterface
+      include Schemas::PatronTeaserResolution
       description "Puzzle archive queries"
       graphql_name "PuzzleQueries"
 
@@ -37,34 +38,36 @@ module Schemas
         description: "Distinct grid sizes present in the published archive, with counts, for the size facet"
 
       def puzzle(id:)
-        record = Puzzle.find_by(id:)
-        return nil unless record&.viewable_by?(context[:current_user])
-
-        record
+        resolve_patron_gated(Puzzle.find_by(id:))
       end
 
       def puzzle_by_token(token:)
-        record = Puzzle.find_by(share_token: token)
-        return nil unless record&.viewable_by?(context[:current_user], share_token: token)
-
-        record
+        resolve_patron_gated(Puzzle.find_by(share_token: token), share_token: token)
       end
 
       def puzzles(filter: nil)
         args = filter ? filter.to_listing_args : {}
+        user = context[:current_user]
         # "Shared with me" swaps the base scope to the viewer's granted puzzles
         # (published + private only — drafts aren't viewable, and a puzzle later
-        # flipped public already shows in the normal archive). apply_my_status
-        # no-ops on this value, so the rest of the pipeline runs unchanged.
+        # flipped public already shows in the normal archive); "Patron content"
+        # narrows to gated items from supported campaigns. apply_my_status
+        # no-ops on both, so the rest of the pipeline runs unchanged. The
+        # default archive is public content plus the viewer's patron layer
+        # (their unlocked items + locked upsell teasers, per teaser settings).
         scope =
-          if args[:my_status] == "SHARED_WITH_ME" && context[:current_user]
-            context[:current_user].accessible_puzzles.where(status: :published, visibility: :private)
+          if args[:my_status] == "SHARED_WITH_ME" && user
+            user.accessible_puzzles.where(status: :published, visibility: :private)
+          elsif args[:my_status] == "PATRON_CONTENT" && user
+            Puzzle.patron_listed_for(user)
+          elsif user
+            Puzzle.publicly_visible.or(Puzzle.patron_listed_for(user))
           else
             Puzzle.publicly_visible
           end
         OwnedListing.apply(
-          scope.includes(:author, :tags), **args,
-          constraints: true, recent_by: :published_at, viewer: context[:current_user]
+          scope.includes(:author, :tags).with_patron_preload, **args,
+          constraints: true, recent_by: :published_at, viewer: user
         )
       end
 
@@ -114,6 +117,10 @@ module Schemas
         description: "Revoke a user's access to a puzzle"
       field :save_puzzle_version, mutation: ::Mutations::Puzzles::SavePuzzleVersion,
         description: "Save the editor state as a new immutable version"
+      field :schedule_puzzle_release, mutation: ::Mutations::Puzzles::SchedulePuzzleRelease,
+        description: "Schedule or clear a puzzle's release moment"
+      field :set_puzzle_patron_gate, mutation: ::Mutations::Puzzles::SetPuzzlePatronGate,
+        description: "Configure who qualifies for a patrons-only puzzle"
       field :set_puzzle_visibility, mutation: ::Mutations::Puzzles::SetPuzzleVisibility,
         description: "Change a puzzle's access mode"
       field :unpublish_puzzle, mutation: ::Mutations::Puzzles::UnpublishPuzzle,

@@ -35,7 +35,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       update_identity_tokens(identity, auth)
       identity.user
     elsif (existing = auto_linkable_user(auth, provider))
-      existing.oauth_identities.create!(identity_attrs(auth, provider))
+      enqueue_patreon_sync(existing.oauth_identities.create!(identity_attrs(auth, provider)))
       existing
     elsif User.exists?(email: auth.info.email)
       # Same email, but we can't verify ownership (e.g. Patreon) — make the
@@ -58,11 +58,9 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
     end
 
     identity ||= user.oauth_identities.build(provider:, uid: auth.uid)
-    identity.assign_attributes(
-      access_token: auth.credentials.token,
-      refresh_token: auth.credentials.refresh_token
-    )
+    identity.assign_attributes(token_attrs(auth))
     identity.save!
+    enqueue_patreon_sync(identity)
     redirect_to_frontend("/settings?connected=#{provider}")
   end
 
@@ -84,19 +82,34 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   end
 
   def update_identity_tokens(identity, auth)
-    identity.update(
-      access_token: auth.credentials.token,
-      refresh_token: auth.credentials.refresh_token
-    )
+    identity.update(token_attrs(auth))
+    enqueue_patreon_sync(identity)
   end
 
   def identity_attrs(auth, provider)
+    { provider: provider, uid: auth.uid, **token_attrs(auth) }
+  end
+
+  # Token pair plus lifecycle metadata: expiry (Patreon tokens live ~31 days)
+  # and the granted scope string from the token response, which gates which
+  # patron/creator features the app may use without a re-auth.
+  def token_attrs(auth)
     {
-      provider: provider,
-      uid: auth.uid,
       access_token: auth.credentials.token,
-      refresh_token: auth.credentials.refresh_token
+      refresh_token: auth.credentials.refresh_token,
+      expires_at: auth.credentials.expires_at ? Time.zone.at(auth.credentials.expires_at) : nil,
+      scopes: auth.credentials.scope
     }
+  end
+
+  # Fresh Patreon tokens mean possibly fresh entitlements: mirror memberships
+  # and (when the grant covers it) the user's own campaign, async.
+  def enqueue_patreon_sync(identity)
+    return unless identity.provider == "patreon" && identity.persisted?
+
+    scopes = identity.scopes.to_s.split
+    PatreonMembershipSyncJob.perform_later(identity.user_id) if scopes.include?("identity.memberships")
+    PatreonCampaignSyncJob.perform_later(identity.user_id) if scopes.include?("campaigns")
   end
 
   def create_user_from_oauth(auth, provider)
@@ -113,7 +126,7 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
       avatar_url: auth.info.image
     )
     user.save!
-    user.oauth_identities.create!(identity_attrs(auth, provider))
+    enqueue_patreon_sync(user.oauth_identities.create!(identity_attrs(auth, provider)))
     user
   end
 

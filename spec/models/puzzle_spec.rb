@@ -93,11 +93,54 @@ RSpec.describe Puzzle, type: :model do
       end
     end
 
-    context "when a stubbed tier (patrons_only / subscribers_only)" do
-      it "denies everyone except the author for now", :aggregate_failures do
-        puzzle = create(:puzzle, :published, author:, visibility: :patrons_only)
+    context "when patrons_only" do
+      let(:campaign) { create(:patreon_campaign, user: author) }
+      let(:puzzle) { create(:puzzle, :published, author:, visibility: :patrons_only) }
+
+      before { create(:user_oauth_identity, :patreon, user: other) }
+
+      it "admits an active patron of the author's campaign and denies non-patrons", :aggregate_failures do
+        expect(puzzle.viewable_by?(other)).to be(false)
+
+        create(:patreon_membership, user: other, patreon_campaign: campaign, entitled_amount_cents: 300)
+        expect(puzzle.viewable_by?(other)).to be(true)
+        expect(puzzle.viewable_by?(author)).to be(true)
+        expect(puzzle.viewable_by?(nil)).to be(false)
+      end
+
+      it "never lets a share_token bypass the paywall" do
+        create(:patreon_membership, :former, user: other, patreon_campaign: campaign)
+        expect(puzzle.viewable_by?(other, share_token: puzzle.share_token)).to be(false)
+      end
+
+      it "honors explicit access grants (author comps)" do
+        campaign
+        puzzle.access_grants.create!(user: other, granted_by: author)
+        expect(puzzle.viewable_by?(other)).to be(true)
+      end
+    end
+
+    context "when subscribers_only (still stubbed)" do
+      it "denies everyone except the author", :aggregate_failures do
+        puzzle = create(:puzzle, :published, author:, visibility: :subscribers_only)
         expect(puzzle.viewable_by?(other)).to be(false)
         expect(puzzle.viewable_by?(author)).to be(true)
+      end
+    end
+
+    context "with a scheduled release" do
+      let(:puzzle) { create(:puzzle, :published, author:, released_at: 1.hour.from_now) }
+
+      it "hides an unreleased puzzle from everyone but the author", :aggregate_failures do
+        expect(puzzle.viewable_by?(other)).to be(false)
+        expect(puzzle.viewable_by?(author)).to be(true)
+        expect(described_class.publicly_visible).not_to include(puzzle)
+      end
+
+      it "releases lazily once the moment passes", :aggregate_failures do
+        puzzle.update!(released_at: 1.minute.ago)
+        expect(puzzle.viewable_by?(other)).to be(true)
+        expect(described_class.publicly_visible).to include(puzzle)
       end
     end
   end

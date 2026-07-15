@@ -40,6 +40,39 @@ RSpec.describe Collection, type: :model do
       expect(c.viewable_by?(other, share_token: "wrong")).to be(false)
       expect(c.viewable_by?(other)).to be(false)
     end
+
+    context "when patrons_only" do
+      let(:campaign) { create(:patreon_campaign, user: author) }
+      let(:c) { create(:collection, author:, visibility: :patrons_only) }
+
+      before { create(:user_oauth_identity, :patreon, user: other) }
+
+      it "denies non-patrons and never honors a share token", :aggregate_failures do
+        expect(c.viewable_by?(other)).to be(false)
+        expect(c.viewable_by?(other, share_token: c.share_token)).to be(false)
+      end
+
+      it "admits active patrons regardless of token", :aggregate_failures do
+        create(:patreon_membership, user: other, patreon_campaign: campaign, entitled_amount_cents: 300)
+        expect(c.viewable_by?(other)).to be(true)
+        expect(c.viewable_by?(other, share_token: "wrong")).to be(true)
+      end
+    end
+
+    context "with a scheduled release" do
+      let(:c) { create(:collection, author:, visibility: :public, released_at: 1.hour.from_now) }
+
+      it "hides an unreleased collection from non-authors", :aggregate_failures do
+        expect(c.viewable_by?(other)).to be(false)
+        expect(c.viewable_by?(author)).to be(true)
+        expect(described_class.publicly_visible).not_to include(c)
+      end
+
+      it "releases lazily once the moment passes" do
+        c.update!(released_at: 1.minute.ago)
+        expect(c.viewable_by?(other)).to be(true)
+      end
+    end
   end
 
   describe "ordered membership" do

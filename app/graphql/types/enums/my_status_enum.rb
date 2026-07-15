@@ -9,6 +9,7 @@ module Types
       value "UNSOLVED", value: "UNSOLVED", description: "Puzzles the viewer has not solved"
       value "FAVORITED", value: "FAVORITED", description: "Puzzles the viewer has favorited"
       value "SHARED_WITH_ME", value: "SHARED_WITH_ME", description: "Private puzzles other users have shared with the viewer"
+      value "PATRON_CONTENT", value: "PATRON_CONTENT", description: "Patron-only content from creators the viewer supports on Patreon"
     end
   end
 end

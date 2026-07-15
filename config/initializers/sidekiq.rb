@@ -16,6 +16,12 @@ Sidekiq.configure_server do |config|
       "prune_abandoned_plays" => {
         "cron" => "0 * * * *", # top of every hour
         "class" => "PruneAbandonedPlaysJob"
+      },
+      # Daily Patreon reconcile: campaign/tier refresh + full member re-mirror.
+      # The backstop for missed or paused webhooks.
+      "patreon_reconcile" => {
+        "cron" => "15 4 * * *",
+        "class" => "PatreonReconcileJob"
       }
     )
   end

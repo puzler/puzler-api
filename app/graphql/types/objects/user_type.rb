@@ -24,11 +24,17 @@ module Types
         argument :filter, Types::InputObjects::ListingFilterInput, required: false,
           description: "Search, filter, sort, and pagination options"
       end
+      field :hide_patron_teasers, Boolean, null: true,
+        description: "Whether locked patron-only content is hidden from the user's browsing " \
+                     "surfaces (only visible to the user themselves)"
       field :id, ID, null: false, description: "Unique user ID"
       field :oauth_connections, [ OauthIdentityType ], null: true,
         description: "Linked OAuth providers (only visible to the user themselves)"
       field :password_set, Boolean, null: true,
         description: "Whether the user has set a password they know (only visible to the user themselves)"
+      field :patreon, UserPatreonType, null: true,
+        description: "The user's Patreon standing: own campaign, supported creators, and grant " \
+                     "capabilities (only visible to the user themselves)"
       field :player_settings, GraphQL::Types::JSON, null: true,
         description: "The user's solver-page settings (only visible to the user themselves)"
       field :profile_stats, Types::Objects::ProfileStatsType, null: true,
@@ -77,6 +83,14 @@ module Types
 
       def oauth_connections
         object.oauth_identities if viewer_is_self?
+      end
+
+      def hide_patron_teasers
+        object.hide_patron_teasers if viewer_is_self?
+      end
+
+      def patreon
+        object if viewer_is_self?
       end
 
       def player_settings

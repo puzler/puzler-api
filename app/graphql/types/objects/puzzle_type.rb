@@ -3,6 +3,10 @@ module Types
     class PuzzleType < BaseObject
       description "A variant sudoku puzzle"
 
+      # Teaser mode for patrons_only puzzles: content fields below withhold
+      # their values when the viewer doesn't pass the patron gate.
+      include PatronGating
+
       field :author, UserType, null: false, description: "Puzzle creator (the owning account)"
       field :author_difficulty, Integer, null: true,
         description: "Difficulty the setter chose, 1 (gentlest) to 5 (hardest); null if unset"
@@ -27,6 +31,8 @@ module Types
       field :effective_difficulty, Float, null: true,
         description: "Difficulty shown in the archive: the community average once there are enough votes, " \
           "otherwise the setter's value; null until either exists"
+      field :effective_release_at, GraphQL::Types::ISO8601DateTime, null: true,
+        description: "When this became (or becomes) available: the scheduled release, else the publish time"
       field :favorite_count, Integer, null: false, description: "Number of times this puzzle has been favorited"
       field :featured, Boolean, null: false, description: "Whether an admin has featured this puzzle"
       field :folder, FolderType, null: true,
@@ -41,15 +47,21 @@ module Types
       field :id, ID, null: false, description: "Unique puzzle ID"
       field :is_favorited, Boolean, null: false,
         description: "Whether the current user has favorited this puzzle"
+      field :is_released, Boolean, null: false,
+        description: "Whether the scheduled release moment has passed (always true when unscheduled)"
       field :my_rating, RatingType, null: true, description: "Current user's rating for this puzzle"
       field :page_description_html, String, null: true,
         description: "Sanitized rich author description (HTML) shown on the public puzzle page"
-      field :patreon_campaign_id, String, null: true,
-        description: "Linked Patreon campaign for future patron integration"
+      field :patron_access, PatronAccessType, null: true,
+        description: "The viewer's standing against the patron gate; null unless patrons_only"
+      field :patron_gate, PatronGateType, null: true,
+        description: "Who qualifies when patrons_only; null means the default gate (any paying patron)"
       field :published_at, GraphQL::Types::ISO8601DateTime, null: true,
         description: "When this puzzle was published"
       field :published_version, PuzzleVersionType, null: true,
         description: "The version currently published to solvers"
+      field :released_at, GraphQL::Types::ISO8601DateTime, null: true,
+        description: "Scheduled release time; only visible to the author"
       field :ruleset, GraphQL::Types::JSON, null: false,
         description: "Boolean variant flags (diagonals, knights_move, etc.)"
       field :share_token, String, null: true,
@@ -74,7 +86,29 @@ module Types
       end
 
       def has_solution_code
+        return false if teaser_locked?
+
         object.published_version&.solution_code.present?
+      end
+
+      def published_version
+        object.published_version unless teaser_locked?
+      end
+
+      def given_digits
+        teaser_locked? ? {} : object.given_digits
+      end
+
+      def ruleset
+        teaser_locked? ? {} : object.ruleset
+      end
+
+      def box_layout
+        object.box_layout unless teaser_locked?
+      end
+
+      def page_description_html
+        object.page_description_html unless teaser_locked?
       end
 
       # The setter's free-text credit lives in the published version's definition
@@ -130,6 +164,8 @@ module Types
       end
 
       def comments
+        return [] if teaser_locked?
+
         object.comments.top_level.by_newest.includes(:user, :replies)
       end
 
@@ -159,8 +195,10 @@ module Types
 
       # Never surface a SudokuPad link for an unreachable puzzle. (The query
       # already gates viewability; this guards the raw fields independently.)
+      # Teaser mode counts as unreachable — the short link is unauthenticated
+      # on sudokupad.app, so handing it out would bypass the patron gate.
       def sudokupad_available?
-        return false if object.draft? || object.visible_private?
+        return false if object.draft? || object.visible_private? || teaser_locked?
 
         (serving_solution_link? ? object.sudokupad_solution_url : object.sudokupad_url).present?
       end

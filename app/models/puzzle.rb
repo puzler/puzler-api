@@ -19,6 +19,10 @@ class Puzzle < ApplicationRecord
   has_many :access_grants, class_name: "PuzzleAccessGrant", dependent: :destroy
   has_many :granted_users, through: :access_grants, source: :user
 
+  # Patron gating + lazy scheduled release (patron_gate, released/released?,
+  # patron listing scopes).
+  include PatronGateable
+
   # Rich page description HTML + embedded images (shared with Collection and
   # StoryPage via the concern).
   include RichDescription
@@ -51,28 +55,48 @@ class Puzzle < ApplicationRecord
   validates :grid_cols, presence: true, numericality: { greater_than: 0, less_than_or_equal_to: GRID_MAX }
 
   # The public archive lists only finished, public puzzles. Unlisted/private and
-  # the future patron/subscriber tiers are reachable by link/grant, not listing.
-  scope :publicly_visible, -> { where(status: :published, visibility: :public) }
+  # the subscriber tier are reachable by link/grant, not listing; patron content
+  # is layered on per-viewer via patron_listed_for (see PatronGateable).
+  scope :publicly_visible, -> { where(status: :published, visibility: :public).released }
   # Published puzzles that may appear inside a container the viewer can see:
   # public ones plus the container-only tier. Used to list a collection's
   # puzzles to non-authors.
-  scope :container_visible, -> { where(status: :published, visibility: [ :public, :containers_only ]) }
+  scope :container_visible, -> { where(status: :published, visibility: [ :public, :containers_only ]).released }
+
+  # Anchors the back-catalog gate and orders patron feeds (see PatronGateable).
+  def self.patron_release_fallback_column
+    :published_at
+  end
   scope :by_newest, -> { order(published_at: :desc) }
   scope :by_rating, -> { order(avg_rating: :desc) }
   scope :by_popularity, -> { order(solve_count: :desc) }
 
+  # The moment this puzzle became (or becomes) available — orders patron feeds
+  # and anchors the back-catalog gate.
+  def effective_release_at
+    released_at || published_at
+  end
+
   # Single source of truth for "can this viewer open this puzzle?". A share_token
   # gates unlisted access (the token IS the secret); private needs an explicit
-  # grant; the patron/subscriber tiers are defined but denied until built.
-  def viewable_by?(user, share_token: nil)
+  # grant; patrons_only checks the viewer's cached Patreon entitlement against
+  # the gate (explicit grants still work there, for comps) and a share_token
+  # deliberately does NOT bypass it — a leaked URL must not defeat a paywall.
+  # Pass `patron_access:` from list contexts to reuse the per-request checker.
+  def viewable_by?(user, share_token: nil, patron_access: nil)
     return true if user && (user.id == author_id || user.admin?)
-    return false if draft?
+    return false if draft? || !released?
 
     case visibility
     when "public" then true
     when "unlisted", "containers_only" then share_token.present? && share_token == self.share_token
     when "private" then user.present? && access_grants.exists?(user_id: user.id)
-    else false # patrons_only / subscribers_only — stubbed
+    when "patrons_only"
+      return false unless user
+
+      (patron_access || PatronAccess.new(user)).satisfies?(self) ||
+        access_grants.exists?(user_id: user.id)
+    else false # subscribers_only — stubbed
     end
   end
 

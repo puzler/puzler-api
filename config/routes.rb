@@ -14,6 +14,9 @@ Rails.application.routes.draw do
 
   get "/me/export", to: "users/data_exports#show"
 
+  # Patreon's per-campaign member webhooks (signature-verified in the controller).
+  post "/webhooks/patreon/:campaign_id", to: "patreon/webhooks#create"
+
   # Crawler-readable share pages with Open Graph tags (the SPA can't serve
   # per-page meta); humans get bounced to the app.
   get "/share/collections/:id", to: "shares#collection"

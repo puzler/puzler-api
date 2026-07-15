@@ -3,7 +3,6 @@ module Mutations
     class CreateCollection < Mutations::BaseMutation
       description "Create a collection"
 
-      SELECTABLE_VISIBILITY = %w[private unlisted public containers_only].freeze
       ALLOWED_MODES = %w[unordered sequence].freeze
 
       argument :description, String, required: false, description: "Optional description"
@@ -17,7 +16,7 @@ module Mutations
 
       def resolve(title:, description: nil, visibility: nil, mode: nil)
         require_auth!
-        if visibility && SELECTABLE_VISIBILITY.exclude?(visibility)
+        if visibility && !SelectableVisibilities.allowed?(current_user, visibility)
           return { collection: nil, errors: [ "Unsupported visibility: #{visibility}" ] }
         end
         if mode && ALLOWED_MODES.exclude?(mode)

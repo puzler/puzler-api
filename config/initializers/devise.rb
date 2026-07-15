@@ -281,10 +281,13 @@ Devise.setup do |config|
     Rails.application.credentials.dig(:google, :client_secret) || "",
     scope: "email,profile"
 
+  # Default (login/signup) scope is the patron set, so a fresh Patreon signup
+  # can see patron-gated content right away. Creator scopes are requested via
+  # the connect flow's intent=creator (see the strategy's INTENT_SCOPES).
   config.omniauth :patreon,
     Rails.application.credentials.dig(:patreon, :client_id) || "",
     Rails.application.credentials.dig(:patreon, :client_secret) || "",
-    scope: "identity identity[email] campaigns"
+    scope: "identity identity[email] identity.memberships"
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or

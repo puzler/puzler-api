@@ -28,6 +28,8 @@ class User < ApplicationRecord
   end
 
   has_many :oauth_identities, class_name: "UserOauthIdentity", dependent: :destroy
+  has_one :patreon_campaign, dependent: :destroy
+  has_many :patreon_memberships, dependent: :destroy
   has_many :puzzles, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :folders, foreign_key: :author_id, dependent: :destroy, inverse_of: :author
   has_many :collections, foreign_key: :author_id, dependent: :destroy, inverse_of: :author

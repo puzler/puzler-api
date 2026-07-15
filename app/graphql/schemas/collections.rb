@@ -2,6 +2,7 @@ module Schemas
   module Collections
     module Queries
       include Types::Interfaces::BaseInterface
+      include Schemas::PatronTeaserResolution
       description "Folder and collection queries"
       graphql_name "CollectionQueries"
 
@@ -39,17 +40,11 @@ module Schemas
         description: "The current user's top-level folders; nest via each folder's children"
 
       def collection(id:)
-        record = Collection.find_by(id:)
-        return nil unless record&.viewable_by?(context[:current_user])
-
-        record
+        resolve_patron_gated(Collection.find_by(id:))
       end
 
       def collection_by_token(token:)
-        record = Collection.find_by(share_token: token)
-        return nil unless record&.viewable_by?(context[:current_user], share_token: token)
-
-        record
+        resolve_patron_gated(Collection.find_by(share_token: token), share_token: token)
       end
 
       def collection_leaderboard(collection_id:)
@@ -70,9 +65,16 @@ module Schemas
       end
 
       def collections(filter: nil)
-        scope = Collection.publicly_visible.includes(:author)
+        user = context[:current_user]
+        # Public archive plus the viewer's patron layer (mirrors puzzles).
+        scope =
+          if user
+            Collection.publicly_visible.or(Collection.patron_listed_for(user))
+          else
+            Collection.publicly_visible
+          end
         args = filter ? filter.to_listing_args : {}
-        OwnedListing.apply(scope, **args)
+        OwnedListing.apply(scope.includes(:author).with_patron_preload, **args)
       end
 
       def my_collections(filter: nil)
@@ -132,6 +134,10 @@ module Schemas
         description: "Rename a folder"
       field :reorder_collection_entries, mutation: ::Mutations::Collections::ReorderCollectionEntries,
         description: "Reorder all entries in a collection"
+      field :schedule_collection_release, mutation: ::Mutations::Collections::ScheduleCollectionRelease,
+        description: "Schedule or clear a collection's release moment"
+      field :set_collection_patron_gate, mutation: ::Mutations::Collections::SetCollectionPatronGate,
+        description: "Configure who qualifies for a patrons-only collection"
       field :submit_collection_codeword, mutation: ::Mutations::Collections::SubmitCollectionCodeword,
         description: "Try a codeword against a collection's gated entries"
       field :update_collection, mutation: ::Mutations::Collections::UpdateCollection,

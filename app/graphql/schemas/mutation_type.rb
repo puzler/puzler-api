@@ -16,5 +16,6 @@ module Schemas
     implements Series::Mutations
     implements Social::Mutations
     implements Play::Mutations
+    implements Patreon::Mutations
   end
 end

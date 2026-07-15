@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_220007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -108,6 +108,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.integer "mode", default: 0, null: false
     t.text "page_description_html"
     t.integer "penalty_points", default: 0, null: false
+    t.datetime "released_at"
     t.string "share_token"
     t.boolean "show_entry_points", default: true, null: false
     t.integer "solve_count", default: 0, null: false
@@ -122,6 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.index ["folder_id"], name: "index_collections_on_folder_id"
     t.index ["kind"], name: "index_collections_on_kind"
     t.index ["mode"], name: "index_collections_on_mode"
+    t.index ["released_at"], name: "index_collections_on_released_at", where: "(released_at IS NOT NULL)"
     t.index ["share_token"], name: "index_collections_on_share_token", unique: true
     t.index ["visibility"], name: "index_collections_on_visibility"
   end
@@ -195,6 +197,80 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.index ["author_id", "position"], name: "index_folders_on_author_id_and_position"
     t.index ["author_id"], name: "index_folders_on_author_id"
     t.index ["parent_id"], name: "index_folders_on_parent_id"
+  end
+
+  create_table "patreon_campaigns", force: :cascade do |t|
+    t.datetime "campaign_synced_at"
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.datetime "members_synced_at"
+    t.string "patreon_id", null: false
+    t.integer "status", default: 0, null: false
+    t.boolean "teasers_enabled", default: true, null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.bigint "user_id", null: false
+    t.string "webhook_patreon_id"
+    t.datetime "webhook_paused_at"
+    t.text "webhook_secret"
+    t.index ["patreon_id"], name: "index_patreon_campaigns_on_patreon_id", unique: true
+    t.index ["user_id"], name: "index_patreon_campaigns_on_user_id", unique: true
+  end
+
+  create_table "patreon_memberships", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "entitled_amount_cents", default: 0, null: false
+    t.string "entitled_patreon_tier_ids", default: [], null: false, array: true
+    t.datetime "first_active_at"
+    t.bigint "patreon_campaign_id", null: false
+    t.string "patreon_member_id"
+    t.integer "patron_status", default: 0, null: false
+    t.datetime "pledge_relationship_start"
+    t.integer "source", default: 0, null: false
+    t.datetime "synced_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["patreon_campaign_id", "patreon_member_id"], name: "idx_on_patreon_campaign_id_patreon_member_id_cbb09d9420"
+    t.index ["patreon_campaign_id"], name: "index_patreon_memberships_on_patreon_campaign_id"
+    t.index ["user_id", "patreon_campaign_id"], name: "index_patreon_memberships_on_user_id_and_patreon_campaign_id", unique: true
+    t.index ["user_id"], name: "index_patreon_memberships_on_user_id"
+  end
+
+  create_table "patreon_tiers", force: :cascade do |t|
+    t.integer "amount_cents", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "discarded_at"
+    t.bigint "patreon_campaign_id", null: false
+    t.string "patreon_id", null: false
+    t.boolean "published", default: true, null: false
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
+    t.index ["patreon_campaign_id", "patreon_id"], name: "index_patreon_tiers_on_patreon_campaign_id_and_patreon_id", unique: true
+    t.index ["patreon_campaign_id"], name: "index_patreon_tiers_on_patreon_campaign_id"
+  end
+
+  create_table "patron_gate_tiers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "patreon_tier_id", null: false
+    t.bigint "patron_gate_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["patreon_tier_id"], name: "index_patron_gate_tiers_on_patreon_tier_id"
+    t.index ["patron_gate_id", "patreon_tier_id"], name: "index_patron_gate_tiers_on_patron_gate_id_and_patreon_tier_id", unique: true
+    t.index ["patron_gate_id"], name: "index_patron_gate_tiers_on_patron_gate_id"
+  end
+
+  create_table "patron_gates", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "gateable_id", null: false
+    t.string "gateable_type", null: false
+    t.integer "min_amount_cents"
+    t.bigint "min_tier_id"
+    t.integer "mode", default: 0, null: false
+    t.boolean "patrons_since_release", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["gateable_type", "gateable_id"], name: "index_patron_gates_on_gateable_type_and_gateable_id", unique: true
+    t.index ["min_tier_id"], name: "index_patron_gates_on_min_tier_id"
   end
 
   create_table "puzzle_access_grants", force: :cascade do |t|
@@ -320,9 +396,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.integer "grid_cols", default: 9, null: false
     t.integer "grid_rows", default: 9, null: false
     t.text "page_description_html"
-    t.string "patreon_campaign_id"
     t.datetime "published_at"
     t.bigint "published_version_id"
+    t.datetime "released_at"
     t.jsonb "ruleset", default: {}, null: false
     t.string "share_token"
     t.integer "solve_count", default: 0, null: false
@@ -341,6 +417,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.index ["published_at"], name: "index_puzzles_on_published_at"
     t.index ["published_at"], name: "index_puzzles_publicly_visible", order: :desc, where: "((status = 1) AND (visibility = 2))"
     t.index ["published_version_id"], name: "index_puzzles_on_published_version_id"
+    t.index ["released_at"], name: "index_puzzles_on_released_at", where: "(released_at IS NOT NULL)"
     t.index ["share_token"], name: "index_puzzles_on_share_token", unique: true
     t.index ["status"], name: "index_puzzles_on_status"
     t.index ["visibility"], name: "index_puzzles_on_visibility"
@@ -419,8 +496,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
   create_table "user_oauth_identities", force: :cascade do |t|
     t.text "access_token"
     t.datetime "created_at", null: false
+    t.datetime "expires_at"
     t.string "provider", null: false
     t.text "refresh_token"
+    t.string "scopes"
     t.string "uid", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -455,6 +534,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
     t.string "email", default: "", null: false
     t.boolean "enable_custom_styles", default: true, null: false
     t.string "encrypted_password", default: "", null: false
+    t.boolean "hide_patron_teasers", default: false, null: false
     t.boolean "include_solution_in_sudokupad_export", default: true, null: false
     t.string "jti", null: false
     t.boolean "password_set", default: true, null: false
@@ -501,6 +581,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
   add_foreign_key "favorites", "users"
   add_foreign_key "folders", "folders", column: "parent_id", on_delete: :nullify
   add_foreign_key "folders", "users", column: "author_id"
+  add_foreign_key "patreon_campaigns", "users"
+  add_foreign_key "patreon_memberships", "patreon_campaigns"
+  add_foreign_key "patreon_memberships", "users"
+  add_foreign_key "patreon_tiers", "patreon_campaigns"
+  add_foreign_key "patron_gate_tiers", "patreon_tiers"
+  add_foreign_key "patron_gate_tiers", "patron_gates"
+  add_foreign_key "patron_gates", "patreon_tiers", column: "min_tier_id"
   add_foreign_key "puzzle_access_grants", "puzzles"
   add_foreign_key "puzzle_access_grants", "users"
   add_foreign_key "puzzle_access_grants", "users", column: "granted_by_id"

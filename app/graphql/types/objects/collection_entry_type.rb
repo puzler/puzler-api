@@ -17,6 +17,8 @@ module Types
       field :id, ID, null: false, description: "Unique entry ID"
       field :locked, Boolean, null: false,
         description: "Whether this entry is currently locked for the viewer"
+      field :patron_locked, Boolean, null: false,
+        description: "Whether this entry's puzzle is patron-gated beyond the viewer's membership (a locked teaser row)"
       field :points, Integer, null: true,
         description: "Competition scoring weight; nil for solvers when the author hides point values"
       field :position, Integer, null: false, description: "Order within the collection"

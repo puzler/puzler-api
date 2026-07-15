@@ -17,6 +17,9 @@ class CollectionGate
   # competition-locked entries withhold the puzzle too (no pre-run peeking).
   class GatedEntry
     attr_reader :entry, :locked, :solved
+    # Set after the fact by CollectionType when the entry's puzzle is patron
+    # gated beyond the viewer's membership — renders as a locked teaser row.
+    attr_accessor :patron_locked
 
     delegate :id, :position, :entryable_type, :entryable, :gated?, :hidden?, :finale?, :released_at,
       :points, to: :entry
@@ -25,6 +28,7 @@ class CollectionGate
       @entry = entry
       @locked = locked
       @solved = solved
+      @patron_locked = false
     end
   end
 

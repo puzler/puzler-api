@@ -278,6 +278,11 @@ type Collection {
   description: String
 
   """
+  When this became (or becomes) available: the scheduled release, else creation
+  """
+  effectiveReleaseAt: ISO8601DateTime
+
+  """
   Ordered entries (puzzles and story pages) with the viewer's lock state
   resolved; non-authors see only publicly-visible puzzles, and hidden entries
   only once unlocked
@@ -298,6 +303,11 @@ type Collection {
   Unique collection ID
   """
   id: ID!
+
+  """
+  Whether the scheduled release moment has passed (always true when unscheduled)
+  """
+  isReleased: Boolean!
 
   """
   What this collection is: basic list, hunt, or competition
@@ -325,6 +335,16 @@ type Collection {
   pageDescriptionHtml: String
 
   """
+  The viewer's standing against the patron gate; null unless patrons_only
+  """
+  patronAccess: PatronAccess
+
+  """
+  Who qualifies when patrons_only; null means the default gate (any paying patron)
+  """
+  patronGate: PatronGate
+
+  """
   Number of puzzles the viewer can see in this collection
   """
   puzzleCount: Int!
@@ -333,6 +353,11 @@ type Collection {
   Puzzles in order; non-authors see only the publicly-visible ones
   """
   puzzles: [Puzzle!]!
+
+  """
+  Scheduled release time; only visible to the author
+  """
+  releasedAt: ISO8601DateTime
 
   """
   Unguessable share key for unlisted access; only visible to the author
@@ -485,6 +510,11 @@ type CollectionEntry {
   Whether this entry is currently locked for the viewer
   """
   locked: Boolean!
+
+  """
+  Whether this entry's puzzle is patron-gated beyond the viewer's membership (a locked teaser row)
+  """
+  patronLocked: Boolean!
 
   """
   Competition scoring weight; nil for solvers when the author hides point values
@@ -737,6 +767,26 @@ interface CollectionMutations {
     """
     input: ReorderCollectionEntriesInput!
   ): ReorderCollectionEntriesPayload
+
+  """
+  Schedule or clear a collection's release moment
+  """
+  scheduleCollectionRelease(
+    """
+    Parameters for ScheduleCollectionRelease
+    """
+    input: ScheduleCollectionReleaseInput!
+  ): ScheduleCollectionReleasePayload
+
+  """
+  Configure who qualifies for a patrons-only collection
+  """
+  setCollectionPatronGate(
+    """
+    Parameters for SetCollectionPatronGate
+    """
+    input: SetCollectionPatronGateInput!
+  ): SetCollectionPatronGatePayload
 
   """
   Try a codeword against a collection's gated entries
@@ -2542,7 +2592,7 @@ type MovePuzzleToFolderPayload {
 """
 Root mutation type — all mutations are composed from domain-specific schema modules
 """
-type Mutation implements CollectionMutations & CompetitionMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
+type Mutation implements CollectionMutations & CompetitionMutations & PatreonMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
   """
   Add a puzzle to a collection
   """
@@ -2884,6 +2934,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
   ): RecordCollectionSolveTimePayload
 
   """
+  Re-sync which creators the current user supports on Patreon
+  """
+  refreshPatreonMemberships(
+    """
+    Parameters for RefreshPatreonMemberships
+    """
+    input: RefreshPatreonMembershipsInput!
+  ): RefreshPatreonMembershipsPayload
+
+  """
   Remove the current user's uploaded avatar
   """
   removeAvatar(
@@ -2994,6 +3054,26 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
   ): SavePuzzleVersionPayload
 
   """
+  Schedule or clear a collection's release moment
+  """
+  scheduleCollectionRelease(
+    """
+    Parameters for ScheduleCollectionRelease
+    """
+    input: ScheduleCollectionReleaseInput!
+  ): ScheduleCollectionReleasePayload
+
+  """
+  Schedule or clear a puzzle's release moment
+  """
+  schedulePuzzleRelease(
+    """
+    Parameters for SchedulePuzzleRelease
+    """
+    input: SchedulePuzzleReleaseInput!
+  ): SchedulePuzzleReleasePayload
+
+  """
   Set or clear a series entry's scheduled release time
   """
   scheduleSeriesEntry(
@@ -3004,6 +3084,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
   ): ScheduleSeriesEntryPayload
 
   """
+  Configure who qualifies for a patrons-only collection
+  """
+  setCollectionPatronGate(
+    """
+    Parameters for SetCollectionPatronGate
+    """
+    input: SetCollectionPatronGateInput!
+  ): SetCollectionPatronGatePayload
+
+  """
   Mark or unmark a comment as a spoiler
   """
   setCommentSpoiler(
@@ -3012,6 +3102,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
     """
     input: SetCommentSpoilerInput!
   ): SetCommentSpoilerPayload
+
+  """
+  Configure who qualifies for a patrons-only puzzle
+  """
+  setPuzzlePatronGate(
+    """
+    Parameters for SetPuzzlePatronGate
+    """
+    input: SetPuzzlePatronGateInput!
+  ): SetPuzzlePatronGatePayload
 
   """
   Change a puzzle's access mode
@@ -3084,6 +3184,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
   ): SubmitSolutionCodePayload
 
   """
+  Re-mirror the current user's Patreon campaign, tiers, and webhook
+  """
+  syncPatreonCampaign(
+    """
+    Parameters for SyncPatreonCampaign
+    """
+    input: SyncPatreonCampaignInput!
+  ): SyncPatreonCampaignPayload
+
+  """
   Add or remove a puzzle from the current user's favorites
   """
   toggleFavorite(
@@ -3152,6 +3262,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & PlayMutati
     """
     input: UpdatePageDescriptionInput!
   ): UpdatePageDescriptionPayload
+
+  """
+  Update the current user's Puzler-side Patreon campaign settings
+  """
+  updatePatreonCampaignSettings(
+    """
+    Parameters for UpdatePatreonCampaignSettings
+    """
+    input: UpdatePatreonCampaignSettingsInput!
+  ): UpdatePatreonCampaignSettingsPayload
 
   """
   Update the current user's solver-page preferences (settings and/or color palette)
@@ -3314,6 +3434,11 @@ enum MyStatusEnum {
   FAVORITED
 
   """
+  Patron-only content from creators the viewer supports on Patreon
+  """
+  PATRON_CONTENT
+
+  """
   Private puzzles other users have shared with the viewer
   """
   SHARED_WITH_ME
@@ -3377,6 +3502,378 @@ type PageInfo {
   Total number of pages
   """
   totalPages: Int!
+}
+
+"""
+The current user's linked Patreon campaign (creator side)
+"""
+type PatreonCampaign {
+  """
+  When the campaign and tiers were last mirrored from Patreon
+  """
+  campaignSyncedAt: ISO8601DateTime
+
+  """
+  Campaign currency code (e.g. USD)
+  """
+  currency: String
+
+  """
+  Puzler's ID for the mirrored campaign
+  """
+  id: ID!
+
+  """
+  When the full member list was last reconciled
+  """
+  membersSyncedAt: ISO8601DateTime
+
+  """
+  Link health: active, token_stale (reconnect recommended), disconnected, or removed
+  """
+  status: PatreonCampaignStatusEnum!
+
+  """
+  Whether non-patrons see locked previews of this campaign's gated content
+  """
+  teasersEnabled: Boolean!
+
+  """
+  The campaign's tiers (kept ones only), cheapest first
+  """
+  tiers: [PatreonTier!]!
+
+  """
+  Campaign name on Patreon
+  """
+  title: String
+
+  """
+  The campaign's patreon.com page
+  """
+  url: String
+
+  """
+  Whether our member webhook is registered and unpaused
+  """
+  webhookActive: Boolean!
+}
+
+"""
+A supported Patreon campaign, as seen by a patron
+"""
+type PatreonCampaignRef {
+  """
+  The Puzler username of the campaign's creator
+  """
+  creatorUsername: String
+
+  """
+  Campaign currency code
+  """
+  currency: String
+
+  """
+  Campaign name on Patreon
+  """
+  title: String
+
+  """
+  The campaign's patreon.com page
+  """
+  url: String
+}
+
+"""
+Health of the mirrored Patreon campaign link
+"""
+enum PatreonCampaignStatusEnum {
+  ACTIVE
+  DISCONNECTED
+  REMOVED
+  TOKEN_STALE
+}
+
+"""
+Which Patreon features the current user's OAuth grant covers
+"""
+type PatreonCapabilities {
+  """
+  Whether the grant can read the user's own campaign (creator features)
+  """
+  creator: Boolean!
+
+  """
+  Whether the grant can read the user's memberships (patron features)
+  """
+  memberships: Boolean!
+}
+
+"""
+The current user's Patreon membership in a Puzler creator's campaign
+"""
+type PatreonMembership {
+  """
+  The supported campaign
+  """
+  campaign: PatreonCampaignRef!
+
+  """
+  Current pledge entitlement in the campaign currency's minor units
+  """
+  entitledAmountCents: Int!
+
+  """
+  Membership row ID
+  """
+  id: ID!
+
+  """
+  Standing: active_patron, declined_patron, former_patron, or unknown
+  """
+  patronStatus: PatronStatusEnum!
+
+  """
+  When this membership was last synced from Patreon
+  """
+  syncedAt: ISO8601DateTime!
+}
+
+"""
+Patreon link and campaign mutations
+"""
+interface PatreonMutations {
+  """
+  Re-sync which creators the current user supports on Patreon
+  """
+  refreshPatreonMemberships(
+    """
+    Parameters for RefreshPatreonMemberships
+    """
+    input: RefreshPatreonMembershipsInput!
+  ): RefreshPatreonMembershipsPayload
+
+  """
+  Re-mirror the current user's Patreon campaign, tiers, and webhook
+  """
+  syncPatreonCampaign(
+    """
+    Parameters for SyncPatreonCampaign
+    """
+    input: SyncPatreonCampaignInput!
+  ): SyncPatreonCampaignPayload
+
+  """
+  Update the current user's Puzler-side Patreon campaign settings
+  """
+  updatePatreonCampaignSettings(
+    """
+    Parameters for UpdatePatreonCampaignSettings
+    """
+    input: UpdatePatreonCampaignSettingsInput!
+  ): UpdatePatreonCampaignSettingsPayload
+}
+
+"""
+Patreon patron-content queries
+"""
+interface PatreonQueries {
+  """
+  Newest patron releases (puzzles and collections) from campaigns the viewer
+  actively supports, newest first. Locked items list as teasers per the
+  creator's and viewer's teaser settings.
+  """
+  patronReleases: [PatronRelease!]!
+}
+
+"""
+A reward tier on a creator's Patreon campaign, mirrored from the API
+"""
+type PatreonTier {
+  """
+  The tier's price in the campaign currency's minor units
+  """
+  amountCents: Int!
+
+  """
+  Whether this tier has been deleted on Patreon (kept here because gates may reference it)
+  """
+  discarded: Boolean!
+
+  """
+  Puzler's ID for the mirrored tier
+  """
+  id: ID!
+
+  """
+  Patreon's stable tier ID
+  """
+  patreonId: String!
+
+  """
+  Whether the tier is published on Patreon
+  """
+  published: Boolean!
+
+  """
+  Tier name as shown on Patreon
+  """
+  title: String!
+}
+
+"""
+The current viewer's access to a patrons-only puzzle or collection
+"""
+type PatronAccess {
+  """
+  The gating creator's campaign name
+  """
+  campaignTitle: String
+
+  """
+  The creator's patreon.com page (the become-a-patron link)
+  """
+  campaignUrl: String
+
+  """
+  Whether the viewer can open the item
+  """
+  hasAccess: Boolean!
+
+  """
+  Why the viewer is locked out; null when hasAccess
+  """
+  lockedReason: PatronLockReasonEnum
+
+  """
+  The gate's effective minimum pledge, when one applies
+  """
+  requiredAmountCents: Int
+
+  """
+  The minimum tier's name, when the gate is tier-based
+  """
+  requiredTierTitle: String
+}
+
+"""
+Who qualifies for a patrons-only puzzle or collection
+"""
+type PatronGate {
+  """
+  Minimum pledge in the campaign currency's minor units (min_amount mode)
+  """
+  minAmountCents: Int
+
+  """
+  The minimum qualifying tier (min_tier mode); null means any paying patron
+  """
+  minTier: PatreonTier
+
+  """
+  How qualification is decided: min_tier, tier_list, or min_amount
+  """
+  mode: PatronGateModeEnum!
+
+  """
+  Back-catalog lock: only patrons who were already supporting at release time qualify
+  """
+  patronsSinceRelease: Boolean!
+
+  """
+  The qualifying tiers (tier_list mode)
+  """
+  tiers: [PatreonTier!]!
+}
+
+"""
+Patron gate configuration for a patrons-only puzzle or collection
+"""
+input PatronGateInput {
+  """
+  Minimum pledge in the campaign currency's minor units (min_amount mode)
+  """
+  minAmountCents: Int
+
+  """
+  Puzler ID of the minimum qualifying tier (min_tier mode); omit for any paying patron
+  """
+  minTierId: ID
+
+  """
+  How qualification is decided: min_tier, tier_list, or min_amount
+  """
+  mode: PatronGateModeEnum!
+
+  """
+  Back-catalog lock: only patrons who were already supporting at release time qualify
+  """
+  patronsSinceRelease: Boolean = false
+
+  """
+  Puzler IDs of the qualifying tiers (tier_list mode; any number)
+  """
+  tierIds: [ID!]
+}
+
+"""
+How a patron gate decides who qualifies: minimum tier (with pledge-amount
+fallback), an explicit tier list, or a minimum pledge amount
+"""
+enum PatronGateModeEnum {
+  MIN_AMOUNT
+  MIN_TIER
+  TIER_LIST
+}
+
+"""
+Why the viewer can't open this patron-gated content
+"""
+enum PatronLockReasonEnum {
+  """
+  The creator's Patreon campaign is no longer available
+  """
+  CREATOR_UNAVAILABLE
+
+  """
+  The viewer's Patreon payment is currently declined
+  """
+  DECLINED
+
+  """
+  An active patron, but below this release's gate
+  """
+  INSUFFICIENT_TIER
+
+  """
+  This release was reserved for patrons at the time it came out
+  """
+  JOINED_AFTER_RELEASE
+
+  """
+  The viewer has no Patreon account linked (or is logged out)
+  """
+  NOT_LINKED
+
+  """
+  Linked, but not an active patron of this creator
+  """
+  NOT_PATRON
+}
+
+"""
+A patron release: a patrons-only puzzle or collection
+"""
+union PatronRelease = Collection | Puzzle
+
+"""
+The member's standing on Patreon: active, payment-declined, or former
+"""
+enum PatronStatusEnum {
+  ACTIVE_PATRON
+  DECLINED_PATRON
+  FORMER_PATRON
+  UNKNOWN
 }
 
 """
@@ -3482,6 +3979,11 @@ input PrepareOauthConnectInput {
   A unique identifier for the client performing the mutation.
   """
   clientMutationId: String
+
+  """
+  Patreon scope preset: patron (default, read own memberships) or creator (also read campaign/members + manage our webhook)
+  """
+  intent: String
 
   """
   Provider to connect: google or patreon
@@ -3625,9 +4127,14 @@ type ProfileVisibility {
 }
 
 """
-Public-profile visibility preferences
+Public-profile visibility and privacy preferences
 """
 input ProfileVisibilityInput {
+  """
+  Hide locked patron-only content from browsing surfaces
+  """
+  hidePatronTeasers: Boolean
+
   """
   Show the recent activity feed
   """
@@ -3786,6 +4293,11 @@ type Puzzle {
   effectiveDifficulty: Float
 
   """
+  When this became (or becomes) available: the scheduled release, else the publish time
+  """
+  effectiveReleaseAt: ISO8601DateTime
+
+  """
   Number of times this puzzle has been favorited
   """
   favoriteCount: Int!
@@ -3831,6 +4343,11 @@ type Puzzle {
   isFavorited: Boolean!
 
   """
+  Whether the scheduled release moment has passed (always true when unscheduled)
+  """
+  isReleased: Boolean!
+
+  """
   Current user's rating for this puzzle
   """
   myRating: Rating
@@ -3841,9 +4358,14 @@ type Puzzle {
   pageDescriptionHtml: String
 
   """
-  Linked Patreon campaign for future patron integration
+  The viewer's standing against the patron gate; null unless patrons_only
   """
-  patreonCampaignId: String
+  patronAccess: PatronAccess
+
+  """
+  Who qualifies when patrons_only; null means the default gate (any paying patron)
+  """
+  patronGate: PatronGate
 
   """
   When this puzzle was published
@@ -3854,6 +4376,11 @@ type Puzzle {
   The version currently published to solvers
   """
   publishedVersion: PuzzleVersion
+
+  """
+  Scheduled release time; only visible to the author
+  """
+  releasedAt: ISO8601DateTime
 
   """
   Boolean variant flags (diagonals, knights_move, etc.)
@@ -4019,6 +4546,26 @@ interface PuzzleMutations {
     """
     input: SavePuzzleVersionInput!
   ): SavePuzzleVersionPayload
+
+  """
+  Schedule or clear a puzzle's release moment
+  """
+  schedulePuzzleRelease(
+    """
+    Parameters for SchedulePuzzleRelease
+    """
+    input: SchedulePuzzleReleaseInput!
+  ): SchedulePuzzleReleasePayload
+
+  """
+  Configure who qualifies for a patrons-only puzzle
+  """
+  setPuzzlePatronGate(
+    """
+    Parameters for SetPuzzlePatronGate
+    """
+    input: SetPuzzlePatronGateInput!
+  ): SetPuzzlePatronGatePayload
 
   """
   Change a puzzle's access mode
@@ -4369,7 +4916,7 @@ enum PuzzleVisibilityEnum {
 """
 Root query type — all queries are composed from domain-specific schema modules
 """
-type Query implements CollectionQueries & CompetitionQueries & PuzzleQueries & SeriesQueries & TagQueries & UserQueries {
+type Query implements CollectionQueries & CompetitionQueries & PatreonQueries & PuzzleQueries & SeriesQueries & TagQueries & UserQueries {
   """
   Find a collection by ID, if the current user is allowed to see it
   """
@@ -4479,6 +5026,13 @@ type Query implements CollectionQueries & CompetitionQueries & PuzzleQueries & S
     """
     filter: ListingFilterInput
   ): SeriesConnection!
+
+  """
+  Newest patron releases (puzzles and collections) from campaigns the viewer
+  actively supports, newest first. Locked items list as teasers per the
+  creator's and viewer's teaser settings.
+  """
+  patronReleases: [PatronRelease!]!
 
   """
   Browse the public series archive with search/filter/sort/pagination
@@ -4694,6 +5248,36 @@ type RecordCollectionSolveTimePayload {
   Whether a time was recorded
   """
   recorded: Boolean!
+}
+
+"""
+Autogenerated input type of RefreshPatreonMemberships
+"""
+input RefreshPatreonMembershipsInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+}
+
+"""
+Autogenerated return type of RefreshPatreonMemberships.
+"""
+type RefreshPatreonMembershipsPayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  The refreshed user
+  """
+  user: User
 }
 
 """
@@ -5122,6 +5706,86 @@ type SavePuzzleVersionPayload {
 }
 
 """
+Autogenerated input type of ScheduleCollectionRelease
+"""
+input ScheduleCollectionReleaseInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  ID of the collection
+  """
+  id: ID!
+
+  """
+  When the collection becomes available; null releases immediately
+  """
+  releasedAt: ISO8601DateTime
+}
+
+"""
+Autogenerated return type of ScheduleCollectionRelease.
+"""
+type ScheduleCollectionReleasePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated collection
+  """
+  collection: Collection
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
+Autogenerated input type of SchedulePuzzleRelease
+"""
+input SchedulePuzzleReleaseInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  ID of the puzzle
+  """
+  id: ID!
+
+  """
+  When the puzzle becomes available; null releases immediately
+  """
+  releasedAt: ISO8601DateTime
+}
+
+"""
+Autogenerated return type of SchedulePuzzleRelease.
+"""
+type SchedulePuzzleReleasePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  The updated puzzle
+  """
+  puzzle: Puzzle
+}
+
+"""
 Autogenerated input type of ScheduleSeriesEntry
 """
 input ScheduleSeriesEntryInput {
@@ -5459,6 +6123,46 @@ enum SeriesVisibilityEnum {
 }
 
 """
+Autogenerated input type of SetCollectionPatronGate
+"""
+input SetCollectionPatronGateInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The gate configuration; omit/null to clear back to the default gate
+  """
+  gate: PatronGateInput
+
+  """
+  ID of the collection
+  """
+  id: ID!
+}
+
+"""
+Autogenerated return type of SetCollectionPatronGate.
+"""
+type SetCollectionPatronGatePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated collection
+  """
+  collection: Collection
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
 Autogenerated input type of SetCommentSpoiler
 """
 input SetCommentSpoilerInput {
@@ -5499,6 +6203,46 @@ type SetCommentSpoilerPayload {
 }
 
 """
+Autogenerated input type of SetPuzzlePatronGate
+"""
+input SetPuzzlePatronGateInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The gate configuration; omit/null to clear back to the default gate
+  """
+  gate: PatronGateInput
+
+  """
+  ID of the puzzle
+  """
+  id: ID!
+}
+
+"""
+Autogenerated return type of SetPuzzlePatronGate.
+"""
+type SetPuzzlePatronGatePayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+
+  """
+  The updated puzzle
+  """
+  puzzle: Puzzle
+}
+
+"""
 Autogenerated input type of SetPuzzleVisibility
 """
 input SetPuzzleVisibilityInput {
@@ -5513,7 +6257,7 @@ input SetPuzzleVisibilityInput {
   id: ID!
 
   """
-  private, unlisted, public, or containers_only
+  private, unlisted, public, containers_only, or patrons_only (creators only)
   """
   visibility: PuzzleVisibilityEnum!
 }
@@ -5978,6 +6722,36 @@ type Subscription {
 }
 
 """
+Autogenerated input type of SyncPatreonCampaign
+"""
+input SyncPatreonCampaignInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+}
+
+"""
+Autogenerated return type of SyncPatreonCampaign.
+"""
+type SyncPatreonCampaignPayload {
+  """
+  The refreshed campaign; null when the user isn't a Patreon creator
+  """
+  campaign: PatreonCampaign
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
+}
+
+"""
 A tag used to categorize puzzles in the archive
 """
 type Tag {
@@ -6310,6 +7084,41 @@ type UpdatePageDescriptionPayload {
   The updated puzzle
   """
   puzzle: Puzzle
+}
+
+"""
+Autogenerated input type of UpdatePatreonCampaignSettings
+"""
+input UpdatePatreonCampaignSettingsInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Whether non-patrons see locked previews (teasers) of this campaign's gated content
+  """
+  teasersEnabled: Boolean!
+}
+
+"""
+Autogenerated return type of UpdatePatreonCampaignSettings.
+"""
+type UpdatePatreonCampaignSettingsPayload {
+  """
+  The updated campaign
+  """
+  campaign: PatreonCampaign
+
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
 }
 
 """
@@ -7024,6 +7833,11 @@ type User {
   ): PuzzleConnection!
 
   """
+  Whether locked patron-only content is hidden from the user's browsing surfaces (only visible to the user themselves)
+  """
+  hidePatronTeasers: Boolean
+
+  """
   Unique user ID
   """
   id: ID!
@@ -7037,6 +7851,12 @@ type User {
   Whether the user has set a password they know (only visible to the user themselves)
   """
   passwordSet: Boolean
+
+  """
+  The user's Patreon standing: own campaign, supported creators, and grant
+  capabilities (only visible to the user themselves)
+  """
+  patreon: UserPatreon
 
   """
   The user's solver-page settings (only visible to the user themselves)
@@ -7292,6 +8112,26 @@ interface UserMutations {
     """
     input: UploadAvatarInput!
   ): UploadAvatarPayload
+}
+
+"""
+The current user's Patreon link: campaign, memberships, and grant capabilities
+"""
+type UserPatreon {
+  """
+  The user's own campaign, when they are a creator
+  """
+  campaign: PatreonCampaign
+
+  """
+  Which Patreon features the stored OAuth grant covers; null when Patreon isn't linked
+  """
+  capabilities: PatreonCapabilities
+
+  """
+  The creators this user supports on Patreon
+  """
+  memberships: [PatreonMembership!]!
 }
 
 """

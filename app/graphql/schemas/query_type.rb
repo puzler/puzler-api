@@ -15,5 +15,6 @@ module Schemas
     implements Competitions::Queries
     implements Series::Queries
     implements Tags::Queries
+    implements Patreon::Queries
   end
 end

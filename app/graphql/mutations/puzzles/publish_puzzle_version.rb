@@ -17,7 +17,7 @@ module Mutations
         version = puzzle.versions.find_by(id: version_id)
         raise GraphQL::ExecutionError, "Version not found" unless version
         return { puzzle: nil, errors: [ "Solution required before publishing" ] } if version.solution.blank?
-        if visibility && SetPuzzleVisibility::SELECTABLE.exclude?(visibility)
+        if visibility && !SelectableVisibilities.allowed?(current_user, visibility)
           return { puzzle: nil, errors: [ "Unsupported visibility: #{visibility}" ] }
         end
 

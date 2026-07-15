@@ -3,7 +3,6 @@ module Mutations
     class UpdateCollection < Mutations::BaseMutation
       description "Update a collection's title, description, visibility, mode, kind, or competition terms"
 
-      SELECTABLE_VISIBILITY = %w[private unlisted public containers_only].freeze
       ALLOWED_MODES = %w[unordered sequence].freeze
       ALLOWED_KINDS = %w[basic hunt competition].freeze
       # The contest terms; frozen once anyone has competed (kind included).
@@ -38,7 +37,7 @@ module Mutations
 
       def validate(collection, data)
         return "Unsupported visibility: #{data[:visibility]}" if
-          data[:visibility] && SELECTABLE_VISIBILITY.exclude?(data[:visibility])
+          data[:visibility] && !SelectableVisibilities.allowed?(current_user, data[:visibility])
         return "Unsupported mode: #{data[:mode]}" if data[:mode] && ALLOWED_MODES.exclude?(data[:mode])
         return "Unsupported kind: #{data[:kind]}" if data[:kind] && ALLOWED_KINDS.exclude?(data[:kind])
 

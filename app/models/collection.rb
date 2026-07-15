@@ -10,6 +10,10 @@ class Collection < ApplicationRecord
   has_many :collection_solve_times, dependent: :destroy
   has_many :series_entries, as: :entryable, dependent: :destroy
 
+  # Patron gating + lazy scheduled release (patron_gate, released/released?,
+  # patron listing scopes).
+  include PatronGateable
+
   # Mirrors Puzzle's access model. "private"/"public" collide with Ruby keywords,
   # so visibility methods are prefixed (visible_public?, etc.). `mode` governs
   # ordering only — timing/competition is a separate setting added later.
@@ -68,7 +72,13 @@ class Collection < ApplicationRecord
     kind_competition? && competition_runs.exists?
   end
 
-  scope :publicly_visible, -> { visible_public }
+  scope :publicly_visible, -> { visible_public.released }
+
+  # Anchors the back-catalog gate and orders patron feeds (see PatronGateable).
+  # Collections have no published_at; creation is the closest release moment.
+  def self.patron_release_fallback_column
+    :created_at
+  end
   scope :by_rating, -> { order(avg_rating: :desc) }
   scope :by_popularity, -> { order(solve_count: :desc) }
 
@@ -104,15 +114,23 @@ class Collection < ApplicationRecord
           .distinct
   end
 
+  def effective_release_at
+    released_at || created_at
+  end
+
   # Can this viewer open the collection? Author/admin always; otherwise by
-  # visibility. Private is author-only (no per-user grants for collections yet);
-  # the patron/subscriber tiers are stubbed.
-  def viewable_by?(user, share_token: nil)
+  # visibility. Private is author-only (no per-user grants for collections);
+  # patrons_only checks cached Patreon entitlement, and a share_token does NOT
+  # bypass it. The subscriber tier stays stubbed.
+  def viewable_by?(user, share_token: nil, patron_access: nil)
     return true if user && (user.id == author_id || user.admin?)
+    return false unless released?
 
     case visibility
     when "public" then true
     when "unlisted", "containers_only" then share_token.present? && share_token == self.share_token
+    when "patrons_only"
+      user.present? && (patron_access || PatronAccess.new(user)).satisfies?(self)
     else false
     end
   end
