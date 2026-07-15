@@ -63,7 +63,7 @@ module Schemas
             Puzzle.publicly_visible
           end
         OwnedListing.apply(
-          scope.includes(:author, :tags, :constraints), **args,
+          scope.includes(:author, :tags), **args,
           constraints: true, recent_by: :published_at, viewer: context[:current_user]
         )
       end

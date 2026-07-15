@@ -145,7 +145,7 @@ module Types
         return OwnedListing.empty_page unless viewer_is_self? || object.solve_history_at_least?(:puzzles)
 
         solved_ids = object.puzzle_plays.completed.select(:puzzle_id)
-        scope = Puzzle.publicly_visible.where(id: solved_ids).includes(:author, :tags, :constraints)
+        scope = Puzzle.publicly_visible.where(id: solved_ids).includes(:author, :tags)
         page = OwnedListing.apply(
           scope, **(filter ? filter.to_listing_args : {}),
           constraints: true, recent_by: :published_at, viewer: context[:current_user]
@@ -184,7 +184,7 @@ module Types
 
         scope = Puzzle.publicly_visible
                       .where(id: object.favorites.select(:puzzle_id))
-                      .includes(:author, :tags, :constraints)
+                      .includes(:author, :tags)
         OwnedListing.apply(
           scope, **(filter ? filter.to_listing_args : {}),
           constraints: true, recent_by: :published_at, viewer: context[:current_user]

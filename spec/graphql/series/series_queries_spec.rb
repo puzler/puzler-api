@@ -117,27 +117,14 @@ RSpec.describe "Series queries", type: :graphql do
     end
   end
 
-  describe "mySeries / mySubscriptions" do
+  describe "mySeries" do
     let(:mine) { create(:series, author:) }
-    let(:followed) { create(:series, visibility: :public) }
-
-    before do
-      mine
-      create(:series_subscription, series: followed, user: author)
-    end
-
-    def ids(field)
-      gql_data(execute_query("{ #{field} { id } }", context: auth_context(author)), field).map { |s| s["id"].to_i }
-    end
 
     it "returns the author's own series" do
+      mine
       # mySeries is a paginated connection; nodes holds the records.
       result = execute_query("{ mySeries { nodes { id } } }", context: auth_context(author))
       expect(gql_data(result, "mySeries", "nodes").map { |s| s["id"].to_i }).to contain_exactly(mine.id)
-    end
-
-    it "returns the viewer's subscriptions" do
-      expect(ids("mySubscriptions")).to contain_exactly(followed.id)
     end
   end
 end

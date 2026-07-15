@@ -27,9 +27,6 @@ module Schemas
           description: "Search, filter, sort, and pagination options"
       end
 
-      field :my_subscriptions, [ Types::Objects::SeriesType ], null: false,
-        description: "Series the current user is subscribed to, newest subscription first"
-
       field :series_feed, [ Types::Objects::SeriesEntryType ], null: false,
         description: "Recently-released entries across the current user's subscribed series, newest first"
 
@@ -58,13 +55,6 @@ module Schemas
         scope = ::Series.publicly_visible.includes(:author)
         args = filter ? filter.to_listing_args : {}
         OwnedListing.apply(scope, **args)
-      end
-
-      def my_subscriptions
-        require_current_user!
-        context[:current_user].series_subscriptions
-                              .order(created_at: :desc)
-                              .map(&:series)
       end
 
       # "New in your series": released entries from subscribed series the user

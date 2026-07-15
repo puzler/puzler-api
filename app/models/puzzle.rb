@@ -10,8 +10,6 @@ class Puzzle < ApplicationRecord
   has_many :collection_solve_times, dependent: :destroy
   has_many :series_entries, as: :entryable, dependent: :destroy
 
-  has_many :constraints, dependent: :destroy
-  has_many :cosmetics, dependent: :destroy
   has_many :puzzle_plays, dependent: :destroy
   has_many :ratings, dependent: :destroy
   has_many :comments, dependent: :destroy

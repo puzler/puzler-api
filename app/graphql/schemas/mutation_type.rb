@@ -14,8 +14,6 @@ module Schemas
     implements Collections::Mutations
     implements Competitions::Mutations
     implements Series::Mutations
-    implements Constraints::Mutations
-    implements Cosmetics::Mutations
     implements Social::Mutations
     implements Play::Mutations
   end

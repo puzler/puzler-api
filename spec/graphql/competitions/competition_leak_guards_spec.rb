@@ -19,8 +19,7 @@ RSpec.describe "Competition leak guards", type: :graphql do
   def play_mutations
     [
       "mutation($p: ID!) { submitSolution(input: { puzzleId: $p, cellState: {}, timeElapsedSeconds: 1 }) { solved } }",
-      "mutation($p: ID!) { checkSolution(input: { puzzleId: $p, board: {} }) { result } }",
-      "mutation($p: ID!) { revealSolveMessage(input: { puzzleId: $p, solutionHash: \"x\" }) { correct } }"
+      "mutation($p: ID!) { checkSolution(input: { puzzleId: $p, board: {} }) { result } }"
     ]
   end
 

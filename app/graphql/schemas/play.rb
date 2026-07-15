@@ -13,8 +13,6 @@ module Schemas
         description: "Join a shared play session via its share token"
       field :kick_participant, mutation: ::Mutations::Play::KickParticipant,
         description: "Remove a collaborator from a play session (host only)"
-      field :reveal_solve_message, mutation: ::Mutations::Play::RevealSolveMessage,
-        description: "Reveal a puzzle's custom solve message for a correct solution"
       field :revoke_play_session, mutation: ::Mutations::Play::RevokePlaySession,
         description: "Stop sharing a play session and remove collaborators (owner only)"
       field :save_progress, mutation: ::Mutations::Play::SaveProgress,

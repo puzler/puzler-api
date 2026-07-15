@@ -128,14 +128,10 @@ module Schemas
         description: "Remove a collection's cover image"
       field :remove_collection_entry, mutation: ::Mutations::Collections::RemoveCollectionEntry,
         description: "Remove an entry from a collection"
-      field :remove_puzzle_from_collection, mutation: ::Mutations::Collections::RemovePuzzleFromCollection,
-        description: "Remove a puzzle from a collection"
       field :rename_folder, mutation: ::Mutations::Folders::RenameFolder,
         description: "Rename a folder"
       field :reorder_collection_entries, mutation: ::Mutations::Collections::ReorderCollectionEntries,
         description: "Reorder all entries in a collection"
-      field :reorder_collection_puzzles, mutation: ::Mutations::Collections::ReorderCollectionPuzzles,
-        description: "Reorder the puzzles in a collection"
       field :submit_collection_codeword, mutation: ::Mutations::Collections::SubmitCollectionCodeword,
         description: "Try a codeword against a collection's gated entries"
       field :update_collection, mutation: ::Mutations::Collections::UpdateCollection,

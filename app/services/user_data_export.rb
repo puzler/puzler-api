@@ -34,10 +34,9 @@ class UserDataExport
   end
 
   def puzzles
-    user.puzzles.includes(:constraints, :cosmetics).map do |puzzle|
+    user.puzzles.includes(:versions).map do |puzzle|
       puzzle.as_json.merge(
-        "constraints" => puzzle.constraints.as_json,
-        "cosmetics" => puzzle.cosmetics.as_json
+        "versions" => puzzle.versions.as_json
       )
     end
   end

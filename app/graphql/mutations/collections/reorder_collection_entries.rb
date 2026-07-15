@@ -1,8 +1,7 @@
 module Mutations
   module Collections
     # Set the order of a collection's entries (puzzles and story pages share
-    # one position sequence). Successor to reorderCollectionPuzzles, which
-    # stays for puzzle-only clients.
+    # one position sequence).
     class ReorderCollectionEntries < Mutations::BaseMutation
       description "Set the order of all entries in a collection"
 

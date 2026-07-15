@@ -60,25 +60,20 @@ RSpec.describe "Collection mutations", type: :graphql do
 
   describe "reorder and remove" do
     let(:collection) { create(:collection, author: user) }
-    let(:first) { create(:puzzle, author: user) }
-    let(:second) { create(:puzzle, author: user) }
+    let!(:first_entry) { create(:collection_entry, collection:, puzzle: create(:puzzle, author: user), position: 0) }
+    let!(:second_entry) { create(:collection_entry, collection:, puzzle: create(:puzzle, author: user), position: 1) }
 
-    before do
-      create(:collection_entry, collection:, puzzle: first, position: 0)
-      create(:collection_entry, collection:, puzzle: second, position: 1)
+    it "reorders entries by the given id list" do
+      m = "mutation($c: ID!, $ids: [ID!]!) { reorderCollectionEntries(input: { collectionId: $c, orderedEntryIds: $ids }) { collection { id } errors } }"
+      gql(m, { c: collection.id, ids: [ second_entry.id, first_entry.id ] })
+      expect(collection.reload.puzzles.pluck(:id)).to eq([ second_entry.entryable_id, first_entry.entryable_id ])
     end
 
-    it "reorders puzzles by the given id list" do
-      m = "mutation($c: ID!, $ids: [ID!]!) { reorderCollectionPuzzles(input: { collectionId: $c, orderedPuzzleIds: $ids }) { collection { id } errors } }"
-      gql(m, { c: collection.id, ids: [ second.id, first.id ] })
-      expect(collection.reload.puzzles.pluck(:id)).to eq([ second.id, first.id ])
-    end
-
-    it "removes a puzzle without deleting it", :aggregate_failures do
-      m = "mutation($c: ID!, $p: ID!) { removePuzzleFromCollection(input: { collectionId: $c, puzzleId: $p }) { collection { id } errors } }"
-      gql(m, { c: collection.id, p: first.id })
-      expect(collection.reload.puzzles.pluck(:id)).to eq([ second.id ])
-      expect(Puzzle.exists?(first.id)).to be(true)
+    it "removes a puzzle entry without deleting the puzzle", :aggregate_failures do
+      m = "mutation($c: ID!, $e: ID!) { removeCollectionEntry(input: { collectionId: $c, entryId: $e }) { collection { id } errors } }"
+      gql(m, { c: collection.id, e: first_entry.id })
+      expect(collection.reload.puzzles.pluck(:id)).to eq([ second_entry.entryable_id ])
+      expect(Puzzle.exists?(first_entry.entryable_id)).to be(true)
     end
   end
 

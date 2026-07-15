@@ -23,8 +23,6 @@ module Types
         description: "Per-puzzle comment-gate override; null inherits the author default (author only)"
       field :constraint_types, [ String ], null: false,
         description: "Constraint-type tags from the published version, for archive filtering"
-      field :constraints, [ ConstraintType ], null: false, description: "Logical constraints attached to this puzzle"
-      field :cosmetics, [ CosmeticType ], null: false, description: "Visual decorations attached to this puzzle"
       field :description, String, null: true, description: "Optional description or story text"
       field :effective_difficulty, Float, null: true,
         description: "Difficulty shown in the archive: the community average once there are enough votes, " \

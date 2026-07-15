@@ -57,8 +57,6 @@ mutations/
   base_mutation.rb      Shared base class (auth helpers, base classes wired up)
   users/                update_profile.rb
   puzzles/              create_puzzle.rb  update_puzzle.rb  publish_puzzle.rb  delete_puzzle.rb
-  constraints/          upsert_constraint.rb  delete_constraint.rb
-  cosmetics/            upsert_cosmetic.rb  delete_cosmetic.rb
   social/               rate_puzzle.rb  toggle_favorite.rb  create_comment.rb  delete_comment.rb
   play/                 start_play.rb  save_progress.rb  submit_solution.rb
 ```
@@ -84,8 +82,6 @@ schemas/
   query_type.rb         QueryType    — implements all query schema interfaces
   users.rb              Users::{ Queries, Mutations }
   puzzles.rb            Puzzles::{ Queries, Mutations }
-  constraints.rb        Constraints::{ Mutations }
-  cosmetics.rb          Cosmetics::{ Mutations }
   social.rb             Social::{ Mutations }
   play.rb               Play::{ Mutations }
   tags.rb               Tags::{ Queries }
