@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_12_200440) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -131,10 +131,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_200440) do
     t.datetime "created_at", null: false
     t.bigint "parent_id"
     t.bigint "puzzle_id", null: false
+    t.boolean "spoiler", default: false, null: false
+    t.bigint "spoiler_marked_by_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["parent_id"], name: "index_comments_on_parent_id"
     t.index ["puzzle_id"], name: "index_comments_on_puzzle_id"
+    t.index ["spoiler_marked_by_id"], name: "index_comments_on_spoiler_marked_by_id"
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
@@ -170,29 +173,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_200440) do
     t.index ["competition_run_id", "puzzle_id"], name: "index_competition_submissions_unique", unique: true
     t.index ["competition_run_id"], name: "index_competition_submissions_on_competition_run_id"
     t.index ["puzzle_id"], name: "index_competition_submissions_on_puzzle_id"
-  end
-
-  create_table "constraints", force: :cascade do |t|
-    t.string "constraint_type", null: false
-    t.datetime "created_at", null: false
-    t.jsonb "data", default: {}, null: false
-    t.integer "display_order", default: 0, null: false
-    t.bigint "puzzle_id", null: false
-    t.datetime "updated_at", null: false
-    t.index ["puzzle_id", "constraint_type"], name: "index_constraints_on_puzzle_id_and_constraint_type"
-    t.index ["puzzle_id"], name: "index_constraints_on_puzzle_id"
-  end
-
-  create_table "cosmetics", force: :cascade do |t|
-    t.integer "cosmetic_type", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.jsonb "data", default: {}, null: false
-    t.integer "display_order", default: 0, null: false
-    t.jsonb "position", default: {}, null: false
-    t.bigint "puzzle_id", null: false
-    t.jsonb "style", default: {}, null: false
-    t.datetime "updated_at", null: false
-    t.index ["puzzle_id"], name: "index_cosmetics_on_puzzle_id"
   end
 
   create_table "favorites", force: :cascade do |t|
@@ -512,12 +492,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_200440) do
   add_foreign_key "comments", "comments", column: "parent_id"
   add_foreign_key "comments", "puzzles"
   add_foreign_key "comments", "users"
+  add_foreign_key "comments", "users", column: "spoiler_marked_by_id"
   add_foreign_key "competition_runs", "collections"
   add_foreign_key "competition_runs", "users"
   add_foreign_key "competition_submissions", "competition_runs"
   add_foreign_key "competition_submissions", "puzzles"
-  add_foreign_key "constraints", "puzzles"
-  add_foreign_key "cosmetics", "puzzles"
   add_foreign_key "favorites", "puzzles"
   add_foreign_key "favorites", "users"
   add_foreign_key "folders", "folders", column: "parent_id", on_delete: :nullify

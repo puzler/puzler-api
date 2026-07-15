@@ -30,6 +30,14 @@ RSpec.describe "Mutation: createComment", type: :graphql do
       expect(Comment.last.parent_id).to eq(parent.id)
     end
 
+    it "marks the comment as a spoiler when asked", :aggregate_failures do
+      m = "mutation($p: ID!, $b: String!) { createComment(input: { puzzleId: $p, body: $b, spoiler: true }) { comment { isSpoiler spoilerMarkedBySetter } errors } }"
+      result = execute_query(m, variables: { p: puzzle.id, b: "hidden take" }, context: auth_context(user))
+      data = gql_data(result, "createComment", "comment")
+      expect(data).to eq({ "isSpoiler" => true, "spoilerMarkedBySetter" => false })
+      expect(Comment.last.spoiler_marked_by).to eq(user)
+    end
+
     it "returns an error for a non-existent puzzle" do
       result = execute_query(mutation, variables: { puzzleId: 0, body: "Hello" }, context: auth_context(user))
       expect(gql_errors(result).first["message"]).to eq("Puzzle not found")

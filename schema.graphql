@@ -719,16 +719,6 @@ interface CollectionMutations {
   ): RemoveCollectionEntryPayload
 
   """
-  Remove a puzzle from a collection
-  """
-  removePuzzleFromCollection(
-    """
-    Parameters for RemovePuzzleFromCollection
-    """
-    input: RemovePuzzleFromCollectionInput!
-  ): RemovePuzzleFromCollectionPayload
-
-  """
   Rename a folder
   """
   renameFolder(
@@ -747,16 +737,6 @@ interface CollectionMutations {
     """
     input: ReorderCollectionEntriesInput!
   ): ReorderCollectionEntriesPayload
-
-  """
-  Reorder the puzzles in a collection
-  """
-  reorderCollectionPuzzles(
-    """
-    Parameters for ReorderCollectionPuzzles
-    """
-    input: ReorderCollectionPuzzlesInput!
-  ): ReorderCollectionPuzzlesPayload
 
   """
   Try a codeword against a collection's gated entries
@@ -930,9 +910,19 @@ A comment on a puzzle
 """
 type Comment {
   """
-  Comment text
+  Comment text; spoiler content is redacted for viewers who have not solved the puzzle
   """
   body: String!
+
+  """
+  Whether the current viewer may delete this comment
+  """
+  canDelete: Boolean!
+
+  """
+  Whether the current viewer may mark or unmark this comment as a spoiler
+  """
+  canMarkSpoiler: Boolean!
 
   """
   Whether the commenter has completed this puzzle (drives the 'solved' badge)
@@ -955,6 +945,11 @@ type Comment {
   isAuthor: Boolean!
 
   """
+  Whether the whole comment is flagged as a spoiler
+  """
+  isSpoiler: Boolean!
+
+  """
   ID of the parent comment if this is a reply
   """
   parentId: ID
@@ -968,6 +963,21 @@ type Comment {
   Direct replies to this comment
   """
   replies: [Comment!]!
+
+  """
+  The body split into text and spoiler runs, spoilers redacted per viewer
+  """
+  segments: [CommentSegment!]!
+
+  """
+  Whether the spoiler flag was applied by someone other than the commenter (the setter or an admin)
+  """
+  spoilerMarkedBySetter: Boolean!
+
+  """
+  True when this viewer cannot see the comment's spoiler content
+  """
+  spoilersRedacted: Boolean!
 
   """
   User who posted the comment
@@ -988,6 +998,26 @@ type CommentConnection {
   Pagination metadata
   """
   pageInfo: PageInfo!
+}
+
+"""
+One run of a comment body: plain text, or a spoiler span whose text is withheld from viewers who have not solved the puzzle
+"""
+type CommentSegment {
+  """
+  True when the span's text was withheld server-side
+  """
+  redacted: Boolean!
+
+  """
+  Whether this span is a spoiler (render click-to-reveal even when text is present)
+  """
+  spoiler: Boolean!
+
+  """
+  The span's text; null exactly when redacted
+  """
+  text: String
 }
 
 """
@@ -1325,176 +1355,6 @@ type ConfigurePuzzlePagePayload {
 }
 
 """
-A logical constraint on a puzzle (killer cage, thermometer, etc.)
-"""
-type Constraint {
-  """
-  Constraint type identifier
-  """
-  constraintType: String!
-
-  """
-  Constraint-specific configuration data
-  """
-  data: JSON!
-
-  """
-  Render order among constraints
-  """
-  displayOrder: Int!
-
-  """
-  Unique constraint ID
-  """
-  id: ID!
-}
-
-"""
-Attributes for creating or updating a constraint
-"""
-input ConstraintAttrsInput {
-  """
-  Constraint type identifier (e.g. killer_cage, thermometer)
-  """
-  constraintType: String!
-
-  """
-  Constraint-specific configuration data
-  """
-  data: JSON!
-
-  """
-  Render order among constraints on this puzzle
-  """
-  displayOrder: Int
-}
-
-"""
-Mutations for managing puzzle constraints
-"""
-interface ConstraintMutations {
-  """
-  Delete a constraint from a puzzle
-  """
-  deleteConstraint(
-    """
-    Parameters for DeleteConstraint
-    """
-    input: DeleteConstraintInput!
-  ): DeleteConstraintPayload
-
-  """
-  Create or update a constraint on a puzzle
-  """
-  upsertConstraint(
-    """
-    Parameters for UpsertConstraint
-    """
-    input: UpsertConstraintInput!
-  ): UpsertConstraintPayload
-}
-
-"""
-A visual decoration on a puzzle (cell color, line, shape, or text label)
-"""
-type Cosmetic {
-  """
-  Cosmetic type identifier
-  """
-  cosmeticType: CosmeticTypeEnum!
-
-  """
-  Type-specific extra data
-  """
-  data: JSON!
-
-  """
-  Render order among cosmetics
-  """
-  displayOrder: Int!
-
-  """
-  Unique cosmetic ID
-  """
-  id: ID!
-
-  """
-  Position descriptor — cell, edge, or corner with associated cell keys
-  """
-  position: JSON!
-
-  """
-  Visual style properties
-  """
-  style: JSON!
-}
-
-"""
-Attributes for creating or updating a cosmetic
-"""
-input CosmeticAttrsInput {
-  """
-  Cosmetic type identifier (line, cell_color, shape, text)
-  """
-  cosmeticType: CosmeticTypeEnum!
-
-  """
-  Type-specific extra data (e.g. path for lines, shapeType for shapes)
-  """
-  data: JSON
-
-  """
-  Render order among cosmetics on this puzzle
-  """
-  displayOrder: Int
-
-  """
-  Position descriptor — cell, edge, or corner with associated cell keys
-  """
-  position: JSON!
-
-  """
-  Visual style properties (color, opacity, strokeWidth, etc.)
-  """
-  style: JSON!
-}
-
-"""
-Mutations for managing puzzle cosmetics
-"""
-interface CosmeticMutations {
-  """
-  Delete a cosmetic from a puzzle
-  """
-  deleteCosmetic(
-    """
-    Parameters for DeleteCosmetic
-    """
-    input: DeleteCosmeticInput!
-  ): DeleteCosmeticPayload
-
-  """
-  Create or update a cosmetic on a puzzle
-  """
-  upsertCosmetic(
-    """
-    Parameters for UpsertCosmetic
-    """
-    input: UpsertCosmeticInput!
-  ): UpsertCosmeticPayload
-}
-
-"""
-Kind of cosmetic: line, cell_color, shape, or text
-"""
-enum CosmeticTypeEnum {
-  CELL_COLOR
-  LINE
-  SHAPE
-  TEXT
-}
-
-"""
 Autogenerated input type of CreateCollection
 """
 input CreateCollectionInput {
@@ -1567,6 +1427,11 @@ input CreateCommentInput {
   ID of the puzzle being commented on
   """
   puzzleId: ID!
+
+  """
+  Mark the whole comment as a spoiler, hidden from viewers who have not solved the puzzle
+  """
+  spoiler: Boolean
 }
 
 """
@@ -1865,66 +1730,6 @@ type DeleteCommentPayload {
 
   """
   True when the comment was successfully deleted
-  """
-  success: Boolean!
-}
-
-"""
-Autogenerated input type of DeleteConstraint
-"""
-input DeleteConstraintInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  ID of the constraint to delete
-  """
-  id: ID!
-}
-
-"""
-Autogenerated return type of DeleteConstraint.
-"""
-type DeleteConstraintPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  True when the constraint was successfully deleted
-  """
-  success: Boolean!
-}
-
-"""
-Autogenerated input type of DeleteCosmetic
-"""
-input DeleteCosmeticInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  ID of the cosmetic to delete
-  """
-  id: ID!
-}
-
-"""
-Autogenerated return type of DeleteCosmetic.
-"""
-type DeleteCosmeticPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  True when the cosmetic was successfully deleted
   """
   success: Boolean!
 }
@@ -2737,7 +2542,7 @@ type MovePuzzleToFolderPayload {
 """
 Root mutation type — all mutations are composed from domain-specific schema modules
 """
-type Mutation implements CollectionMutations & CompetitionMutations & ConstraintMutations & CosmeticMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
+type Mutation implements CollectionMutations & CompetitionMutations & PlayMutations & PuzzleMutations & SeriesMutations & SocialMutations & UserMutations {
   """
   Add a puzzle to a collection
   """
@@ -2887,26 +2692,6 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
     """
     input: DeleteCommentInput!
   ): DeleteCommentPayload
-
-  """
-  Delete a constraint from a puzzle
-  """
-  deleteConstraint(
-    """
-    Parameters for DeleteConstraint
-    """
-    input: DeleteConstraintInput!
-  ): DeleteConstraintPayload
-
-  """
-  Delete a cosmetic from a puzzle
-  """
-  deleteCosmetic(
-    """
-    Parameters for DeleteCosmetic
-    """
-    input: DeleteCosmeticInput!
-  ): DeleteCosmeticPayload
 
   """
   Delete a folder
@@ -3129,16 +2914,6 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
   ): RemoveCollectionEntryPayload
 
   """
-  Remove a puzzle from a collection
-  """
-  removePuzzleFromCollection(
-    """
-    Parameters for RemovePuzzleFromCollection
-    """
-    input: RemovePuzzleFromCollectionInput!
-  ): RemovePuzzleFromCollectionPayload
-
-  """
   Remove an entry from a series
   """
   removeSeriesEntry(
@@ -3169,16 +2944,6 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
   ): ReorderCollectionEntriesPayload
 
   """
-  Reorder the puzzles in a collection
-  """
-  reorderCollectionPuzzles(
-    """
-    Parameters for ReorderCollectionPuzzles
-    """
-    input: ReorderCollectionPuzzlesInput!
-  ): ReorderCollectionPuzzlesPayload
-
-  """
   Reorder the entries in a series
   """
   reorderSeriesEntries(
@@ -3187,16 +2952,6 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
     """
     input: ReorderSeriesEntriesInput!
   ): ReorderSeriesEntriesPayload
-
-  """
-  Reveal a puzzle's custom solve message for a correct solution
-  """
-  revealSolveMessage(
-    """
-    Parameters for RevealSolveMessage
-    """
-    input: RevealSolveMessageInput!
-  ): RevealSolveMessagePayload
 
   """
   Stop sharing a play session and remove collaborators (owner only)
@@ -3247,6 +3002,16 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
     """
     input: ScheduleSeriesEntryInput!
   ): ScheduleSeriesEntryPayload
+
+  """
+  Mark or unmark a comment as a spoiler
+  """
+  setCommentSpoiler(
+    """
+    Parameters for SetCommentSpoiler
+    """
+    input: SetCommentSpoilerInput!
+  ): SetCommentSpoilerPayload
 
   """
   Change a puzzle's access mode
@@ -3537,26 +3302,6 @@ type Mutation implements CollectionMutations & CompetitionMutations & Constraint
     """
     input: UploadStoryPageImageInput!
   ): UploadStoryPageImagePayload
-
-  """
-  Create or update a constraint on a puzzle
-  """
-  upsertConstraint(
-    """
-    Parameters for UpsertConstraint
-    """
-    input: UpsertConstraintInput!
-  ): UpsertConstraintPayload
-
-  """
-  Create or update a cosmetic on a puzzle
-  """
-  upsertCosmetic(
-    """
-    Parameters for UpsertCosmetic
-    """
-    input: UpsertCosmeticInput!
-  ): UpsertCosmeticPayload
 }
 
 """
@@ -3677,16 +3422,6 @@ interface PlayMutations {
     """
     input: KickParticipantInput!
   ): KickParticipantPayload
-
-  """
-  Reveal a puzzle's custom solve message for a correct solution
-  """
-  revealSolveMessage(
-    """
-    Parameters for RevealSolveMessage
-    """
-    input: RevealSolveMessageInput!
-  ): RevealSolveMessagePayload
 
   """
   Stop sharing a play session and remove collaborators (owner only)
@@ -4038,16 +3773,6 @@ type Puzzle {
   Constraint-type tags from the published version, for archive filtering
   """
   constraintTypes: [String!]!
-
-  """
-  Logical constraints attached to this puzzle
-  """
-  constraints: [Constraint!]!
-
-  """
-  Visual decorations attached to this puzzle
-  """
-  cosmetics: [Cosmetic!]!
 
   """
   Optional description or story text
@@ -4756,11 +4481,6 @@ type Query implements CollectionQueries & CompetitionQueries & PuzzleQueries & S
   ): SeriesConnection!
 
   """
-  Series the current user is subscribed to, newest subscription first
-  """
-  mySubscriptions: [Series!]!
-
-  """
   Browse the public series archive with search/filter/sort/pagination
   """
   publicSeries(
@@ -5082,46 +4802,6 @@ type RemoveCollectionEntryPayload {
 }
 
 """
-Autogenerated input type of RemovePuzzleFromCollection
-"""
-input RemovePuzzleFromCollectionInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The collection
-  """
-  collectionId: ID!
-
-  """
-  Puzzle to remove
-  """
-  puzzleId: ID!
-}
-
-"""
-Autogenerated return type of RemovePuzzleFromCollection.
-"""
-type RemovePuzzleFromCollectionPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The updated collection
-  """
-  collection: Collection
-
-  """
-  Validation errors, if any
-  """
-  errors: [String!]!
-}
-
-"""
 Autogenerated input type of RemoveSeriesEntry
 """
 input RemoveSeriesEntryInput {
@@ -5237,46 +4917,6 @@ type ReorderCollectionEntriesPayload {
 }
 
 """
-Autogenerated input type of ReorderCollectionPuzzles
-"""
-input ReorderCollectionPuzzlesInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The collection
-  """
-  collectionId: ID!
-
-  """
-  Puzzle IDs in the desired order; sets each position by its index
-  """
-  orderedPuzzleIds: [ID!]!
-}
-
-"""
-Autogenerated return type of ReorderCollectionPuzzles.
-"""
-type ReorderCollectionPuzzlesPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The reordered collection
-  """
-  collection: Collection
-
-  """
-  Validation errors, if any
-  """
-  errors: [String!]!
-}
-
-"""
 Autogenerated input type of ReorderSeriesEntries
 """
 input ReorderSeriesEntriesInput {
@@ -5314,51 +4954,6 @@ type ReorderSeriesEntriesPayload {
   The reordered series
   """
   series: Series
-}
-
-"""
-Autogenerated input type of RevealSolveMessage
-"""
-input RevealSolveMessageInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  ID of the solved puzzle
-  """
-  puzzleId: ID!
-
-  """
-  Share token, required to reach an unlisted puzzle
-  """
-  shareToken: String
-
-  """
-  SHA-256 of the submitted board; must match the published solution
-  """
-  solutionHash: String!
-}
-
-"""
-Autogenerated return type of RevealSolveMessage.
-"""
-type RevealSolveMessagePayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  Whether the submitted hash matches the solution
-  """
-  correct: Boolean!
-
-  """
-  The author's custom message, present only on a correct solve with a non-blank message
-  """
-  solveMessage: String
 }
 
 """
@@ -5816,11 +5411,6 @@ interface SeriesQueries {
   ): SeriesConnection!
 
   """
-  Series the current user is subscribed to, newest subscription first
-  """
-  mySubscriptions: [Series!]!
-
-  """
   Browse the public series archive with search/filter/sort/pagination
   """
   publicSeries(
@@ -5866,6 +5456,46 @@ enum SeriesVisibilityEnum {
   PUBLIC
   SUBSCRIBERS_ONLY
   UNLISTED
+}
+
+"""
+Autogenerated input type of SetCommentSpoiler
+"""
+input SetCommentSpoilerInput {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  ID of the comment
+  """
+  id: ID!
+
+  """
+  True to mark as a spoiler, false to unmark
+  """
+  spoiler: Boolean!
+}
+
+"""
+Autogenerated return type of SetCommentSpoiler.
+"""
+type SetCommentSpoilerPayload {
+  """
+  A unique identifier for the client performing the mutation.
+  """
+  clientMutationId: String
+
+  """
+  The updated comment
+  """
+  comment: Comment
+
+  """
+  Validation errors, if any
+  """
+  errors: [String!]!
 }
 
 """
@@ -5950,6 +5580,16 @@ interface SocialMutations {
     """
     input: RatePuzzleInput!
   ): RatePuzzlePayload
+
+  """
+  Mark or unmark a comment as a spoiler
+  """
+  setCommentSpoiler(
+    """
+    Parameters for SetCommentSpoiler
+    """
+    input: SetCommentSpoilerInput!
+  ): SetCommentSpoilerPayload
 
   """
   Add or remove a puzzle from the current user's favorites
@@ -7317,96 +6957,6 @@ type UploadStoryPageImagePayload {
   Hosted URL of the stored image
   """
   url: String
-}
-
-"""
-Autogenerated input type of UpsertConstraint
-"""
-input UpsertConstraintInput {
-  """
-  Constraint attributes to create or update
-  """
-  attrs: ConstraintAttrsInput!
-
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  ID of the constraint to update; omit to create a new one
-  """
-  id: ID
-
-  """
-  ID of the puzzle this constraint belongs to
-  """
-  puzzleId: ID!
-}
-
-"""
-Autogenerated return type of UpsertConstraint.
-"""
-type UpsertConstraintPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The created or updated constraint
-  """
-  constraint: Constraint
-
-  """
-  Validation errors, if any
-  """
-  errors: [String!]!
-}
-
-"""
-Autogenerated input type of UpsertCosmetic
-"""
-input UpsertCosmeticInput {
-  """
-  Cosmetic attributes to create or update
-  """
-  attrs: CosmeticAttrsInput!
-
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  ID of the cosmetic to update; omit to create a new one
-  """
-  id: ID
-
-  """
-  ID of the puzzle this cosmetic belongs to
-  """
-  puzzleId: ID!
-}
-
-"""
-Autogenerated return type of UpsertCosmetic.
-"""
-type UpsertCosmeticPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  The created or updated cosmetic
-  """
-  cosmetic: Cosmetic
-
-  """
-  Validation errors, if any
-  """
-  errors: [String!]!
 }
 
 """
